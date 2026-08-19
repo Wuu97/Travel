@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import { access, readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
-const developmentPreviewMeta =
-  /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
 const templateRoot = new URL("../", import.meta.url);
 const previewRoot = new URL("../app/_sites-preview/", import.meta.url);
 
@@ -28,32 +26,27 @@ async function render() {
   );
 }
 
-test("server-renders the starter loading skeleton", async () => {
+test("server-renders the travel application", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, developmentPreviewMeta);
-  assert.match(html, /<title>Your site is taking shape<\/title>/i);
-  assert.match(html, /Building your site/);
-  assert.match(html, /Your site is taking shape/);
-  assert.match(
-    html,
-    /Your first version will appear here automatically when it’s ready\./,
-  );
+  assert.match(html, /途遇/);
+  assert.match(html, /出发地/);
+  assert.match(html, /DEEPSEEK POWERED/);
   assert.doesNotMatch(html, /Codex/);
-  assert.match(html, /react-loading-skeleton/);
-  assert.match(html, /role="status"/);
+  assert.doesNotMatch(html, /codex-preview/);
 });
 
 test("keeps the loading skeleton scoped and disposable", async () => {
-  const [preview, css, page, layout, packageJson, files] = await Promise.all([
+  const [preview, css, page, layout, packageJson, validation, files] = await Promise.all([
     readFile(new URL("SkeletonPreview.tsx", previewRoot), "utf8"),
     readFile(new URL("preview.css", previewRoot), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/validation.ts", import.meta.url), "utf8"),
     readdir(previewRoot),
   ]);
 
@@ -78,12 +71,20 @@ test("keeps the loading skeleton scoped and disposable", async () => {
     /loading-spinner|status-mark|status-progress|canvas|cookie|random/i,
   );
 
-  assert.match(page, /export const metadata:\s*Metadata/);
-  assert.match(page, /"codex-preview": "development"/);
-  assert.match(page, /<SkeletonPreview \/>/);
-  assert.match(layout, /title:\s*"Starter Project"/);
+  assert.match(page, /export default function Home\(\)/);
+  assert.match(page, /DeepSeek/);
+  assert.match(
+    page,
+    /\$\{window\.location\.pathname\}\$\{window\.location\.search\}/,
+  );
+  assert.doesNotMatch(page, /SkeletonPreview/);
+  assert.doesNotMatch(page, /codex-preview/);
+  assert.match(layout, /title:\s*"途遇 · 旅行服务平台"/);
   assert.doesNotMatch(layout, /codex-preview|_sites-preview|themeColor|\bViewport\b/);
   assert.doesNotMatch(css, /(^|\s)(html|body)\s*\{/m);
+  assert.match(validation, /const MAX_TRIP_ITEMS = 500/);
+  assert.match(validation, /history\.length > 8/);
+  assert.match(validation, /plans\.every\(isItineraryItem\)/);
 
   await assert.rejects(
     access(new URL("public/_sites-preview", templateRoot)),
