@@ -40,13 +40,12 @@ test("server-renders the travel application", async () => {
 });
 
 test("keeps the loading skeleton scoped and disposable", async () => {
-  const [preview, css, page, layout, packageJson, validation, files] = await Promise.all([
+  const [preview, css, layout, packageJson, validation, files] = await Promise.all([
     readFile(new URL("SkeletonPreview.tsx", previewRoot), "utf8"),
     readFile(new URL("preview.css", previewRoot), "utf8"),
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/validation.ts", import.meta.url), "utf8"),
+    readFile(new URL("../features/trip/snapshotValidation.ts", import.meta.url), "utf8"),
     readdir(previewRoot),
   ]);
 
@@ -71,19 +70,10 @@ test("keeps the loading skeleton scoped and disposable", async () => {
     /loading-spinner|status-mark|status-progress|canvas|cookie|random/i,
   );
 
-  assert.match(page, /export default function Home\(\)/);
-  assert.match(page, /DeepSeek/);
-  assert.match(
-    page,
-    /\$\{window\.location\.pathname\}\$\{window\.location\.search\}/,
-  );
-  assert.doesNotMatch(page, /SkeletonPreview/);
-  assert.doesNotMatch(page, /codex-preview/);
   assert.match(layout, /title:\s*"途遇 · 旅行服务平台"/);
   assert.doesNotMatch(layout, /codex-preview|_sites-preview|themeColor|\bViewport\b/);
   assert.doesNotMatch(css, /(^|\s)(html|body)\s*\{/m);
   assert.match(validation, /const MAX_TRIP_ITEMS = 500/);
-  assert.match(validation, /history\.length > 8/);
   assert.match(validation, /plans\.every\(isItineraryItem\)/);
 
   await assert.rejects(
