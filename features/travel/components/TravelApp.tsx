@@ -8,6 +8,7 @@ import {
 import { useScrollRestoration } from "../../navigation/hooks/useScrollRestoration";
 import { AiAssistantSection } from "../../chat/components/AiAssistantSection";
 import { useSupabaseAuth } from "../../auth/useSupabaseAuth";
+import { AuthControl } from "../../auth/components/AuthControl";
 import { createTripImportRenderer } from "../../chat/components/TripImportRenderer";
 import { useTravelChat } from "../../chat/hooks/useTravelChat";
 import { TravelDiscoverySections } from "../../landing/components/TravelDiscoverySections";
@@ -261,6 +262,19 @@ function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean 
         scrollRef={chatScrollRef}
       />
       <SiteFooter />
+      <AuthControl
+        configured={auth.configured}
+        error={auth.error}
+        onClearError={auth.clearError}
+        onRequestPhoneOtp={auth.requestPhoneOtp}
+        onSignIn={auth.signInWithPassword}
+        onSignOut={auth.signOut}
+        onSignUp={auth.signUpWithPassword}
+        onVerifyPhoneOtp={auth.verifyPhoneOtp}
+        ready={auth.ready}
+        showTrigger={false}
+        user={auth.user}
+      />
     </main>
   );
 }

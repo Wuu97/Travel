@@ -25,10 +25,11 @@ type Props = {
   onSignUp: (email: string, password: string) => Promise<string | null | void>;
   onVerifyPhoneOtp: (phone: string, token: string) => Promise<string | null | void>;
   ready: boolean;
+  showTrigger?: boolean;
   user: User | null;
 };
 
-export function AuthControl({ configured, error, onClearError, onRequestPhoneOtp, onSignIn, onSignOut, onSignUp, onVerifyPhoneOtp, ready, user }: Props) {
+export function AuthControl({ configured, error, onClearError, onRequestPhoneOtp, onSignIn, onSignOut, onSignUp, onVerifyPhoneOtp, ready, showTrigger = true, user }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -59,9 +60,9 @@ export function AuthControl({ configured, error, onClearError, onRequestPhoneOtp
     };
   }, [open]);
 
-  if (!configured) return <span className="auth-status">云端未配置</span>;
-  if (!ready) return <span className="auth-status">正在恢复登录…</span>;
-  if (user) return <div className="auth-control"><span title={user.email || user.phone}>{user.email || user.phone || "已登录"}</span><button type="button" onClick={() => void onSignOut()}>退出</button></div>;
+  if (!configured) return showTrigger ? <span className="auth-status">云端未配置</span> : null;
+  if (!ready) return showTrigger ? <span className="auth-status">正在恢复登录…</span> : null;
+  if (user) return showTrigger ? <div className="auth-control"><span title={user.email || user.phone}>{user.email || user.phone || "已登录"}</span><button type="button" onClick={() => void onSignOut()}>退出</button></div> : null;
 
   const isSignUp = mode === "sign-up";
   const isPasswordMismatch = notice === "两次输入的密码不一致。";
@@ -88,7 +89,7 @@ export function AuthControl({ configured, error, onClearError, onRequestPhoneOtp
   };
 
   return <>
-    <div className="auth-control"><button type="button" onClick={() => setOpen(true)}>登录 / 注册</button></div>
+    {showTrigger && <div className="auth-control"><button type="button" onClick={() => setOpen(true)}>登录 / 注册</button></div>}
     {open && <div className="auth-backdrop">
       <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
         <div className="auth-dialog-title"><div><b id="auth-title">{method === "phone" ? "手机号登录或注册" : isSignUp ? "创建账户" : "登录账户"}</b><small>{method === "phone" ? "验证短信验证码后，将自动登录或创建账户。" : isSignUp ? "注册后可同步你的行程和对话。" : "登录后可同步你的行程和对话。"}</small></div><button type="button" className="auth-close" aria-label="关闭" onClick={() => { onClearError(); setNotice(null); setOpen(false); }}>×</button></div>
