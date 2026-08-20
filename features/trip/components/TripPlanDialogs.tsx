@@ -7,5 +7,5 @@ type Props = { activeDay: number; days: Array<{ day: number; date: string }>; ed
 
 /** Groups the mutually exclusive itinerary edit dialogs at the workspace boundary. */
 export function TripPlanDialogs({ activeDay, days, editingPlan, manualPlan, onSaveEdit, onSaveManual, setEditingPlan, setManualPlan }: Props) {
-  return <><PlanEditorDialog onClose={() => setEditingPlan(null)} onSave={onSaveEdit} plan={editingPlan} setPlan={setEditingPlan} /><ManualPlanDialog activeDay={activeDay} days={days} onClose={() => setManualPlan(null)} onSave={onSaveManual} plan={manualPlan} setPlan={setManualPlan} /></>;
+  return <><PlanEditorDialog onClose={() => setEditingPlan(null)} onSave={onSaveEdit} plan={editingPlan} setPlan={setEditingPlan} /><ManualPlanDialog activeDay={activeDay} days={days} key={manualPlan?.id} onClose={() => setManualPlan(null)} onSave={onSaveManual} plan={manualPlan} setPlan={setManualPlan} /></>;
 }

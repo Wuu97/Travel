@@ -1,48 +1,36 @@
-import { env } from "cloudflare:workers";
+import { createSupabaseServerClient } from "../../../features/auth/supabase";
 import { isStoredTrip } from "../../../features/trip/snapshotValidation";
 import { getTripId } from "../../../features/trip/tripId";
-import { getAuthenticatedUserId } from "../../../features/trip/access";
 
-const CREATE_TABLE_SQL = `
-  CREATE TABLE IF NOT EXISTS trip_snapshots (
-    id TEXT PRIMARY KEY NOT NULL,
-    payload TEXT NOT NULL,
-    updated_at INTEGER NOT NULL,
-    updated_by TEXT
-  );
-`;
+function getAccessToken(request: Request) {
+  const value = request.headers.get("authorization");
+  return value?.startsWith("Bearer ") ? value.slice(7) : null;
+}
 
-async function getDatabase() {
-  if (!env.DB) {
-    throw new Error("Cloudflare D1 binding `DB` is unavailable.");
-  }
-  await env.DB.exec(CREATE_TABLE_SQL);
-  return env.DB;
+async function getAuthenticatedClient(request: Request) {
+  const accessToken = getAccessToken(request);
+  const client = accessToken ? createSupabaseServerClient(accessToken) : null;
+  if (!client) return { error: Response.json({ error: "Supabase 云端服务尚未配置。" }, { status: 503 }) };
+  const { data, error } = await client.auth.getUser(accessToken);
+  if (error || !data.user) return { error: Response.json({ error: "请先登录后查看共享行程。" }, { status: 401 }) };
+  return { client, userId: data.user.id };
 }
 
 export async function GET(request: Request) {
   try {
-    const userId = getAuthenticatedUserId(request);
-    if (!userId) return Response.json({ error: "请先登录后查看共享行程。" }, { status: 401 });
-    const database = await getDatabase();
+    const context = await getAuthenticatedClient(request);
+    if ("error" in context) return context.error;
     const tripId = getTripId(request);
-    const row = await database
-      .prepare("SELECT payload, updated_at, updated_by FROM trip_snapshots WHERE id = ? AND updated_by = ?")
-      .bind(tripId, userId)
-      .first<{ payload: string; updated_at: number; updated_by: string | null }>();
-
+    const { data: row, error } = await context.client.from("trip_snapshots").select("payload, updated_at").eq("id", tripId).maybeSingle();
+    if (error) return Response.json({ error: error.message }, { status: 502 });
     if (!row) return Response.json({ trip: null });
 
-    const trip = JSON.parse(row.payload) as unknown;
+    const trip = row.payload;
     if (!isStoredTrip(trip)) {
       return Response.json({ error: "保存的行程数据无效。" }, { status: 500 });
     }
 
-    return Response.json({
-      trip,
-      updatedAt: row.updated_at,
-      updatedBy: row.updated_by,
-    });
+    return Response.json({ trip, updatedAt: row.updated_at });
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : "无法读取共享行程。" },
@@ -53,8 +41,8 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const userId = getAuthenticatedUserId(request);
-    if (!userId) return Response.json({ error: "请先登录后编辑共享行程。" }, { status: 401 });
+    const context = await getAuthenticatedClient(request);
+    if ("error" in context) return context.error;
     let body: { trip?: unknown };
     try {
       body = (await request.json()) as { trip?: unknown };
@@ -65,30 +53,11 @@ export async function PUT(request: Request) {
       return Response.json({ error: "行程数据格式无效。" }, { status: 400 });
     }
 
-    const database = await getDatabase();
     const tripId = getTripId(request);
     const updatedAt = Date.now();
-    const updatedBy = userId;
-
-    const result = await database
-      .prepare(
-        `INSERT INTO trip_snapshots (id, payload, updated_at, updated_by)
-         VALUES (?, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET
-           payload = excluded.payload,
-           updated_at = excluded.updated_at,
-           updated_by = excluded.updated_by
-         WHERE trip_snapshots.updated_by = excluded.updated_by
-            OR trip_snapshots.updated_by IS NULL`,
-      )
-      .bind(tripId, JSON.stringify(body.trip), updatedAt, updatedBy)
-      .run();
-
-    if (!result.meta.changes) {
-      return Response.json({ error: "你没有编辑该共享行程的权限。" }, { status: 403 });
-    }
-
-    return Response.json({ updatedAt, updatedBy });
+    const { error } = await context.client.from("trip_snapshots").upsert({ id: tripId, user_id: context.userId, payload: body.trip, updated_at: updatedAt }, { onConflict: "id,user_id" });
+    if (error) return Response.json({ error: error.message }, { status: 502 });
+    return Response.json({ updatedAt });
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : "无法保存共享行程。" },
@@ -99,12 +68,11 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const userId = getAuthenticatedUserId(request);
-    if (!userId) return Response.json({ error: "请先登录后删除共享行程。" }, { status: 401 });
-    const database = await getDatabase();
+    const context = await getAuthenticatedClient(request);
+    if ("error" in context) return context.error;
     const tripId = getTripId(request);
-    const result = await database.prepare("DELETE FROM trip_snapshots WHERE id = ? AND updated_by = ?").bind(tripId, userId).run();
-    if (!result.meta.changes) return Response.json({ error: "你没有删除该共享行程的权限。" }, { status: 403 });
+    const { error } = await context.client.from("trip_snapshots").delete().eq("id", tripId);
+    if (error) return Response.json({ error: error.message }, { status: 502 });
     return Response.json({ deleted: true });
   } catch (error) {
     return Response.json(

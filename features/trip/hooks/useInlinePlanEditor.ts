@@ -1,7 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { ItineraryItem } from "../model";
+import { sortItineraryItems } from "../utils";
 
-type InlineEdit = { id: string; field: "title" | "note"; value: string };
+type InlineEdit = { id: string; field: "title" | "note" | "time" | "type"; value: string };
 type Options = { announceSave: () => void; edit: InlineEdit | null; setEdit: (edit: InlineEdit | null) => void; setPlans: Dispatch<SetStateAction<ItineraryItem[]>> };
 
 /** Persists inline itinerary edits while preserving required-title validation. */
@@ -13,7 +14,10 @@ export function useInlinePlanEditor({ announceSave, edit, setEdit, setPlans }: O
       setEdit(null);
       return;
     }
-    setPlans((current) => current.map((plan) => plan.id === edit.id ? { ...plan, [edit.field]: value || undefined } : plan));
+    setPlans((current) => {
+      const next = current.map((plan) => plan.id === edit.id ? { ...plan, [edit.field]: value || undefined } : plan);
+      return edit.field === "time" ? sortItineraryItems(next) : next;
+    });
     setEdit(null);
     announceSave();
   };

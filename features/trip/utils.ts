@@ -23,8 +23,10 @@ export const destinationPinyin: Record<string, string> = {
   香港: "HONGKONG",
   澳门: "MACAU",
 };
+export const getTripDestination = (title: string) =>
+  title.split(/[·｜|—–-]/)[0].trim();
 export const getDestinationPinyin = (title: string) => {
-  const destination = title.split(/[·｜|—–-]/)[0].trim();
+  const destination = getTripDestination(title);
   return destinationPinyin[destination] || destination.toUpperCase();
 };
 export const weekdayLabels = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -58,11 +60,11 @@ export const typeColors: Record<
 };
 export const classifyItinerary = (title: string): ItineraryItem["type"] => {
   const value = title.toLowerCase();
+  if (/吃|喝|用餐|就餐|点餐|觅食|早餐|早饭|午餐|午饭|晚餐|晚饭|夜宵|下午茶|咖啡|奶茶|饮品|餐厅|饭店|小吃|美食/.test(value))
+    return "餐饮";
   if (/酒店|民宿|入住|住宿|旅馆|客栈|房间|如家/.test(value)) return "住宿";
   if (/景区|公园|博物馆|游玩|西湖|乐园|古镇|展览|景点|寺|塔/.test(value))
     return "景点";
-  if (/餐厅|吃饭|午餐|晚餐|早餐|咖啡|奶茶|美食|饭店|小吃/.test(value))
-    return "餐饮";
   if (/购物|商场|逛街|买|市集|菜场|免税店/.test(value)) return "购物";
   if (/高铁|火车|飞机|打车|地铁|公交|航班|车站|接送|租车/.test(value))
     return "交通";
@@ -93,6 +95,7 @@ export const parseTimeNumber = (value: string) => {
 };
 export const parsePlanInput = (input: string) => {
   const value = input.trim();
+  const type = classifyItinerary(value);
   const match = value.match(
     /(?:(上午|早上|中午|下午|晚上|傍晚)\s*)?(\d{1,2}|[一二三四五六七八九十]{1,3})(?:(?:\s*:\s*|\s*点\s*)(\d{1,2})\s*分?|\s*(?:点|时))?/,
   );
@@ -118,7 +121,7 @@ export const parsePlanInput = (input: string) => {
   );
   const title = noteMatch?.[1].trim() || activity;
   const note = noteMatch?.[2].trim();
-  return { title, time, type: classifyItinerary(title), ...(note ? { note } : {}) };
+  return { title, time, type, ...(note ? { note } : {}) };
 };
 
 export const parsePlanInputs = (input: string) => {
@@ -141,7 +144,7 @@ export const planTimeValue = (plan: ItineraryItem) => {
 };
 
 export const sortItineraryItems = (plans: ItineraryItem[]) =>
-  [...plans].sort(
+  plans.map((plan) => plan.type === "其他" && classifyItinerary(plan.title) === "餐饮" ? { ...plan, type: "餐饮" } : plan).sort(
     (first, second) =>
       (first.day || 1) - (second.day || 1) ||
       planTimeValue(first) - planTimeValue(second),

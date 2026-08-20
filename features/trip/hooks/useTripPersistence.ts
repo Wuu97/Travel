@@ -19,12 +19,16 @@ type TripSetters = {
 };
 
 type Options = TripState & TripSetters & {
+  accessToken: string | null;
+  authReady: boolean;
   enabled: boolean;
   tripId: string;
 };
 
-/** Keeps browser persistence and the optional D1 snapshot behind one boundary. */
+/** Keeps browser persistence and the authenticated Supabase snapshot behind one boundary. */
 export function useTripPersistence({
+  accessToken,
+  authReady,
   budgetItems,
   details,
   enabled,
@@ -36,22 +40,22 @@ export function useTripPersistence({
   setPlans,
   tripId,
 }: Options) {
-  const [remoteSyncEnabled, setRemoteSyncEnabled] = useState(false);
+  const [syncedAccessToken, setSyncedAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
-    saveTrip({ expenses, budgetItems, plans });
-  }, [budgetItems, enabled, expenses, plans]);
+    saveTrip({ expenses, budgetItems, plans }, tripId);
+  }, [budgetItems, enabled, expenses, plans, tripId]);
 
   useEffect(() => {
-    if (enabled) saveTripDetails(details);
-  }, [details, enabled]);
+    if (enabled) saveTripDetails(details, tripId);
+  }, [details, enabled, tripId]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !authReady || !accessToken) return;
     let cancelled = false;
 
-    void loadSharedTrip(tripId)
+    void loadSharedTrip(tripId, accessToken)
       .then((trip) => {
         if (cancelled) return;
         if (trip) {
@@ -60,24 +64,24 @@ export function useTripPersistence({
           setPlans(sortItineraryItems(trip.plans));
           if (trip.details) setDetails(trip.details);
         }
-        setRemoteSyncEnabled(true);
+        setSyncedAccessToken(accessToken);
       })
       .catch(() => {
-        // Local storage remains available when D1 is not configured.
+        // Local storage remains available when cloud sync is unavailable.
       });
 
     return () => {
       cancelled = true;
     };
-  }, [enabled, setBudgetItems, setDetails, setExpenses, setPlans, tripId]);
+  }, [accessToken, authReady, enabled, setBudgetItems, setDetails, setExpenses, setPlans, tripId]);
 
   useEffect(() => {
-    if (!remoteSyncEnabled) return;
+    if (!accessToken || syncedAccessToken !== accessToken) return;
     const timer = window.setTimeout(() => {
-      void saveSharedTrip(tripId, { expenses, budgetItems, plans, details });
+      void saveSharedTrip(tripId, { expenses, budgetItems, plans, details }, accessToken);
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [budgetItems, details, expenses, plans, remoteSyncEnabled, tripId]);
+  }, [accessToken, budgetItems, details, expenses, plans, syncedAccessToken, tripId]);
 
-  return { disableRemoteSync: () => setRemoteSyncEnabled(false) };
+  return { disableRemoteSync: () => setSyncedAccessToken(null) };
 }

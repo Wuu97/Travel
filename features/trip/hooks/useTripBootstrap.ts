@@ -8,7 +8,7 @@ const DEFAULT_TRIP_ID = "hangzhou-summer-trip";
 /** Resolves the active trip and hydrates its local snapshot exactly once. */
 export function useTripBootstrap(enabled: boolean): { initialTrip: StoredTrip; initialDetails: TripDetails; tripId: string } {
   const [tripId] = useState(() => enabled ? new URLSearchParams(window.location.search).get("trip") || DEFAULT_TRIP_ID : DEFAULT_TRIP_ID);
-  const [initialTrip] = useState(() => enabled ? loadStoredTrip(getDefaultStoredTrip()) : getDefaultStoredTrip());
-  const [initialDetails] = useState(() => enabled ? loadTripDetails(defaultTripDetails) : defaultTripDetails);
+  const [initialTrip] = useState(() => enabled ? loadStoredTrip(getDefaultStoredTrip(), tripId) : getDefaultStoredTrip());
+  const [initialDetails] = useState(() => enabled ? loadTripDetails(defaultTripDetails, tripId) : defaultTripDetails);
   return { initialDetails, initialTrip, tripId };
 }

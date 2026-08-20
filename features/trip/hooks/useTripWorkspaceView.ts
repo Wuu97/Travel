@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ExpenseItem, ItineraryItem } from "../model";
 
 type InlinePlanEdit = {
   id: string;
-  field: "title" | "note";
+  field: "title" | "note" | "time" | "type";
   value: string;
 };
 
@@ -12,7 +12,7 @@ export type EditingExpense = { id: string; occurrence: "actual" | "estimated" } 
 
 /** UI-only state for the trip workspace. Domain data remains outside this hook. */
 export function useTripWorkspaceView() {
-  const [workspaceTab, setWorkspaceTab] = useState<"plan" | "budget">("plan");
+  const [workspaceTab, setWorkspaceTab] = useState<"plan" | "budget">(() => typeof window !== "undefined" && window.sessionStorage.getItem("tuyu-workspace-tab") === "budget" ? "budget" : "plan");
   const [activeDay, setActiveDay] = useState(1);
   const [shared, setShared] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "failed">("idle");
@@ -47,6 +47,10 @@ export function useTripWorkspaceView() {
     setNewPlan, setOpenMenuId: setOpenPlanMenuId, setPendingScrollId: setPendingPlanScrollId,
   };
   const sharing = { shared, shareStatus, setShared, setShareStatus };
+
+  useEffect(() => {
+    window.sessionStorage.setItem("tuyu-workspace-tab", workspaceTab);
+  }, [workspaceTab]);
 
   return {
     ledger, plan, sharing,

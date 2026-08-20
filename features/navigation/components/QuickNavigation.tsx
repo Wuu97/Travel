@@ -68,7 +68,7 @@ export function QuickNavigation({ onNavigate }: QuickNavigationProps) {
             AI 旅行助手
           </a>
         </div>
-        <button className="login">登录 / 注册</button>
+        <button className="login" type="button" onClick={() => window.dispatchEvent(new Event("travel:open-auth"))}>登录 / 注册</button>
       </nav>
     </>
 

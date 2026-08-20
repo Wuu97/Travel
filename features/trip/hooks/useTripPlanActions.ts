@@ -1,18 +1,29 @@
 import type { Dispatch, SetStateAction } from "react";
+import { lookupPlaceCategory } from "../../places/api";
 import type { ItineraryItem } from "../model";
 import { parsePlanInputs, sortItineraryItems } from "../utils";
 
-type Options = { activeDay: number; editingPlan: ItineraryItem | null; manualPlan: ItineraryItem | null; newPlan: string; setActiveDay: (day: number) => void; setEditingPlan: Dispatch<SetStateAction<ItineraryItem | null>>; setManualPlan: Dispatch<SetStateAction<ItineraryItem | null>>; setNewPlan: (value: string) => void; setPendingPlanId: (id: string | null) => void; setPlans: Dispatch<SetStateAction<ItineraryItem[]>> };
+type Options = { activeDay: number; city?: string; editingPlan: ItineraryItem | null; manualPlan: ItineraryItem | null; newPlan: string; setActiveDay: (day: number) => void; setEditingPlan: Dispatch<SetStateAction<ItineraryItem | null>>; setManualPlan: Dispatch<SetStateAction<ItineraryItem | null>>; setNewPlan: (value: string) => void; setPendingPlanId: (id: string | null) => void; setPlans: Dispatch<SetStateAction<ItineraryItem[]>> };
 
 /** Domain commands for itinerary creation, editing, copying, and deletion. */
-export function useTripPlanActions({ activeDay, editingPlan, manualPlan, newPlan, setActiveDay, setEditingPlan, setManualPlan, setNewPlan, setPendingPlanId, setPlans }: Options) {
+export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, newPlan, setActiveDay, setEditingPlan, setManualPlan, setNewPlan, setPendingPlanId, setPlans }: Options) {
   const addPlan = () => {
     if (!newPlan.trim()) return;
     const timestamp = Date.now();
-    const parsedPlans = parsePlanInputs(newPlan);
-    setPlans((current) => sortItineraryItems([...current, ...parsedPlans.map((plan, index) => ({ id: `plan-${timestamp}-${index}`, ...plan, day: activeDay, creator: "你" }))]));
-    setPendingPlanId(`plan-${timestamp}-${parsedPlans.length - 1}`);
+    const parsedPlans = parsePlanInputs(newPlan).map((plan, index) => ({ id: `plan-${timestamp}-${index}`, ...plan, day: activeDay, creator: "你" }));
+    setPlans((current) => sortItineraryItems([...current, ...parsedPlans]));
+    setPendingPlanId(parsedPlans.at(-1)!.id);
     setNewPlan("");
+
+    void Promise.all(parsedPlans.map(async (plan) => ({ id: plan.id, result: await lookupPlaceCategory(plan.title, city) })))
+      .then((lookups) => {
+        const results = new Map(lookups.flatMap(({ id, result }) => result?.confidence === "high" ? [[id, result] as const] : []));
+        if (!results.size) return;
+        setPlans((current) => sortItineraryItems(current.map((plan) => {
+          const result = results.get(plan.id);
+          return result ? { ...plan, ...(plan.type === "其他" ? { type: result.category } : {}), ...(result.place ? { place: result.place } : {}) } : plan;
+        })));
+      });
   };
   const savePlan = () => {
     if (!editingPlan?.title.trim()) return;
@@ -28,13 +39,24 @@ export function useTripPlanActions({ activeDay, editingPlan, manualPlan, newPlan
     setPlans((current) => sortItineraryItems([...current, { ...plan, id, title: `${plan.title}（副本）` }]));
     setPendingPlanId(id);
   };
+  const movePlanToDay = (id: string, day: number) => {
+    setPlans((current) => sortItineraryItems(current.map((plan) => plan.id === id ? { ...plan, day } : plan)));
+    setActiveDay(day);
+    setPendingPlanId(id);
+  };
   const openManualPlan = () => setManualPlan({ id: `plan-${Date.now()}`, title: "", type: "交通", time: "", day: activeDay, creator: "你" });
   const saveManualPlan = () => {
     if (!manualPlan?.title.trim()) return;
-    setPlans((current) => sortItineraryItems([...current, { ...manualPlan, title: manualPlan.title.trim() }]));
-    setActiveDay(manualPlan.day || activeDay);
-    setPendingPlanId(manualPlan.id);
+    const savedPlan = { ...manualPlan, title: manualPlan.title.trim() };
+    setPlans((current) => sortItineraryItems([...current, savedPlan]));
+    setActiveDay(savedPlan.day || activeDay);
+    setPendingPlanId(savedPlan.id);
     setManualPlan(null);
+
+    void lookupPlaceCategory(savedPlan.location || savedPlan.title, city).then((result) => {
+      if (!result?.place) return;
+      setPlans((current) => current.map((plan) => plan.id === savedPlan.id ? { ...plan, place: result.place } : plan));
+    });
   };
-  return { addPlan, copyPlan, deletePlan, openManualPlan, saveManualPlan, savePlan };
+  return { addPlan, copyPlan, deletePlan, movePlanToDay, openManualPlan, saveManualPlan, savePlan };
 }

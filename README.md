@@ -1,8 +1,6 @@
 # vinext-starter
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+A travel-planning application built with [vinext](https://github.com/cloudflare/vinext), Supabase Auth, and Supabase Postgres.
 
 ## Prerequisites
 
@@ -16,85 +14,52 @@ npm run dev
 npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+## Supabase Auth And Cloud Chat History
 
-## Included Shape
+This application uses Supabase Auth for email-and-password registration and
+sign-in, plus phone-number registration and sign-in with an SMS verification
+code. Supabase can require email confirmation after registration. Both AI
+chat history and trip snapshots are stored in Supabase Postgres; no Cloudflare
+D1 database or platform identity headers are required.
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+1. Create a Supabase project and enable **Email** authentication with the
+  password provider. To use phone registration, enable **Phone** authentication
+  and configure an SMS provider in Supabase.
+2. Add `http://localhost:3000` and your deployed application URL to Auth
+  redirect URLs.
+3. Add these variables to an ignored `.env.local` file:
+  `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+4. Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor.
 
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+Never expose a Supabase service-role key to the browser. Row Level Security on
+`chat_sessions` and `trip_snapshots` ensures that users can only access their
+own records. On first sign-in, local chat history is imported only if cloud
+history is empty.
 
 ## Useful Commands
 
 - `npm run dev`: start local development
 - `npm run build`: verify the vinext build output
 - `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+
+## Optional Amap Place Classification
+
+Quick itinerary entry always uses local intent rules first. If a place is still
+classified as `其他`, the browser calls the server-side `/api/places` route for a
+high-confidence Amap POI category. Amap is optional: missing keys, unavailable
+results, and provider errors all retain the local classification.
+
+Set the Web Service key only in an ignored environment file:
+
+```bash
+AMAP_WEB_SERVICE_KEY=your_amap_web_service_key
+```
+
+The browser never receives this key. Amap-specific code is isolated in
+`features/places/amap.ts`; the itinerary flow depends only on the shared
+`PlaceProvider` interface, so another provider can replace it without changing
+the UI or trip model.
 
 ## Learn More
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)

@@ -1,13 +1,19 @@
-import type { StoredTrip, TripDetails } from "./model";
+import type { StoredTrip, TripDetails, TripLibraryItem } from "./model";
 import { sortItineraryItems } from "./utils";
 
 const TRIP_STORAGE_KEY = "tuyu-local-trip";
 const TRIP_DETAILS_STORAGE_KEY = "tuyu-trip-details";
+const TRIP_LIBRARY_STORAGE_KEY = "tuyu-trip-library";
 
-export function loadStoredTrip(fallback: StoredTrip): StoredTrip {
+const tripStorageKey = (tripId: string) => `${TRIP_STORAGE_KEY}:${tripId}`;
+const tripDetailsStorageKey = (tripId: string) => `${TRIP_DETAILS_STORAGE_KEY}:${tripId}`;
+
+export function loadStoredTrip(fallback: StoredTrip, tripId?: string): StoredTrip {
   if (typeof window === "undefined") return fallback;
   try {
-    const data = JSON.parse(localStorage.getItem(TRIP_STORAGE_KEY) || "{}") as Partial<StoredTrip>;
+    const key = tripId ? tripStorageKey(tripId) : TRIP_STORAGE_KEY;
+    const storedValue = localStorage.getItem(key) || (!tripId ? localStorage.getItem(TRIP_STORAGE_KEY) : null) || "{}";
+    const data = JSON.parse(storedValue) as Partial<StoredTrip>;
     return {
       expenses: Array.isArray(data.expenses) ? data.expenses.map((item) => ({ ...item, id: item.id || `expense-${item.item}-${item.amount}` })) : fallback.expenses,
       budgetItems: Array.isArray(data.budgetItems) ? data.budgetItems : fallback.budgetItems,
@@ -20,15 +26,18 @@ export function loadStoredTrip(fallback: StoredTrip): StoredTrip {
   }
 }
 
-export function loadTripDetails(fallback: TripDetails): TripDetails {
+export function loadTripDetails(fallback: TripDetails, tripId?: string): TripDetails {
   if (typeof window === "undefined") return fallback;
   try {
-    const value = JSON.parse(localStorage.getItem(TRIP_DETAILS_STORAGE_KEY) || "{}") as Partial<TripDetails>;
+    const key = tripId ? tripDetailsStorageKey(tripId) : TRIP_DETAILS_STORAGE_KEY;
+    const storedValue = localStorage.getItem(key) || (!tripId ? localStorage.getItem(TRIP_DETAILS_STORAGE_KEY) : null) || "{}";
+    const value = JSON.parse(storedValue) as Partial<TripDetails>;
     const companions = Array.isArray(value.companions) && value.companions.every((name) => typeof name === "string") ? value.companions.filter(Boolean) : fallback.companions;
     const memberRoles = value.memberRoles && typeof value.memberRoles === "object"
-      ? companions.reduce<Record<string, "编辑者" | "查看者">>((roles, companion) => {
+      ? companions.reduce<Record<string, "协作者" | "同行人">>((roles, companion) => {
           const role = value.memberRoles?.[companion];
-          if (role === "编辑者" || role === "查看者") roles[companion] = role;
+          if (role === "协作者" || role === "编辑者") roles[companion] = "协作者";
+          if (role === "同行人" || role === "查看者") roles[companion] = "同行人";
           return roles;
         }, {})
       : undefined;
@@ -46,12 +55,33 @@ export function loadTripDetails(fallback: TripDetails): TripDetails {
   }
 }
 
-export function saveTrip(trip: StoredTrip) {
-  localStorage.setItem(TRIP_STORAGE_KEY, JSON.stringify(trip));
+export function saveTrip(trip: StoredTrip, tripId?: string) {
+  localStorage.setItem(tripId ? tripStorageKey(tripId) : TRIP_STORAGE_KEY, JSON.stringify(trip));
 }
 
-export function saveTripDetails(details: TripDetails) {
-  localStorage.setItem(TRIP_DETAILS_STORAGE_KEY, JSON.stringify(details));
+export function saveTripDetails(details: TripDetails, tripId?: string) {
+  localStorage.setItem(tripId ? tripDetailsStorageKey(tripId) : TRIP_DETAILS_STORAGE_KEY, JSON.stringify(details));
+}
+
+export function loadTripLibrary(fallback: TripLibraryItem): TripLibraryItem[] {
+  if (typeof window === "undefined") return [fallback];
+  try {
+    const items = JSON.parse(localStorage.getItem(TRIP_LIBRARY_STORAGE_KEY) || "[]") as TripLibraryItem[];
+    if (Array.isArray(items) && items.length && items.every((item) => item && typeof item.id === "string" && typeof item.title === "string")) return items;
+  } catch {
+    // The default entry preserves the existing single-trip data after a malformed snapshot.
+  }
+  localStorage.setItem(TRIP_LIBRARY_STORAGE_KEY, JSON.stringify([fallback]));
+  return [fallback];
+}
+
+export function saveTripLibrary(items: TripLibraryItem[]) {
+  localStorage.setItem(TRIP_LIBRARY_STORAGE_KEY, JSON.stringify(items));
+}
+
+export function removeTripStorage(tripId: string) {
+  localStorage.removeItem(tripStorageKey(tripId));
+  localStorage.removeItem(tripDetailsStorageKey(tripId));
 }
 
 export function clearTripStorage() {

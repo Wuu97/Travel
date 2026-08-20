@@ -1,3 +1,10 @@
+export type PlaceInfo = {
+  provider: "amap";
+  rating?: number;
+  averageCost?: number;
+  openingHours?: string;
+};
+
 export type ItineraryItem = {
   id: string;
   title: string;
@@ -8,6 +15,7 @@ export type ItineraryItem = {
   location?: string;
   note?: string;
   creator?: string;
+  place?: PlaceInfo;
 };
 
 export type ExpenseCategory = "住宿" | "餐饮" | "交通" | "门票" | "活动" | "其他";
@@ -51,6 +59,14 @@ export type TripDetails = {
   startDate: string;
   endDate: string;
   companions: string[];
-  memberRoles?: Record<string, "编辑者" | "查看者">;
+  memberRoles?: Record<string, "协作者" | "同行人">;
   coverImage?: string;
+};
+
+export type TripLibraryItem = {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  status?: TripDetails["status"];
 };

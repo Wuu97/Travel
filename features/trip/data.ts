@@ -10,8 +10,9 @@ const defaultExpenses: LedgerItem[] = [
 
 const defaultPlans: ItineraryItem[] = [
   { id: "plan-arrival", title: "抵达杭州东站", type: "交通", time: "09:30", day: 1, creator: "你" },
-  { id: "plan-lunch", title: "知味观 · 午餐", type: "餐饮", time: "11:30", day: 1, creator: "林" },
+  { id: "plan-lunch", title: "知味观 · 午餐", type: "餐饮", time: "11:30", day: 1, creator: "林", place: { provider: "amap", rating: 4.6, averageCost: 68, openingHours: "07:00-20:30" } },
   { id: "plan-bike", title: "西湖边骑行", type: "景点", time: "14:30", day: 1, creator: "AI" },
+  { id: "plan-dinner", title: "南京大牌档 · 晚餐", type: "餐饮", time: "18:30", day: 1, creator: "你", place: { provider: "amap", rating: 4.4, averageCost: 96, openingHours: "10:30-14:00, 16:30-21:30" } },
 ];
 
 export const defaultTripDetails: TripDetails = {
@@ -20,6 +21,7 @@ export const defaultTripDetails: TripDetails = {
   startDate: "2026-08-16",
   endDate: "2026-08-18",
   companions: ["你", "林", "安"],
+  memberRoles: { "林": "协作者", "安": "协作者" },
 };
 
 export const statusTagColors: Record<TripDetails["status"], { background: string; color: string }> = {
