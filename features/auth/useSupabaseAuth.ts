@@ -4,6 +4,12 @@ import type { User } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "./supabase";
 
+export type SignUpResult =
+  | { status: "success"; message: string }
+  | { status: "existing-confirmed" }
+  | { status: "existing-unverified" }
+  | { status: "error"; message: string };
+
 export function useSupabaseAuth() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,21 +54,43 @@ export function useSupabaseAuth() {
 
   const signUpWithPassword = async (email: string, password: string) => {
     const client = getSupabaseBrowserClient();
-    if (!client) return setError("尚未配置 Supabase 云端服务。");
+    if (!client) {
+      const message = "尚未配置 Supabase 云端服务。";
+      setError(message);
+      return { status: "error", message } as SignUpResult;
+    }
     setError(null);
+    const requestStartedAt = Date.now();
     const { data, error: signUpError } = await client.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
     });
     if (signUpError) {
+      if (signUpError.code === "email_not_confirmed") return { status: "existing-unverified" } as SignUpResult;
+      if (signUpError.code === "email_exists" || /already registered/i.test(signUpError.message)) return { status: "existing-confirmed" } as SignUpResult;
       setError(signUpError.message);
-      return signUpError.message;
+      return { status: "error", message: signUpError.message } as SignUpResult;
     }
     if (data.user?.identities?.length === 0) {
-      return "该邮箱已注册，请直接登录。";
+      return { status: "existing-confirmed" } as SignUpResult;
     }
-    return data.session ? "注册并登录成功。" : "注册成功，请查收验证邮件后登录。";
+    const createdAt = data.user?.created_at ? new Date(data.user.created_at).getTime() : requestStartedAt;
+    if (!data.session && !data.user?.email_confirmed_at && createdAt < requestStartedAt - 5000) return { status: "existing-unverified" } as SignUpResult;
+    return { status: "success", message: data.session ? "注册并登录成功。" : "注册成功，请查收验证邮件后登录。" } as SignUpResult;
+  };
+
+  const resendSignupEmail = async (email: string) => {
+    const client = getSupabaseBrowserClient();
+    if (!client) return setError("尚未配置 Supabase 云端服务。");
+    setError(null);
+    const { error: resendError } = await client.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
+    });
+    if (resendError) { setError(resendError.message); return resendError.message; }
+    return "验证邮件已重新发送，请查收邮箱。";
   };
 
   const requestPhoneOtp = async (phone: string) => {
@@ -98,5 +126,5 @@ export function useSupabaseAuth() {
 
   const clearError = () => setError(null);
 
-  return { accessToken, clearError, configured: isSupabaseConfigured(), error, ready, requestPhoneOtp, signInWithPassword, signOut, signUpWithPassword, user, verifyPhoneOtp };
+  return { accessToken, clearError, configured: isSupabaseConfigured(), error, ready, requestPhoneOtp, resendSignupEmail, signInWithPassword, signOut, signUpWithPassword, user, verifyPhoneOtp };
 }

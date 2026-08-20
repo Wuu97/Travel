@@ -22,3 +22,18 @@ export function createSupabaseServerClient(accessToken: string) {
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
 }
+
+export function getBearerAccessToken(request: Request) {
+  const authorization = request.headers.get("authorization");
+  return authorization?.startsWith("Bearer ") ? authorization.slice(7).trim() || null : null;
+}
+
+/** Establishes one consistent server-side authorization boundary for cloud data APIs. */
+export async function requireSupabaseUser(request: Request, unauthorizedMessage: string) {
+  const accessToken = getBearerAccessToken(request);
+  const client = accessToken ? createSupabaseServerClient(accessToken) : null;
+  if (!client) return { error: Response.json({ error: "Supabase 云端服务尚未配置。" }, { status: 503 }) };
+  const { data, error } = await client.auth.getUser(accessToken);
+  if (error || !data.user) return { error: Response.json({ error: unauthorizedMessage }, { status: 401 }) };
+  return { client, userId: data.user.id };
+}

@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { defaultTripDetails, getDefaultStoredTrip, statusTagColors } from "../data";
 import type { TripDetails, TripLibraryItem } from "../model";
 import { loadTripDetails, loadTripLibrary, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
+import { createId } from "../../shared/utils/createId";
 
 const defaultLibraryTrip: TripLibraryItem = {
   id: "hangzhou-summer-trip",
@@ -13,7 +14,7 @@ const defaultLibraryTrip: TripLibraryItem = {
   status: defaultTripDetails.status,
 };
 
-const newTripId = () => `trip-${Date.now().toString(36)}`;
+const newTripId = () => createId("trip");
 const subscribeToHydration = () => () => {};
 const getClientHydrationState = () => true;
 const getServerHydrationState = () => false;
@@ -50,10 +51,11 @@ export function TripLibrary({ currentDetails }: { currentDetails: TripDetails })
   useEffect(() => {
     if (!hydrated || !libraryLoaded) return;
     const timer = window.setTimeout(() => setItems((current) => {
-      const next = current.map((item) => item.id === activeTripId
-        ? { ...item, title: currentDetails.title, startDate: currentDetails.startDate, endDate: currentDetails.endDate, status: currentDetails.status }
-        : item);
-      if (next.some((item, index) => item !== current[index])) saveTripLibrary(next);
+      const currentItem = { id: activeTripId, title: currentDetails.title, startDate: currentDetails.startDate, endDate: currentDetails.endDate, status: currentDetails.status };
+      const next = current.some((item) => item.id === activeTripId)
+        ? current.map((item) => item.id === activeTripId ? { ...item, ...currentItem } : item)
+        : [...current, currentItem];
+      if (next.length !== current.length || next.some((item, index) => item !== current[index])) saveTripLibrary(next);
       return next;
     }), 0);
     return () => window.clearTimeout(timer);

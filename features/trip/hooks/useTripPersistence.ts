@@ -58,11 +58,27 @@ export function useTripPersistence({
     if (!enabled || !authReady || !accessToken) return;
     let cancelled = false;
 
-    const invite = new URLSearchParams(window.location.search).get("invite");
-    const load = invite ? acceptTripInvite(invite, accessToken).then(() => loadSharedTrip(tripId, accessToken)) : loadSharedTrip(tripId, accessToken);
-    void load
-      .then(({ trip, version: loadedVersion }) => {
+    const loadCurrentTrip = async () => {
+      const invite = new URLSearchParams(window.location.search).get("invite");
+      if (!invite) return { redirected: false as const, result: await loadSharedTrip(tripId, accessToken) };
+
+      const acceptedTripId = await acceptTripInvite(invite, accessToken);
+      const url = new URL(window.location.href);
+      url.searchParams.set("trip", acceptedTripId);
+      url.searchParams.delete("invite");
+      window.history.replaceState(null, "", url);
+      if (acceptedTripId !== tripId) {
+        window.dispatchEvent(new Event("tuyu-tripchange"));
+        return { redirected: true as const };
+      }
+      return { redirected: false as const, result: await loadSharedTrip(acceptedTripId, accessToken) };
+    };
+
+    void loadCurrentTrip()
+      .then((loaded) => {
         if (cancelled) return;
+        if (loaded.redirected) return;
+        const { trip, version: loadedVersion } = loaded.result;
         if (trip) {
           setExpenses(trip.expenses);
           setBudgetItems(trip.budgetItems);

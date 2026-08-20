@@ -12,7 +12,7 @@ export type EditingExpense = { id: string; occurrence: "actual" | "estimated" } 
 
 /** UI-only state for the trip workspace. Domain data remains outside this hook. */
 export function useTripWorkspaceView() {
-  const [workspaceTab, setWorkspaceTab] = useState<"plan" | "budget">(() => typeof window !== "undefined" && window.sessionStorage.getItem("tuyu-workspace-tab") === "budget" ? "budget" : "plan");
+  const [workspaceTab, setWorkspaceTab] = useState<"plan" | "budget">("plan");
   const [activeDay, setActiveDay] = useState(1);
   const [shared, setShared] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "failed">("idle");
@@ -51,6 +51,13 @@ export function useTripWorkspaceView() {
   useEffect(() => {
     window.sessionStorage.setItem("tuyu-workspace-tab", workspaceTab);
   }, [workspaceTab]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (window.sessionStorage.getItem("tuyu-workspace-tab") === "budget") setWorkspaceTab("budget");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return {
     ledger, plan, sharing,

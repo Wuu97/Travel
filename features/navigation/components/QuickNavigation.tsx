@@ -4,9 +4,11 @@ import Link from "next/link";
 
 type QuickNavigationProps = {
   onNavigate: (event: React.MouseEvent<HTMLAnchorElement>, target: string) => void;
+  accountLabel?: string | null;
+  onSignOut?: () => void;
 };
 
-export function QuickNavigation({ onNavigate }: QuickNavigationProps) {
+export function QuickNavigation({ accountLabel, onNavigate, onSignOut }: QuickNavigationProps) {
   return (
     <>
       <aside className="quick-nav" aria-label="快速导航">
@@ -68,7 +70,14 @@ export function QuickNavigation({ onNavigate }: QuickNavigationProps) {
             AI 旅行助手
           </a>
         </div>
-        <button className="login" type="button" onClick={() => window.dispatchEvent(new Event("travel:open-auth"))}>登录 / 注册</button>
+        {accountLabel ? (
+          <div className="account-menu">
+            <span title={accountLabel}>{accountLabel}</span>
+            <button className="login" type="button" onClick={onSignOut}>退出</button>
+          </div>
+        ) : (
+          <button className="login" type="button" onClick={() => window.dispatchEvent(new Event("travel:open-auth"))}>登录 / 注册</button>
+        )}
       </nav>
     </>
 

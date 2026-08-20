@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import { createId } from "../../shared/utils/createId";
 import type { ExpenseItem, ItineraryItem, LedgerItem } from "../model";
 import type { EditingExpense } from "./useTripWorkspaceView";
 import { createTripExpense, toBudgetItem, toLedgerItem } from "../expense";
@@ -13,10 +14,10 @@ export function useExpenseEntry({ amount, budgetItems, editingExpense, expenses,
     const plan = plans.find((item) => item.id === relatedItineraryItemId);
     const related = plan ? { relatedItineraryItemId: plan.id, relatedItineraryTitle: plan.title } : {};
     if (occurrence === "estimated") {
-      const item = toBudgetItem(createTripExpense({ id: editingExpense?.occurrence === "estimated" ? editingExpense.id : `budget-${Date.now()}`, title: name.trim(), type, amount: numericAmount, occurrence: "estimated", ...related }));
+      const item = toBudgetItem(createTripExpense({ id: editingExpense?.occurrence === "estimated" ? editingExpense.id : createId("budget"), title: name.trim(), type, amount: numericAmount, occurrence: "estimated", ...related }));
       setBudgetItems((current) => editingExpense?.occurrence === "estimated" ? current.map((existing) => existing.id === item.id ? item : existing) : [item, ...current]);
     } else {
-      const item = toLedgerItem(createTripExpense({ id: editingExpense?.occurrence === "actual" ? editingExpense.id : `expense-${Date.now()}`, title: name.trim(), type, amount: numericAmount, occurrence: "actual", ...related }));
+      const item = toLedgerItem(createTripExpense({ id: editingExpense?.occurrence === "actual" ? editingExpense.id : createId("expense"), title: name.trim(), type, amount: numericAmount, occurrence: "actual", ...related }));
       setExpenses((current) => editingExpense?.occurrence === "actual" ? current.map((existing) => existing.id === item.id ? item : existing) : [item, ...current]);
     }
     setName("");

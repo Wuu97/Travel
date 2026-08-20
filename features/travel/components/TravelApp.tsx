@@ -230,11 +230,13 @@ function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean 
   return (
     <main>
       <TravelDiscoverySections
+        accountLabel={auth.user?.email || auth.user?.phone || null}
         active={active}
         from={from}
         notice={notice}
         onNavigate={jumpTo}
         onSearch={search}
+        onSignOut={() => void auth.signOut()}
         setActive={setActive}
         setFrom={setFrom}
         setNotice={setNotice}
@@ -268,6 +270,7 @@ function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean 
         error={auth.error}
         onClearError={auth.clearError}
         onRequestPhoneOtp={auth.requestPhoneOtp}
+        onResendSignupEmail={auth.resendSignupEmail}
         onSignIn={auth.signInWithPassword}
         onSignOut={auth.signOut}
         onSignUp={auth.signUpWithPassword}

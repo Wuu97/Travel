@@ -1,39 +1,40 @@
-import { createSupabaseServerClient } from "../../../features/auth/supabase";
+import { requireSupabaseUser } from "../../../features/auth/supabase";
 import { normalizeChatMessage, type SavedChat } from "../../../features/chat/model";
+import { isShortString } from "../../../features/shared/validation";
 
 type ChatRow = { id: string; title: string; messages: unknown; created_at: number; updated_at: number };
+const MAX_CHAT_MESSAGES = 100;
+const MAX_MESSAGE_LENGTH = 12_000;
+const isChatId = (value: unknown) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value);
+const isTimestamp = (value: unknown) => typeof value === "number" && Number.isFinite(value) && value >= 0;
 
-function getAccessToken(request: Request) {
-  const value = request.headers.get("authorization");
-  return value?.startsWith("Bearer ") ? value.slice(7) : null;
-}
-
-async function getAuthenticatedClient(request: Request) {
-  const accessToken = getAccessToken(request);
-  const client = accessToken ? createSupabaseServerClient(accessToken) : null;
-  if (!client) return { error: Response.json({ error: "Supabase 云端服务尚未配置。" }, { status: 503 }) };
-  const { data, error } = await client.auth.getUser(accessToken);
-  if (error || !data.user) return { error: Response.json({ error: "请先登录后同步历史记录。" }, { status: 401 }) };
-  return { client, userId: data.user.id };
+function parseMessages(value: unknown): SavedChat["messages"] | null {
+  if (!Array.isArray(value) || value.length > MAX_CHAT_MESSAGES) return null;
+  const messages = value.map(normalizeChatMessage);
+  return messages.every((message) => message && message.content.trim() && message.content.length <= MAX_MESSAGE_LENGTH)
+    ? messages
+    : null;
 }
 
 function normalizeRow(row: ChatRow): SavedChat | null {
-  if (!Array.isArray(row.messages) || !row.id || !row.title) return null;
-  const messages = row.messages.map(normalizeChatMessage).filter((message) => message !== null);
+  if (!isChatId(row.id) || !isShortString(row.title, 200) || !row.title.trim() || !isTimestamp(row.created_at) || !isTimestamp(row.updated_at)) return null;
+  const messages = parseMessages(row.messages);
+  if (!messages) return null;
   return { id: row.id, title: row.title, messages, createdAt: row.created_at, updatedAt: row.updated_at };
 }
 
 function parseChat(value: unknown): SavedChat | null {
   if (!value || typeof value !== "object") return null;
   const chat = value as Partial<SavedChat>;
-  if (typeof chat.id !== "string" || !chat.id || typeof chat.title !== "string" || !Array.isArray(chat.messages)) return null;
-  const messages = chat.messages.map(normalizeChatMessage).filter((message) => message !== null);
-  if (messages.length !== chat.messages.length) return null;
-  return { id: chat.id.slice(0, 200), title: chat.title.slice(0, 200), messages, createdAt: typeof chat.createdAt === "number" ? chat.createdAt : Date.now(), updatedAt: typeof chat.updatedAt === "number" ? chat.updatedAt : Date.now() };
+  if (!isChatId(chat.id) || !isShortString(chat.title, 200) || !chat.title.trim()) return null;
+  const messages = parseMessages(chat.messages);
+  if (!messages) return null;
+  const now = Date.now();
+  return { id: chat.id, title: chat.title.trim(), messages, createdAt: isTimestamp(chat.createdAt) ? chat.createdAt : now, updatedAt: isTimestamp(chat.updatedAt) ? chat.updatedAt : now };
 }
 
 export async function GET(request: Request) {
-  const context = await getAuthenticatedClient(request);
+  const context = await requireSupabaseUser(request, "请先登录后同步历史记录。");
   if ("error" in context) return context.error;
   const { data, error } = await context.client.from("chat_sessions").select("id, title, messages, created_at, updated_at").order("updated_at", { ascending: false }).limit(20);
   if (error) return Response.json({ error: error.message }, { status: 502 });
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const context = await getAuthenticatedClient(request);
+  const context = await requireSupabaseUser(request, "请先登录后同步历史记录。");
   if ("error" in context) return context.error;
   let body: { chat?: unknown };
   try { body = await request.json() as { chat?: unknown }; }
@@ -54,10 +55,10 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const context = await getAuthenticatedClient(request);
+  const context = await requireSupabaseUser(request, "请先登录后同步历史记录。");
   if ("error" in context) return context.error;
   const id = new URL(request.url).searchParams.get("id");
-  if (!id) return Response.json({ error: "缺少对话 ID。" }, { status: 400 });
+  if (!isChatId(id)) return Response.json({ error: "对话 ID 无效。" }, { status: 400 });
   const { error } = await context.client.from("chat_sessions").delete().eq("id", id);
   if (error) return Response.json({ error: error.message }, { status: 502 });
   return Response.json({ deleted: true });

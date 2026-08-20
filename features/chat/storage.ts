@@ -16,12 +16,17 @@ export function loadSavedChats(): SavedChat[] {
         createdAt: typeof chat.createdAt === "number" ? chat.createdAt : typeof chat.updatedAt === "number" ? chat.updatedAt : Date.now(),
         updatedAt: typeof chat.updatedAt === "number" ? chat.updatedAt : Date.now(),
       }))
-      .sort((first, second) => second.createdAt - first.createdAt);
+      .sort((first, second) => second.updatedAt - first.updatedAt);
   } catch {
     return [];
   }
 }
 
 export function saveChats(chats: SavedChat[]) {
-  localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chats));
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chats));
+  } catch {
+    // Keep the in-memory conversation available when browser storage is full or unavailable.
+  }
 }

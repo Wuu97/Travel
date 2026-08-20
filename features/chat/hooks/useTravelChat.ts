@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { downloadChatTranscript } from "../export";
 import { useChatScroll } from "./useChatScroll";
 import { normalizeAssistantResponse, type ChatMessage, type SavedChat } from "../model";
-import { loadSavedChats } from "../storage";
+import { loadSavedChats, saveChats } from "../storage";
 
 type Options = { accessToken: string | null; authReady: boolean; enabled: boolean };
 
@@ -16,10 +16,19 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
   const [aiBusy, setAiBusy] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
-  const [activeChatId, setActiveChatId] = useState(createChatId);
+  // Keep the first server and browser render identical; a unique ID is created
+  // only after hydration or when the user starts a new conversation.
+  const [activeChatId, setActiveChatId] = useState("current");
   const [historyOpen, setHistoryOpen] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const historyPanelRef = useRef<HTMLDivElement>(null);
+  const savedChatsRef = useRef<SavedChat[]>([]);
+
+  const replaceSavedChats = (next: SavedChat[]) => {
+    savedChatsRef.current = next;
+    setSavedChats(next);
+    saveChats(next);
+  };
 
   useChatScroll(chatScrollRef, chatMessages, aiBusy);
   useEffect(() => {
@@ -28,7 +37,7 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
     if (!accessToken) {
       queueMicrotask(() => {
         if (cancelled) return;
-        setSavedChats([]);
+        replaceSavedChats(loadSavedChats());
         setChatMessages([]);
         setActiveChatId(createChatId());
       });
@@ -47,12 +56,12 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
           await Promise.all(chats.map((chat) => fetch("/api/chats", { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ chat }) })));
         }
         if (cancelled) return;
-        setSavedChats(chats);
+        replaceSavedChats(chats);
         setChatMessages(chats[0]?.messages || []);
         setActiveChatId(chats[0]?.id || createChatId());
       })
       .catch(() => {
-        if (!cancelled) setSavedChats([]);
+        if (!cancelled) replaceSavedChats(loadSavedChats());
       });
     return () => { cancelled = true; };
   }, [accessToken, authReady, enabled]);
@@ -64,15 +73,13 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
 
   const saveChat = (messages: ChatMessage[], chatId = activeChatId) => {
     const title = messages.find((message) => message.role === "user")?.content.slice(0, 18) || "新对话";
-    setSavedChats((current) => {
-      const previous = current.find((chat) => chat.id === chatId);
-      const chat: SavedChat = { id: chatId, title, createdAt: previous?.createdAt ?? Date.now(), updatedAt: Date.now(), messages };
-      const next = [chat, ...current.filter((item) => item.id !== chatId)]
-        .sort((first, second) => second.updatedAt - first.updatedAt)
-        .slice(0, 20);
-      if (accessToken) void fetch("/api/chats", { method: "PUT", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ chat }) });
-      return next;
-    });
+    const previous = savedChatsRef.current.find((chat) => chat.id === chatId);
+    const chat: SavedChat = { id: chatId, title, createdAt: previous?.createdAt ?? Date.now(), updatedAt: Date.now(), messages };
+    const next = [chat, ...savedChatsRef.current.filter((item) => item.id !== chatId)]
+      .sort((first, second) => second.updatedAt - first.updatedAt)
+      .slice(0, 20);
+    replaceSavedChats(next);
+    if (accessToken) void fetch("/api/chats", { method: "PUT", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ chat }) });
   };
 
   const sendQuestion = async (userMessage: string, history: ChatMessage[], chatId: string) => {
@@ -123,10 +130,7 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
   };
   const deleteChat = (chatId: string) => {
     if (!window.confirm("确定删除这段云端对话吗？此操作无法撤销。")) return;
-    setSavedChats((current) => {
-      const next = current.filter((chat) => chat.id !== chatId);
-      return next;
-    });
+    replaceSavedChats(savedChatsRef.current.filter((chat) => chat.id !== chatId));
     if (accessToken) void fetch(`/api/chats?id=${encodeURIComponent(chatId)}`, { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } });
     if (chatId === activeChatId) newChat();
   };

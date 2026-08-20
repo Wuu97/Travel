@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import { lookupPlaceCategory } from "../../places/api";
+import { createId } from "../../shared/utils/createId";
 import type { ItineraryItem } from "../model";
 import { parsePlanInputs, sortItineraryItems } from "../utils";
 
@@ -9,8 +10,7 @@ type Options = { activeDay: number; city?: string; editingPlan: ItineraryItem | 
 export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, newPlan, setActiveDay, setEditingPlan, setManualPlan, setNewPlan, setPendingPlanId, setPlans }: Options) {
   const addPlan = () => {
     if (!newPlan.trim()) return;
-    const timestamp = Date.now();
-    const parsedPlans = parsePlanInputs(newPlan).map((plan, index) => ({ id: `plan-${timestamp}-${index}`, ...plan, day: activeDay, creator: "你" }));
+    const parsedPlans = parsePlanInputs(newPlan).map((plan) => ({ id: createId("plan"), ...plan, day: activeDay, creator: "你" }));
     setPlans((current) => sortItineraryItems([...current, ...parsedPlans]));
     setPendingPlanId(parsedPlans.at(-1)!.id);
     setNewPlan("");
@@ -35,7 +35,7 @@ export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, n
     setPlans((current) => current.filter((plan) => plan.id !== id));
   };
   const copyPlan = (plan: ItineraryItem) => {
-    const id = `plan-${Date.now()}`;
+    const id = createId("plan");
     setPlans((current) => sortItineraryItems([...current, { ...plan, id, title: `${plan.title}（副本）` }]));
     setPendingPlanId(id);
   };
@@ -44,7 +44,7 @@ export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, n
     setActiveDay(day);
     setPendingPlanId(id);
   };
-  const openManualPlan = () => setManualPlan({ id: `plan-${Date.now()}`, title: "", type: "交通", time: "", day: activeDay, creator: "你" });
+  const openManualPlan = () => setManualPlan({ id: createId("plan"), title: "", type: "交通", time: "", day: activeDay, creator: "你" });
   const saveManualPlan = () => {
     if (!manualPlan?.title.trim()) return;
     const savedPlan = { ...manualPlan, title: manualPlan.title.trim() };
