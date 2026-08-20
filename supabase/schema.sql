@@ -40,3 +40,62 @@ create policy "Users can read their trip snapshots" on public.trip_snapshots for
 create policy "Users can create their trip snapshots" on public.trip_snapshots for insert with check (auth.uid() = user_id);
 create policy "Users can update their trip snapshots" on public.trip_snapshots for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Users can delete their trip snapshots" on public.trip_snapshots for delete using (auth.uid() = user_id);
+
+-- Shared trips use a single authoritative record plus explicit memberships.
+create table if not exists public.trips (
+  id text primary key check (char_length(id) between 1 and 128),
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  payload jsonb not null,
+  version bigint not null default 1,
+  updated_at bigint not null
+);
+create table if not exists public.trip_members (
+  trip_id text not null references public.trips(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  role text not null check (role in ('editor', 'viewer')),
+  primary key (trip_id, user_id)
+);
+create table if not exists public.trip_invites (
+  token uuid primary key,
+  trip_id text not null references public.trips(id) on delete cascade,
+  role text not null default 'editor' check (role in ('editor', 'viewer')),
+  created_by uuid not null references auth.users(id) on delete cascade,
+  created_at bigint not null,
+  expires_at bigint not null
+);
+
+alter table public.trips enable row level security;
+alter table public.trip_members enable row level security;
+alter table public.trip_invites enable row level security;
+
+create or replace function public.is_trip_member(target_trip_id text, required_role text default 'viewer')
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.trips where id = target_trip_id and owner_id = auth.uid())
+    or exists (select 1 from public.trip_members where trip_id = target_trip_id and user_id = auth.uid() and (required_role = 'viewer' or role = 'editor'));
+$$;
+
+drop policy if exists "Trip participants can read trips" on public.trips;
+drop policy if exists "Users can create owned trips" on public.trips;
+drop policy if exists "Editors can update trips" on public.trips;
+drop policy if exists "Owners can delete trips" on public.trips;
+create policy "Trip participants can read trips" on public.trips for select using (public.is_trip_member(id));
+create policy "Users can create owned trips" on public.trips for insert with check (owner_id = auth.uid());
+create policy "Editors can update trips" on public.trips for update using (public.is_trip_member(id, 'editor')) with check (public.is_trip_member(id, 'editor'));
+create policy "Owners can delete trips" on public.trips for delete using (owner_id = auth.uid());
+create policy "Participants can read memberships" on public.trip_members for select using (public.is_trip_member(trip_id));
+create policy "Editors can manage memberships" on public.trip_members for all using (public.is_trip_member(trip_id, 'editor')) with check (public.is_trip_member(trip_id, 'editor'));
+create policy "Editors can create invites" on public.trip_invites for insert with check (created_by = auth.uid() and public.is_trip_member(trip_id, 'editor'));
+create policy "Editors can read invites" on public.trip_invites for select using (public.is_trip_member(trip_id, 'editor'));
+
+create or replace function public.accept_trip_invite(invite_token uuid)
+returns text language plpgsql security definer set search_path = public as $$
+declare invitation public.trip_invites%rowtype;
+begin
+  select * into invitation from public.trip_invites where token = invite_token and expires_at > (extract(epoch from now()) * 1000)::bigint;
+  if not found then raise exception '邀请链接无效或已过期'; end if;
+  insert into public.trip_members (trip_id, user_id, role) values (invitation.trip_id, auth.uid(), invitation.role)
+  on conflict (trip_id, user_id) do update set role = excluded.role;
+  return invitation.trip_id;
+end;
+$$;
+grant execute on function public.accept_trip_invite(uuid) to authenticated;

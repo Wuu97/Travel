@@ -1,5 +1,5 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import { loadSharedTrip, saveSharedTrip } from "../api";
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { acceptTripInvite, loadSharedTrip, saveSharedTrip } from "../api";
 import type { ExpenseItem, ItineraryItem, LedgerItem, TripDetails } from "../model";
 import { saveTrip, saveTripDetails } from "../storage";
 import { sortItineraryItems } from "../utils";
@@ -41,6 +41,9 @@ export function useTripPersistence({
   tripId,
 }: Options) {
   const [syncedAccessToken, setSyncedAccessToken] = useState<string | null>(null);
+  const [version, setVersion] = useState<number | undefined>();
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const lastSavedRef = useRef("");
 
   useEffect(() => {
     if (!enabled) return;
@@ -55,8 +58,10 @@ export function useTripPersistence({
     if (!enabled || !authReady || !accessToken) return;
     let cancelled = false;
 
-    void loadSharedTrip(tripId, accessToken)
-      .then((trip) => {
+    const invite = new URLSearchParams(window.location.search).get("invite");
+    const load = invite ? acceptTripInvite(invite, accessToken).then(() => loadSharedTrip(tripId, accessToken)) : loadSharedTrip(tripId, accessToken);
+    void load
+      .then(({ trip, version: loadedVersion }) => {
         if (cancelled) return;
         if (trip) {
           setExpenses(trip.expenses);
@@ -64,10 +69,13 @@ export function useTripPersistence({
           setPlans(sortItineraryItems(trip.plans));
           if (trip.details) setDetails(trip.details);
         }
+        lastSavedRef.current = trip ? JSON.stringify(trip) : "";
+        setVersion(loadedVersion);
+        setSyncError(null);
         setSyncedAccessToken(accessToken);
       })
-      .catch(() => {
-        // Local storage remains available when cloud sync is unavailable.
+      .catch((error) => {
+        if (!cancelled) setSyncError(error instanceof Error ? error.message : "云端同步不可用，已保留本地副本。");
       });
 
     return () => {
@@ -77,11 +85,16 @@ export function useTripPersistence({
 
   useEffect(() => {
     if (!accessToken || syncedAccessToken !== accessToken) return;
+    const snapshot = { expenses, budgetItems, plans, details };
+    const fingerprint = JSON.stringify(snapshot);
+    if (fingerprint === lastSavedRef.current) return;
     const timer = window.setTimeout(() => {
-      void saveSharedTrip(tripId, { expenses, budgetItems, plans, details }, accessToken);
+      void saveSharedTrip(tripId, snapshot, version, accessToken)
+        .then((result) => { lastSavedRef.current = fingerprint; setVersion(result.version); setSyncError(null); })
+        .catch((error) => setSyncError(error instanceof Error ? error.message : "保存失败，请稍后重试。"));
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [accessToken, budgetItems, details, expenses, plans, syncedAccessToken, tripId]);
+  }, [accessToken, budgetItems, details, expenses, plans, syncedAccessToken, tripId, version]);
 
-  return { disableRemoteSync: () => setSyncedAccessToken(null) };
+  return { disableRemoteSync: () => setSyncedAccessToken(null), syncError };
 }

@@ -1,4 +1,4 @@
-import { deleteSharedTrip } from "../api";
+import { createTripInvite, deleteSharedTrip } from "../api";
 import type { TripDetails } from "../model";
 import { copyText } from "../../shared/utils/copyText";
 
@@ -7,8 +7,10 @@ type Options = { accessToken: string | null; disableRemoteSync: () => void; onRe
 /** Owns user-facing trip lifecycle operations that span local and shared storage. */
 export function useTripLifecycle({ accessToken, disableRemoteSync, onClosePopover, onReset, onStatusChange, setShareStatus, setShared, tripId }: Options) {
   const copyInviteLink = async () => {
-    const inviteUrl = `${window.location.origin}${window.location.pathname}?trip=${encodeURIComponent(tripId)}`;
     try {
+      if (!accessToken) throw new Error("请先登录后再邀请协作者。");
+      const token = await createTripInvite(tripId, accessToken);
+      const inviteUrl = `${window.location.origin}${window.location.pathname}?trip=${encodeURIComponent(tripId)}&invite=${encodeURIComponent(token)}`;
       await copyText(inviteUrl);
       setShareStatus("copied");
     } catch {

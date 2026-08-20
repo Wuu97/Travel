@@ -106,7 +106,7 @@ function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean 
     setQuestion,
     startNewChatAndAsk,
   } = chat;
-  const { disableRemoteSync } = useTripPersistence({
+  const { disableRemoteSync, syncError } = useTripPersistence({
     accessToken: auth.accessToken,
     authReady: auth.ready,
     budgetItems,
@@ -261,6 +261,7 @@ function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean 
         savedChats={savedChats}
         scrollRef={chatScrollRef}
       />
+      {syncError && <p className="sync-error" role="status">{syncError}</p>}
       <SiteFooter />
       <AuthControl
         configured={auth.configured}

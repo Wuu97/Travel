@@ -30,6 +30,9 @@ D1 database or platform identity headers are required.
 3. Add these variables to an ignored `.env.local` file:
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 4. Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor.
+   It creates the shared-trip, membership, and expiring-invite tables in
+   addition to the chat tables. Invite links require a signed-in user and add
+   that user to the same shared trip.
 
 Never expose a Supabase service-role key to the browser. Row Level Security on
 `chat_sessions` and `trip_snapshots` ensures that users can only access their

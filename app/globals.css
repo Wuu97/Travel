@@ -57,6 +57,7 @@
 
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #d96e40;outline-offset:2px}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+.sync-error{position:fixed;z-index:20;right:20px;bottom:20px;max-width:360px;margin:0;border:1px solid #edb29f;border-radius:8px;background:#fff6f2;color:#92452f;padding:10px 14px;font-size:13px;box-shadow:0 8px 24px #1d342f22}
 
 .status-popover{min-width:112px;padding:4px}.status-popover button{gap:6px;padding:6px 7px;font-size:11px;line-height:1.2}.status-popover i{width:8px;height:8px}
 
