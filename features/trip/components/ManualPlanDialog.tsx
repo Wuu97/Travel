@@ -35,7 +35,7 @@ export function ManualPlanDialog({ activeDay, days, onClose, onSave, plan, setPl
       <form className="edit-plan manual-plan" onSubmit={(event) => { event.preventDefault(); if (!plan.title.trim()) { setTitleError(true); return; } onSave(); }}>
         <div><b>手动添加行程</b><button type="button" aria-label="关闭手动添加" onClick={onClose}>×</button></div>
         <label>日期<select value={plan.day || activeDay} onChange={(event) => update({ day: Number(event.target.value) })}>{days.map((item) => <option key={item.day} value={item.day}>DAY {item.day} · {item.date}</option>)}</select></label>
-        <label>时间<TimePicker onChange={(time) => update({ time })} value={plan.time || ""} /></label>
+        <div className="field-label"><span>时间</span><TimePicker onChange={(time) => update({ time })} value={plan.time || ""} /></div>
         <label>行程名称<input aria-invalid={titleError} value={plan.title} placeholder="例如 杭州东站 → 西湖" onChange={(event) => { updateTitle(event.target.value); setTitleError(false); }} />{titleError && <small className="manual-form-error">请填写行程名称</small>}</label>
         <label>备注（可选）<input value={plan.note || ""} placeholder="例如 提前预约" onChange={(event) => update({ note: event.target.value })} /></label>
         <label>分类<select value={plan.type} onChange={(event) => update({ type: event.target.value as ItineraryItem["type"] })}>{itineraryTypes.filter((type) => type !== "活动").map((type) => <option key={type}>{type}</option>)}</select></label>

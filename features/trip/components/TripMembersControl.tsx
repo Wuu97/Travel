@@ -38,7 +38,7 @@ export function TripMembersControl({ details, editingRole, isOpen, newMember, on
             <button className="member-role-label" type="button" title="点击修改身份" aria-expanded={editingRole === member} onClick={() => setEditingRole(member)}>{details.memberRoles?.[member] || "同行人"}<span aria-hidden="true">⌄</span></button>
             {editingRole === member && <div className="member-role-menu" role="menu">{(["协作者", "同行人"] as const).map((role) => <button key={role} type="button" role="menuitem" className={(details.memberRoles?.[member] || "同行人") === role ? "selected" : ""} onClick={() => { onChange({ memberRoles: { ...details.memberRoles, [member]: role } }); setEditingRole(null); }}>{role}</button>)}</div>}
           </div>}
-          {member !== "你" && <button type="button" aria-label={`移除${member}`} onClick={() => { const { [member]: removed, ...memberRoles } = details.memberRoles || {}; onChange({ companions: details.companions.filter((name) => name !== member), memberRoles }); }}>×</button>}
+          {member !== "你" && <button type="button" aria-label={`移除${member}`} onClick={() => { const memberRoles = { ...details.memberRoles }; delete memberRoles[member]; onChange({ companions: details.companions.filter((name) => name !== member), memberRoles }); }}>×</button>}
         </div>)}
         <p className="member-role-note">同行人可查看行程，不可编辑。</p>
         <form onSubmit={(event) => { event.preventDefault(); addMember(); }}><input value={newMember} onChange={(event) => onNewMemberChange(event.target.value)} placeholder="输入同行人姓名" /><button type="submit">添加同行人</button></form>

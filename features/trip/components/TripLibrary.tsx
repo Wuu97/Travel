@@ -37,22 +37,26 @@ export function TripLibrary({ currentDetails }: { currentDetails: TripDetails })
 
   useEffect(() => {
     if (!hydrated) return;
-    setActiveTripId(new URLSearchParams(window.location.search).get("trip") || defaultLibraryTrip.id);
-    const loadedItems = loadTripLibrary(defaultLibraryTrip).map((item) => ({ ...item, status: loadTripDetails(defaultTripDetails, item.id).status }));
-    setItems(loadedItems);
-    saveTripLibrary(loadedItems);
-    setLibraryLoaded(true);
+    const timer = window.setTimeout(() => {
+      setActiveTripId(new URLSearchParams(window.location.search).get("trip") || defaultLibraryTrip.id);
+      const loadedItems = loadTripLibrary(defaultLibraryTrip).map((item) => ({ ...item, status: loadTripDetails(defaultTripDetails, item.id).status }));
+      setItems(loadedItems);
+      saveTripLibrary(loadedItems);
+      setLibraryLoaded(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [hydrated]);
 
   useEffect(() => {
     if (!hydrated || !libraryLoaded) return;
-    setItems((current) => {
+    const timer = window.setTimeout(() => setItems((current) => {
       const next = current.map((item) => item.id === activeTripId
         ? { ...item, title: currentDetails.title, startDate: currentDetails.startDate, endDate: currentDetails.endDate, status: currentDetails.status }
         : item);
       if (next.some((item, index) => item !== current[index])) saveTripLibrary(next);
       return next;
-    });
+    }), 0);
+    return () => window.clearTimeout(timer);
   }, [activeTripId, currentDetails.endDate, currentDetails.startDate, currentDetails.status, currentDetails.title, hydrated, libraryLoaded]);
 
   const openTrip = (tripId: string) => {
@@ -110,7 +114,7 @@ export function TripLibrary({ currentDetails }: { currentDetails: TripDetails })
       <button className="edit-plan-dismiss" type="button" aria-label="关闭新建行程" onClick={() => setCreateOpen(false)} />
       <form className="edit-plan create-trip-form" onSubmit={(event) => { event.preventDefault(); createTrip(); }}>
         <div><b id="create-trip-title">新建行程</b><button type="button" aria-label="关闭新建行程" onClick={() => setCreateOpen(false)}>×</button></div>
-        <label>目的地<input autoFocus placeholder="例如 杭州" required value={draft.destination} onChange={(event) => setDraft({ ...draft, destination: event.target.value })} /></label>
+        <label>目的地<input placeholder="例如 杭州" required value={draft.destination} onChange={(event) => setDraft({ ...draft, destination: event.target.value })} /></label>
         <div className="create-trip-dates">
           <label>出发日期<input type="date" required value={draft.startDate} onChange={(event) => setDraft({ ...draft, startDate: event.target.value, endDate: event.target.value > draft.endDate ? event.target.value : draft.endDate })} /></label>
           <label>返程日期<input type="date" min={draft.startDate} required value={draft.endDate} onChange={(event) => setDraft({ ...draft, endDate: event.target.value })} /></label>

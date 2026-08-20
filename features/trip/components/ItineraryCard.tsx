@@ -6,7 +6,7 @@ type InlineEdit = { id: string; field: "title" | "note" | "time" | "type"; value
 type Props = { index: number; inlineEdit: InlineEdit; inlineRef: RefObject<HTMLInputElement | HTMLTextAreaElement | null>; isMenuOpen: boolean; menuRef: RefObject<HTMLDivElement | null>; onChangeInline: (edit: InlineEdit) => void; onCopy: (plan: ItineraryItem) => void; onDelete: (id: string) => void; onEdit: (plan: ItineraryItem) => void; onSaveInline: () => void; onToggleMenu: () => void; plan: ItineraryItem };
 const itineraryTypes: ItineraryItem["type"][] = ["景点", "餐饮", "活动", "交通", "住宿", "购物", "其他"];
 
-export function ItineraryCard({ index, inlineEdit, inlineRef, isMenuOpen, menuRef, onChangeInline, onCopy, onDelete, onEdit, onSaveInline, onToggleMenu, plan }: Props) {
+export function ItineraryCard({ index, inlineEdit, inlineRef, isMenuOpen, menuRef, onChangeInline, onCopy, onDelete, onSaveInline, onToggleMenu, plan }: Props) {
   const [opensUp, setOpensUp] = useState(false);
   const displayTime = plan.time || ["09:30", "11:30", "14:30"][index] || "待定";
   const editingTitle = inlineEdit?.id === plan.id && inlineEdit.field === "title";
