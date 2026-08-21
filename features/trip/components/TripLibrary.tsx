@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { defaultTripDetails, getDefaultStoredTrip, statusTagColors } from "../data";
+import { defaultTripDetails, getDefaultStoredTrip } from "../data";
 import type { TripDetails, TripLibraryItem } from "../model";
 import { loadTripDetails, loadTripLibrary, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
 import { createId } from "../../shared/utils/createId";
+import { getTripDays } from "../utils";
 
 const defaultLibraryTrip: TripLibraryItem = {
   id: "hangzhou-summer-trip",
@@ -23,18 +24,34 @@ type TripDraft = { destination: string; startDate: string; endDate: string; comp
 
 const defaultTripDraft = (): TripDraft => ({
   destination: "",
-  startDate: defaultTripDetails.startDate,
-  endDate: defaultTripDetails.endDate,
+  startDate: "",
+  endDate: "",
   companions: "",
 });
 
-export function TripLibrary({ currentDetails }: { currentDetails: TripDetails }) {
+type Props = {
+  activeDay: number;
+  collapsed?: boolean;
+  currentDetails: TripDetails;
+  onCollapsedChange?: (collapsed: boolean) => void;
+  onSelectDay: (day: number) => void;
+};
+
+export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCollapsedChange, onSelectDay }: Props) {
   const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationState, getServerHydrationState);
   const [activeTripId, setActiveTripId] = useState(defaultLibraryTrip.id);
   const [items, setItems] = useState<TripLibraryItem[]>([defaultLibraryTrip]);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [draft, setDraft] = useState<TripDraft>(defaultTripDraft);
+  const [openGroups, setOpenGroups] = useState<Record<TripDetails["status"], boolean>>({
+    "进行中": true,
+    "筹备中": true,
+    "已结束": true,
+  });
+  const [expandedTrips, setExpandedTrips] = useState<Record<string, boolean>>({
+    [defaultLibraryTrip.id]: true,
+  });
 
   useEffect(() => {
     if (!hydrated) return;
@@ -61,10 +78,17 @@ export function TripLibrary({ currentDetails }: { currentDetails: TripDetails })
     return () => window.clearTimeout(timer);
   }, [activeTripId, currentDetails.endDate, currentDetails.startDate, currentDetails.status, currentDetails.title, hydrated, libraryLoaded]);
 
-  const openTrip = (tripId: string) => {
-    if (tripId === activeTripId) return;
+  const openTrip = (tripId: string, day = 1) => {
+    if (tripId === activeTripId) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("day", String(day));
+      window.history.replaceState(null, "", url);
+      onSelectDay(day);
+      return;
+    }
     const url = new URL(window.location.href);
     url.searchParams.set("trip", tripId);
+    url.searchParams.set("day", String(day));
     sessionStorage.setItem("tuyu-scroll-position", String(window.scrollY));
     window.history.pushState(null, "", url);
     window.dispatchEvent(new Event("tuyu-tripchange"));
@@ -101,15 +125,43 @@ export function TripLibrary({ currentDetails }: { currentDetails: TripDetails })
     if (tripId === activeTripId) openTrip(nextItems[0].id);
   };
 
-  return <section className="trip-library" aria-label="我的行程">
-    <div className="trip-library-heading"><span>我的行程</span><button type="button" onClick={() => setCreateOpen(true)}>+ 新建行程</button></div>
-    <div className="trip-library-list">
-      {items.map((item) => {
-        const status = item.id === activeTripId ? currentDetails.status : item.status || "筹备中";
-        return <div className={`trip-library-item ${item.id === activeTripId ? "selected" : ""}`} key={item.id}>
-          <button className="trip-library-open" type="button" onClick={() => openTrip(item.id)}><b>{item.title}</b><small>{item.startDate} - {item.endDate}</small><em style={statusTagColors[status]}>{status}</em></button>
-        <button aria-label={`删除${item.title}`} className="trip-library-delete" title="删除行程" type="button" onClick={() => deleteTrip(item.id)}>×</button>
-        </div>;
+  const groups: Array<{ label: string; status: TripDetails["status"] }> = [
+    { label: "进行中", status: "进行中" },
+    { label: "筹备中", status: "筹备中" },
+    { label: "已结束", status: "已结束" },
+  ];
+
+  return <section className={`trip-library trip-sidebar ${collapsed ? "is-collapsed" : ""}`} aria-label="全部行程">
+    <div className="trip-sidebar-heading">
+      <button className="trip-sidebar-collapse" type="button" aria-label={collapsed ? "展开行程侧栏" : "收起行程侧栏"} title={collapsed ? "展开侧栏" : "收起侧栏"} onClick={() => onCollapsedChange?.(!collapsed)}>☰</button>
+      <span>全部行程</span>
+      <button className="trip-sidebar-create" type="button" aria-label="新建行程" title="新建行程" onClick={() => setCreateOpen(true)}>＋</button>
+    </div>
+    <div className="trip-sidebar-groups">
+      {groups.map(({ label, status }) => {
+        const groupItems = items.filter((item) => (item.id === activeTripId ? currentDetails.status : item.status || "筹备中") === status);
+        const isOpen = openGroups[status];
+        return <section className="trip-sidebar-group" key={status}>
+          <button className="trip-sidebar-group-toggle" type="button" aria-expanded={isOpen} onClick={() => setOpenGroups((current) => ({ ...current, [status]: !current[status] }))}><span aria-hidden="true">{isOpen ? "⌄" : "›"}</span><b>{label}</b><small>{groupItems.length}</small></button>
+          {isOpen && <div className="trip-library-list">
+            {groupItems.map((item) => {
+              const isActive = item.id === activeTripId;
+              const details = isActive ? currentDetails : loadTripDetails(defaultTripDetails, item.id);
+              const days = getTripDays(details.startDate, details.endDate);
+              const isExpanded = expandedTrips[item.id] ?? isActive;
+              return <div className={`trip-library-item ${isActive ? "selected" : ""}`} key={item.id}>
+                <div className="trip-library-trip-row">
+                  <button className="trip-library-tree-toggle" type="button" aria-expanded={isExpanded} aria-label={`${isExpanded ? "收起" : "展开"}${item.title}的天数`} onClick={() => setExpandedTrips((current) => ({ ...current, [item.id]: !isExpanded }))}>{isExpanded ? "⌄" : "›"}</button>
+                  <button className="trip-library-open" type="button" title={item.title} onClick={() => openTrip(item.id)}><b>{item.title}</b><small>{item.startDate} - {item.endDate}</small></button>
+                </div>
+                {isExpanded && <div className="trip-library-days" aria-label={`${item.title} 的天数`}>
+                  {days.map((day) => <button className={isActive && activeDay === day.day ? "selected-day" : ""} key={day.day} type="button" onClick={() => openTrip(item.id, day.day)}><b>DAY {day.day}</b><span>{day.date}</span></button>)}
+                </div>}
+                <button aria-label={`删除${item.title}`} className="trip-library-delete" title="删除行程" type="button" onClick={() => deleteTrip(item.id)}>×</button>
+              </div>;
+            })}
+          </div>}
+        </section>;
       })}
     </div>
     {createOpen && <div aria-modal="true" className="edit-plan-backdrop" role="dialog" aria-labelledby="create-trip-title">

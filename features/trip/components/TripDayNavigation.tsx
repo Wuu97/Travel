@@ -9,13 +9,12 @@ type Props = {
 
 export function TripDayNavigation({ activeDay, days, onMovePlan, onSelectDay }: Props) {
   return (
-    <aside>
-      <b>行程安排</b>
+    <nav className="trip-day-tabs" aria-label="选择行程天数">
       {days.map((item) => (
-        <button key={item.day} className={activeDay === item.day ? "active-day" : ""} onClick={() => onSelectDay(item.day)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { const id = event.dataTransfer.getData("application/x-tuyu-itinerary"); if (id) onMovePlan(id, item.day); }} style={{ fontSize: 11 }}>
-          DAY {item.day} <span style={{ color: "#597568", fontSize: 12 }}>{item.date}</span>
+        <button key={item.day} className={activeDay === item.day ? "active-day" : ""} onClick={() => onSelectDay(item.day)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { const id = event.dataTransfer.getData("application/x-tuyu-itinerary"); if (id) onMovePlan(id, item.day); }}>
+          <b>DAY {item.day}</b><span>{item.date.replaceAll("-", ".")}</span>
         </button>
       ))}
-    </aside>
+    </nav>
   );
 }

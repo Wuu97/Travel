@@ -13,7 +13,11 @@ export type EditingExpense = { id: string; occurrence: "actual" | "estimated" } 
 /** UI-only state for the trip workspace. Domain data remains outside this hook. */
 export function useTripWorkspaceView() {
   const [workspaceTab, setWorkspaceTab] = useState<"plan" | "budget">("plan");
-  const [activeDay, setActiveDay] = useState(1);
+  const [activeDay, setActiveDay] = useState(() => {
+    if (typeof window === "undefined") return 1;
+    const value = Number(new URLSearchParams(window.location.search).get("day"));
+    return Number.isInteger(value) && value > 0 ? value : 1;
+  });
   const [shared, setShared] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [showExpense, setShowExpense] = useState(false);

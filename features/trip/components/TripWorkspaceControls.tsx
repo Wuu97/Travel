@@ -14,13 +14,13 @@ type Props = {
   onToggleSettings: () => void;
 };
 
-export function TripWorkspaceControls({ activeTab, containerRef, isSettingsOpen, onCopyInvite, onSelectTab, onToggleSettings }: Props) {
+export function TripWorkspaceControls({ activeTab, onCopyInvite, onSelectTab }: Props) {
   return (
-    <div className="trip-actions" ref={isSettingsOpen ? containerRef : null}>
+    <div className="trip-actions">
       <button className={activeTab === "plan" ? "selected" : ""} onClick={() => onSelectTab("plan")}>攻略</button>
       <button className={activeTab === "budget" ? "selected" : ""} onClick={() => onSelectTab("budget")}>账本</button>
-      <button className="settings-trigger" type="button" onClick={onToggleSettings}>协作与导出</button>
-      {isSettingsOpen && <div className="trip-popover settings-popover"><button onClick={onCopyInvite}>复制协作邀请链接</button><button onClick={() => window.print()}>导出 PDF</button></div>}
+      <button className="settings-trigger" type="button" onClick={() => window.print()}>导出行程</button>
+      <button className="share trip-invite" type="button" onClick={onCopyInvite}>＋ 邀请协作者</button>
     </div>
   );
 }
