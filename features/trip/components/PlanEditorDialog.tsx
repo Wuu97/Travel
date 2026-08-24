@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { itineraryTypes } from "../data";
 import type { ItineraryItem } from "../model";
 import { TimePicker } from "./TimePicker";
+import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 
 type Props = {
   plan: ItineraryItem | null;
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function PlanEditorDialog({ onClose, onSave, plan, setPlan }: Props) {
+  useModalBehavior(Boolean(plan), onClose);
   if (!plan) return null;
   const update = (patch: Partial<ItineraryItem>) => setPlan({ ...plan, ...patch });
   return (

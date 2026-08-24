@@ -13,11 +13,9 @@ export type EditingExpense = { id: string; occurrence: "actual" | "estimated" } 
 /** UI-only state for the trip workspace. Domain data remains outside this hook. */
 export function useTripWorkspaceView() {
   const [workspaceTab, setWorkspaceTab] = useState<"plan" | "budget">("plan");
-  const [activeDay, setActiveDay] = useState(() => {
-    if (typeof window === "undefined") return 1;
-    const value = Number(new URLSearchParams(window.location.search).get("day"));
-    return Number.isInteger(value) && value > 0 ? value : 1;
-  });
+  // Keep the first server and client render deterministic; read the URL only
+  // after hydration to prevent a selected-day mismatch in SSR output.
+  const [activeDay, setActiveDay] = useState(1);
   const [shared, setShared] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [showExpense, setShowExpense] = useState(false);
@@ -60,6 +58,13 @@ export function useTripWorkspaceView() {
     const timer = window.setTimeout(() => {
       if (window.sessionStorage.getItem("tuyu-workspace-tab") === "budget") setWorkspaceTab("budget");
     }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const value = Number(new URLSearchParams(window.location.search).get("day"));
+    if (!Number.isInteger(value) || value < 0) return;
+    const timer = window.setTimeout(() => setActiveDay(value), 0);
     return () => window.clearTimeout(timer);
   }, []);
 

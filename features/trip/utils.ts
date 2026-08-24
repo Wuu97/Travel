@@ -146,6 +146,6 @@ export const planTimeValue = (plan: ItineraryItem) => {
 export const sortItineraryItems = (plans: ItineraryItem[]) =>
   plans.map((plan) => plan.type === "其他" && classifyItinerary(plan.title) === "餐饮" ? { ...plan, type: "餐饮" } : plan).sort(
     (first, second) =>
-      (first.day || 1) - (second.day || 1) ||
+      (first.day ?? 1) - (second.day ?? 1) ||
       planTimeValue(first) - planTimeValue(second),
   );

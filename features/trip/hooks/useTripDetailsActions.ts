@@ -1,16 +1,21 @@
 import type { Dispatch, SetStateAction } from "react";
 import { readTripCover } from "../cover";
-import type { TripDetails } from "../model";
+import type { ItineraryItem, TripDetails } from "../model";
 import { getTripDays } from "../utils";
 
-type Options = { activeDay: number; announceSave: () => void; inlineTitle: string | null; setActiveDay: (day: number) => void; setDetails: Dispatch<SetStateAction<TripDetails>>; setInlineTitle: (value: string | null) => void };
+type Options = { activeDay: number; announceSave: () => void; inlineTitle: string | null; setActiveDay: (day: number) => void; setDetails: Dispatch<SetStateAction<TripDetails>>; setInlineTitle: (value: string | null) => void; setPlans: Dispatch<SetStateAction<ItineraryItem[]>> };
 
 /** Coordinates editable trip metadata and keeps the selected day valid after date changes. */
-export function useTripDetailsActions({ activeDay, announceSave, inlineTitle, setActiveDay, setDetails, setInlineTitle }: Options) {
+export function useTripDetailsActions({ activeDay, announceSave, inlineTitle, setActiveDay, setDetails, setInlineTitle, setPlans }: Options) {
   const updateTripDetails = (patch: Partial<TripDetails>) => {
     setDetails((current) => {
       const next = { ...current, ...patch };
-      if (!getTripDays(next.startDate, next.endDate).some((item) => item.day === activeDay)) setActiveDay(1);
+      const nextDays = getTripDays(next.startDate, next.endDate);
+      if (!nextDays.some((item) => item.day === activeDay)) setActiveDay(1);
+      if (patch.startDate !== undefined || patch.endDate !== undefined) {
+        const lastDay = nextDays.at(-1)!.day;
+        setPlans((plans) => plans.map((plan) => (plan.day ?? 1) > lastDay ? { ...plan, day: 0 } : plan));
+      }
       return next;
     });
     announceSave();

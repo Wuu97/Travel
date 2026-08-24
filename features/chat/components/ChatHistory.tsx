@@ -1,22 +1,23 @@
 import type { SavedChat } from "../model";
+import { SidebarCollapseButton } from "../../shared/components/SidebarCollapseButton";
+import { SidebarHeader } from "../../shared/components/SidebarHeader";
+import { ScrollArea } from "../../shared/components/ScrollArea";
 
 type Props = {
   activeChatId: string;
-  hasMessages: boolean;
   savedChats: SavedChat[];
   onDelete: (chatId: string) => void;
-  onExport: () => void;
+  onNewChat: () => void;
   onOpen: (chat: SavedChat) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 };
 
-export function ChatHistory({ activeChatId, hasMessages, savedChats, onDelete, onExport, onOpen }: Props) {
+export function ChatHistory({ activeChatId, collapsed, onDelete, onNewChat, onOpen, onToggleCollapse, savedChats }: Props) {
   return (
     <div className="chat-history">
-      <div className="history-tools">
-        <b>历史对话</b>
-        <button onClick={onExport} disabled={!hasMessages}>⇩ 导出当前</button>
-      </div>
-      <div className="history-list">
+      <SidebarHeader action={<button className="sidebar-header-action" type="button" onClick={onNewChat}>＋ 新建</button>} className="history-tools" collapseButton={<SidebarCollapseButton className="sidebar-header-collapse" collapseLabel="收起历史对话侧栏" collapsed={collapsed} expandLabel="展开历史对话侧栏" onToggle={onToggleCollapse} />} title="历史对话" />
+      <ScrollArea className="history-list">
         {savedChats.length ? savedChats.map((chat) => (
           <div className={`history-row ${chat.id === activeChatId ? "current" : ""}`} key={chat.id}>
             <button className="history-open" onClick={() => onOpen(chat)}>
@@ -26,7 +27,7 @@ export function ChatHistory({ activeChatId, hasMessages, savedChats, onDelete, o
             <button className="history-delete" onClick={() => onDelete(chat.id)} title="删除这段对话">×</button>
           </div>
         )) : <p>还没有历史对话</p>}
-      </div>
+      </ScrollArea>
     </div>
   );
 }

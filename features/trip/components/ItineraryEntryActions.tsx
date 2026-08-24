@@ -3,9 +3,10 @@ type Props = {
   onAddByAi: () => void;
   onIdeaChange: (idea: string) => void;
   onManualAdd: () => void;
+  onOptimize: () => void;
 };
 
-export function ItineraryEntryActions({ idea, onAddByAi, onIdeaChange, onManualAdd }: Props) {
+export function ItineraryEntryActions({ idea, onAddByAi, onIdeaChange, onManualAdd, onOptimize }: Props) {
   return (
     <div style={{ flex: "none", marginTop: "auto", paddingTop: 12 }}>
       <div className="add-local" style={{ marginTop: 0 }}>
@@ -14,6 +15,7 @@ export function ItineraryEntryActions({ idea, onAddByAi, onIdeaChange, onManualA
       </div>
       <div className="manual-entry" style={{ marginTop: 8 }}>
         <button className="manual-add" onClick={onManualAdd} style={{ fontSize: 12, padding: "8px 12px" }}>＋ 手动添加行程</button>
+        <button className="optimize-route" onClick={onOptimize} style={{ fontSize: 12, padding: "8px 12px" }}>✦ 让 AI 优化路线</button>
       </div>
     </div>
   );

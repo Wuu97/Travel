@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import { createId } from "../../shared/utils/createId";
+import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import type { ExpenseItem, ItineraryItem, LedgerItem } from "../model";
 import type { EditingExpense } from "./useTripWorkspaceView";
 import { createTripExpense, toBudgetItem, toLedgerItem } from "../expense";
@@ -8,6 +9,7 @@ type Options = { amount: string; budgetItems: ExpenseItem[]; editingExpense: Edi
 
 /** Validates and records a manual actual expense. */
 export function useExpenseEntry({ amount, budgetItems, editingExpense, expenses, name, occurrence, plans, relatedItineraryItemId, setAmount, setBudgetItems, setEditingExpense, setExpenses, setName, setOccurrence, setRelatedItineraryItemId, setType, setVisible, type }: Options) {
+  const { confirm } = useConfirmation();
   const addExpense = () => {
     const numericAmount = Number(amount);
     if (!name.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0) return;
@@ -37,12 +39,12 @@ export function useExpenseEntry({ amount, budgetItems, editingExpense, expenses,
     setEditingExpense({ id, occurrence: itemOccurrence });
     setVisible(true);
   };
-  const removeExpense = (id: string) => {
-    if (!window.confirm("确定删除这笔实际消费吗？")) return;
+  const removeExpense = async (id: string) => {
+    if (!await confirm({ title: "删除实际消费？", description: "这笔实际消费将被永久删除。" })) return;
     setExpenses((current) => current.filter((item) => item.id !== id));
   };
-  const removeBudgetItem = (id: string) => {
-    if (!window.confirm("确定移除这项预计费用吗？")) return;
+  const removeBudgetItem = async (id: string) => {
+    if (!await confirm({ title: "移除预计费用？", description: "这项预计费用将被永久移除。" })) return;
     setBudgetItems((current) => current.filter((item) => item.id !== id));
   };
   return { addExpense, editExpense, removeBudgetItem, removeExpense };

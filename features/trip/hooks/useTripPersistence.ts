@@ -55,6 +55,12 @@ export function useTripPersistence({
   }, [details, enabled, tripId]);
 
   useEffect(() => {
+    if (!syncError) return;
+    const timer = window.setTimeout(() => setSyncError(null), 8_000);
+    return () => window.clearTimeout(timer);
+  }, [syncError]);
+
+  useEffect(() => {
     if (!enabled || !authReady || !accessToken) return;
     let cancelled = false;
 

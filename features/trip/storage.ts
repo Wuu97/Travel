@@ -66,8 +66,11 @@ export function saveTripDetails(details: TripDetails, tripId?: string) {
 export function loadTripLibrary(fallback: TripLibraryItem): TripLibraryItem[] {
   if (typeof window === "undefined") return [fallback];
   try {
-    const items = JSON.parse(localStorage.getItem(TRIP_LIBRARY_STORAGE_KEY) || "[]") as TripLibraryItem[];
-    if (Array.isArray(items) && items.length && items.every((item) => item && typeof item.id === "string" && typeof item.title === "string")) return items;
+    const storedValue = localStorage.getItem(TRIP_LIBRARY_STORAGE_KEY);
+    if (storedValue !== null) {
+      const items = JSON.parse(storedValue) as TripLibraryItem[];
+      if (Array.isArray(items) && items.every((item) => item && typeof item.id === "string" && typeof item.title === "string")) return items;
+    }
   } catch {
     // The default entry preserves the existing single-trip data after a malformed snapshot.
   }

@@ -7,8 +7,12 @@ const authHeaders = (accessToken: string) => ({ Authorization: `Bearer ${accessT
 
 export async function loadSharedTrip(tripId: string, accessToken: string): Promise<TripApiResponse> {
   const response = await fetch(tripUrl(tripId), { headers: authHeaders(accessToken) });
-  if (!response.ok) throw new Error("无法读取共享行程。");
-  return (await response.json()) as TripApiResponse;
+  const data = await response.json().catch(() => ({})) as TripApiResponse & { error?: unknown };
+  if (!response.ok) {
+    const detail = typeof data.error === "string" && data.error.trim() ? data.error.trim() : `请求失败（HTTP ${response.status}）`;
+    throw new Error(`无法读取共享行程：${detail}`);
+  }
+  return data;
 }
 
 export async function saveSharedTrip(tripId: string, trip: StoredTrip, version: number | undefined, accessToken: string) {

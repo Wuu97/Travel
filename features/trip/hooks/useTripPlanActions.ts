@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { lookupPlaceCategory } from "../../places/api";
 import { createId } from "../../shared/utils/createId";
+import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import type { ItineraryItem } from "../model";
 import { parsePlanInputs, sortItineraryItems } from "../utils";
 
@@ -8,6 +9,7 @@ type Options = { activeDay: number; city?: string; editingPlan: ItineraryItem | 
 
 /** Domain commands for itinerary creation, editing, copying, and deletion. */
 export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, newPlan, setActiveDay, setEditingPlan, setManualPlan, setNewPlan, setPendingPlanId, setPlans }: Options) {
+  const { confirm } = useConfirmation();
   const addPlan = () => {
     if (!newPlan.trim()) return;
     const parsedPlans = parsePlanInputs(newPlan).map((plan) => ({ id: createId("plan"), ...plan, day: activeDay, creator: "你" }));
@@ -30,8 +32,8 @@ export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, n
     setPlans((current) => sortItineraryItems(current.map((plan) => plan.id === editingPlan.id ? { ...editingPlan, title: editingPlan.title.trim() } : plan)));
     setEditingPlan(null);
   };
-  const deletePlan = (id: string) => {
-    if (!window.confirm("确定删除这条行程吗？")) return;
+  const deletePlan = async (id: string) => {
+    if (!await confirm({ title: "删除行程？", description: "这条行程将被永久删除，且无法恢复。" })) return;
     setPlans((current) => current.filter((plan) => plan.id !== id));
   };
   const copyPlan = (plan: ItineraryItem) => {

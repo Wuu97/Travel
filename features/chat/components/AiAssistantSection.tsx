@@ -1,13 +1,17 @@
-import type { RefObject, ReactNode } from "react";
+import { useState, type RefObject, type ReactNode } from "react";
 import type { ChatMessage, SavedChat } from "../model";
 import { AiAssistantIntro } from "./AiAssistantIntro";
 import { ChatComposer } from "./ChatComposer";
 import { ChatHeader } from "./ChatHeader";
 import { ChatHistory } from "./ChatHistory";
 import { ChatMessageList } from "./ChatMessageList";
+import { ChatPdfExport } from "./ChatPdfExport";
 
-type Props = { activeChatId: string; busy: boolean; historyOpen: boolean; historyPanelRef: RefObject<HTMLDivElement | null>; messages: ChatMessage[]; onAsk: () => void; onDelete: (id: string) => void; onExport: () => void; onNewChat: () => void; onOpen: (chat: SavedChat) => void; onQuestionChange: (value: string) => void; onToggleHistory: () => void; question: string; renderImports: (message: ChatMessage) => ReactNode; savedChats: SavedChat[]; scrollRef: RefObject<HTMLDivElement | null> };
+type Props = { activeChatId: string; busy: boolean; historyOpen: boolean; historyPanelRef: RefObject<HTMLDivElement | null>; messages: ChatMessage[]; onAsk: () => void; onDelete: (id: string) => void; onNewChat: () => void; onOpen: (chat: SavedChat) => void; onQuestionChange: (value: string) => void; onToggleHistory: () => void; question: string; renderImports: (message: ChatMessage) => ReactNode; savedChats: SavedChat[]; scrollRef: RefObject<HTMLDivElement | null> };
 
-export function AiAssistantSection({ activeChatId, busy, historyOpen, historyPanelRef, messages, onAsk, onDelete, onExport, onNewChat, onOpen, onQuestionChange, onToggleHistory, question, renderImports, savedChats, scrollRef }: Props) {
-  return <section className="ai-wrap" id="ai"><div className="wide-ai"><AiAssistantIntro setQuestion={onQuestionChange} /><div className={`chat ${historyOpen ? "history-visible" : ""}`}><ChatHeader history={<ChatHistory activeChatId={activeChatId} hasMessages={Boolean(messages.length)} onDelete={onDelete} onExport={onExport} onOpen={onOpen} savedChats={savedChats} />} historyOpen={historyOpen} historyPanelRef={historyPanelRef} onNewChat={onNewChat} onToggleHistory={onToggleHistory} provider="DeepSeek" /><div className="chat-scroll" ref={scrollRef}><ChatMessageList busy={busy} messages={messages} renderImports={renderImports} /></div><ChatComposer busy={busy} onAsk={onAsk} onQuestionChange={onQuestionChange} question={question} /></div></div></section>;
+export function AiAssistantSection({ activeChatId, busy, historyPanelRef, messages, onAsk, onDelete, onNewChat, onOpen, onQuestionChange, question, renderImports, savedChats, scrollRef }: Props) {
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
+  const title = savedChats.find((chat) => chat.id === activeChatId)?.title || "途遇 AI 对话";
+  return <section className="ai-wrap" id="ai"><div className="wide-ai"><AiAssistantIntro /><div className={`chat-workbench${historyCollapsed ? " is-history-collapsed" : ""}`}><aside className={`ai-history-sidebar${historyCollapsed ? " is-collapsed" : ""}`} ref={historyPanelRef}><ChatHistory activeChatId={activeChatId} collapsed={historyCollapsed} onDelete={onDelete} onNewChat={onNewChat} onOpen={onOpen} onToggleCollapse={() => setHistoryCollapsed((current) => !current)} savedChats={savedChats} /></aside><div className="chat"><ChatHeader hasMessages={Boolean(messages.length)} onExport={() => setPdfPreviewOpen(true)} provider="DeepSeek" /><div className="chat-scroll" ref={scrollRef}><ChatMessageList busy={busy} messages={messages} renderImports={renderImports} /></div><ChatComposer busy={busy} onAsk={onAsk} onQuestionChange={onQuestionChange} question={question} /></div></div><ChatPdfExport messages={messages} onClose={() => setPdfPreviewOpen(false)} open={pdfPreviewOpen} title={title} /></div></section>;
 }

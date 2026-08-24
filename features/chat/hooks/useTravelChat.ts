@@ -3,6 +3,7 @@ import { downloadChatTranscript } from "../export";
 import { useChatScroll } from "./useChatScroll";
 import { normalizeAssistantResponse, type ChatMessage, type SavedChat } from "../model";
 import { loadSavedChats, saveChats } from "../storage";
+import { useConfirmation } from "../../shared/components/ConfirmDialog";
 
 type Options = { accessToken: string | null; authReady: boolean; enabled: boolean };
 
@@ -10,19 +11,40 @@ function createChatId() {
   return `chat-${crypto.randomUUID()}`;
 }
 
+function mergeChats(localChats: SavedChat[], cloudChats: SavedChat[]) {
+  const byId = new Map<string, SavedChat>();
+  for (const chat of [...localChats, ...cloudChats]) {
+    const existing = byId.get(chat.id);
+    if (!existing || chat.updatedAt >= existing.updatedAt) byId.set(chat.id, chat);
+  }
+  return [...byId.values()].sort((first, second) => second.updatedAt - first.updatedAt).slice(0, 20);
+}
+
 /** Owns chat history, AI requests, and export without leaking persistence details to UI. */
 export function useTravelChat({ accessToken, authReady, enabled }: Options) {
+  const { confirm } = useConfirmation();
   const [question, setQuestion] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
+  // TravelApp remounts this hook after client hydration. Seed from the local
+  // copy during that remount so a refresh never flashes an empty history while
+  // the authenticated cloud request is still in flight.
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() =>
+    enabled && typeof window !== "undefined" ? loadSavedChats()[0]?.messages || [] : [],
+  );
+  const [savedChats, setSavedChats] = useState<SavedChat[]>(() =>
+    enabled && typeof window !== "undefined" ? loadSavedChats() : [],
+  );
   // Keep the first server and browser render identical; a unique ID is created
   // only after hydration or when the user starts a new conversation.
-  const [activeChatId, setActiveChatId] = useState("current");
+  const [activeChatId, setActiveChatId] = useState(() =>
+    enabled && typeof window !== "undefined" ? loadSavedChats()[0]?.id || "current" : "current",
+  );
   const [historyOpen, setHistoryOpen] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const historyPanelRef = useRef<HTMLDivElement>(null);
-  const savedChatsRef = useRef<SavedChat[]>([]);
+  const savedChatsRef = useRef<SavedChat[]>(
+    enabled && typeof window !== "undefined" ? loadSavedChats() : [],
+  );
 
   const replaceSavedChats = (next: SavedChat[]) => {
     savedChatsRef.current = next;
@@ -37,9 +59,10 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
     if (!accessToken) {
       queueMicrotask(() => {
         if (cancelled) return;
-        replaceSavedChats(loadSavedChats());
-        setChatMessages([]);
-        setActiveChatId(createChatId());
+        const localChats = loadSavedChats();
+        replaceSavedChats(localChats);
+        setChatMessages((current) => current.length ? current : localChats[0]?.messages || []);
+        setActiveChatId((current) => current === "current" ? localChats[0]?.id || createChatId() : current);
       });
       return () => { cancelled = true; };
     }
@@ -51,17 +74,26 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
       })
       .then(async (cloudChats) => {
         if (cancelled) return;
-        const chats = cloudChats.length ? cloudChats : loadSavedChats();
-        if (!cloudChats.length && chats.length) {
-          await Promise.all(chats.map((chat) => fetch("/api/chats", { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ chat }) })));
-        }
+        // A previous background upload may not have completed before refresh.
+        // Merge rather than treating an empty cloud response as an empty history.
+        const chats = mergeChats(loadSavedChats(), cloudChats);
         if (cancelled) return;
         replaceSavedChats(chats);
-        setChatMessages(chats[0]?.messages || []);
-        setActiveChatId(chats[0]?.id || createChatId());
+        setChatMessages((current) => current.length ? current : chats[0]?.messages || []);
+        setActiveChatId((current) => current === "current" ? chats[0]?.id || createChatId() : current);
+
+        const cloudById = new Map(cloudChats.map((chat) => [chat.id, chat]));
+        await Promise.all(chats
+          .filter((chat) => !cloudById.get(chat.id) || chat.updatedAt > cloudById.get(chat.id)!.updatedAt)
+          .map((chat) => fetch("/api/chats", { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ chat }) })));
       })
       .catch(() => {
-        if (!cancelled) replaceSavedChats(loadSavedChats());
+        // Network or database failures must never erase the browser copy.
+        if (!cancelled) {
+          const localChats = loadSavedChats();
+          replaceSavedChats(localChats);
+          setChatMessages((current) => current.length ? current : localChats[0]?.messages || []);
+        }
       });
     return () => { cancelled = true; };
   }, [accessToken, authReady, enabled]);
@@ -108,10 +140,10 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
     await sendQuestion(userMessage, chatMessages, activeChatId);
   };
 
-  const newChat = () => {
+  const newChat = (draft = "") => {
     setActiveChatId(createChatId());
     setChatMessages([]);
-    setQuestion("");
+    setQuestion(typeof draft === "string" ? draft : "");
     setHistoryOpen(false);
   };
   const startNewChatAndAsk = (prompt: string) => {
@@ -128,8 +160,8 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
     setChatMessages(chat.messages);
     setHistoryOpen(false);
   };
-  const deleteChat = (chatId: string) => {
-    if (!window.confirm("确定删除这段云端对话吗？此操作无法撤销。")) return;
+  const deleteChat = async (chatId: string) => {
+    if (!await confirm({ title: "删除对话？", description: "这段对话将被永久删除，且无法恢复。" })) return;
     replaceSavedChats(savedChatsRef.current.filter((chat) => chat.id !== chatId));
     if (accessToken) void fetch(`/api/chats?id=${encodeURIComponent(chatId)}`, { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } });
     if (chatId === activeChatId) newChat();

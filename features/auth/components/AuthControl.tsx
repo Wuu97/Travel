@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import type { SignUpResult } from "../useSupabaseAuth";
+import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 
 const callingCodes = [
   { code: "+86", label: "中国大陆 +86" },
@@ -73,14 +74,25 @@ export function AuthControl({ configured, error, onClearError, onRequestPhoneOtp
     };
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
+  const closeDialog = () => {
+    onClearError();
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setNotice(null);
+    setPhoneNumber("");
+    setPhoneOtpSent(false);
+    setVerificationCode("");
+    setRegisteredEmail(null);
+    setFieldErrors({});
+    setTouchedFields({});
+    setEmailAccountState(null);
+    setEmailAccountFeedback(null);
+    setMethod("email");
+    setMode("sign-in");
+    setOpen(false);
+  };
+  useModalBehavior(open, closeDialog);
 
   if (!configured) return showTrigger ? <span className="auth-status">云端未配置</span> : null;
   if (!ready) return showTrigger ? <span className="auth-status">正在恢复登录…</span> : null;
@@ -162,29 +174,10 @@ export function AuthControl({ configured, error, onClearError, onRequestPhoneOtp
     setEmailAccountFeedback(message || "验证邮件发送失败，请稍后重试。");
     setSubmitting(false);
   };
-  const closeDialog = () => {
-    onClearError();
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
-    setNotice(null);
-    setPhoneNumber("");
-    setPhoneOtpSent(false);
-    setVerificationCode("");
-    setRegisteredEmail(null);
-    setFieldErrors({});
-    setTouchedFields({});
-    setEmailAccountState(null);
-    setEmailAccountFeedback(null);
-    setMethod("email");
-    setMode("sign-in");
-    setOpen(false);
-  };
-
   return <>
     {showTrigger && <div className="auth-control"><button type="button" onClick={() => setOpen(true)}>登录 / 注册</button></div>}
     {open && <div className="auth-backdrop">
-      <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <section className="auth-dialog" data-modal-scroll-lock role="dialog" aria-modal="true" aria-labelledby="auth-title">
         <div className="auth-dialog-title"><div><b id="auth-title">{registeredEmail ? "注册成功" : method === "phone" ? "手机号登录或注册" : isSignUp ? "创建账户" : "登录账户"}</b><small>{registeredEmail ? "请完成邮箱验证后再登录。" : method === "phone" ? "验证短信验证码后，将自动登录或创建账户。" : isSignUp ? "注册后可同步你的行程和对话。" : "登录后可同步你的行程和对话。"}</small></div><button type="button" className="auth-close" aria-label="关闭" onClick={closeDialog}>×</button></div>
         {registeredEmail ? <div className="auth-success-state"><div className="auth-success-icon" aria-hidden="true">✓</div><h2>注册成功</h2><p>验证邮件已发送至<br /><strong>{registeredEmail}</strong></p><p className="auth-success-help">请前往邮箱完成验证，验证后即可登录。</p>{(error || notice) && <p className={`auth-message${error ? " auth-message-error" : ""}`} role="status">{error || notice}</p>}<button type="button" className="auth-submit" onClick={goToSignIn}>去登录</button><button type="button" className="auth-switch auth-resend" onClick={() => void resendVerification()} disabled={submitting}>{submitting ? "正在发送…" : "没收到邮件？重新发送验证邮件"}</button></div> : <form className="auth-dialog-form" noValidate onSubmit={(event) => { event.preventDefault(); void submit(); }}>
           <div className="auth-methods" role="group" aria-label="认证方式"><button type="button" className={method === "email" ? "selected" : ""} onClick={() => { onClearError(); setMethod("email"); setNotice(null); }}>邮箱密码</button><button type="button" className={method === "phone" ? "selected" : ""} onClick={() => { onClearError(); setMethod("phone"); setNotice(null); }}>手机验证码</button></div>

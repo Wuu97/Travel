@@ -3,6 +3,7 @@ import { itineraryTypes } from "../data";
 import type { ItineraryItem } from "../model";
 import { typeColors } from "../utils";
 import { TimePicker } from "./TimePicker";
+import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 
 function inferLocation(title: string) {
   const trimmedTitle = title.trim();
@@ -22,6 +23,7 @@ type Props = {
 
 export function ManualPlanDialog({ activeDay, days, onClose, onSave, plan, setPlan }: Props) {
   const [titleError, setTitleError] = useState(false);
+  useModalBehavior(Boolean(plan), onClose);
   if (!plan) return null;
   const update = (patch: Partial<ItineraryItem>) => setPlan({ ...plan, ...patch });
   const updateTitle = (title: string) => setPlan((currentPlan) => currentPlan && {

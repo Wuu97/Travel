@@ -32,7 +32,8 @@ import { useTripBootstrap } from "../../trip/hooks/useTripBootstrap";
 import { useAnchorNavigation } from "../../navigation/hooks/useAnchorNavigation";
 import { useTripImportSelection } from "../../trip/hooks/useTripImportSelection";
 import { useTripSummary } from "../../trip/hooks/useTripSummary";
-import { getTripDestination } from "../../trip/utils";
+import { ConfirmDialogProvider } from "../../shared/components/ConfirmDialog";
+import { destinationPinyin, getTripDestination } from "../../trip/utils";
 import type {
   ExpenseItem,
   ItineraryItem,
@@ -52,6 +53,14 @@ const subscribeToTripLocation = (onStoreChange: () => void) => {
 };
 const getTripLocation = () => window.location.search;
 const getServerTripLocation = () => "";
+
+function isConversationAboutDestination(messages: { role: "user" | "assistant"; content: string }[], destination: string) {
+  // The opening user request identifies the conversation's city much more
+  // reliably than assistant replies, which can mention comparison cities.
+  const conversation = messages.find((message) => message.role === "user")?.content.toLowerCase() || "";
+  const destinationAlias = destinationPinyin[destination]?.toLowerCase();
+  return conversation.includes(destination.toLowerCase()) || Boolean(destinationAlias && conversation.includes(destinationAlias));
+}
 
 function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean }) {
   const auth = useSupabaseAuth();
@@ -95,7 +104,6 @@ function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean 
     chatMessages,
     chatScrollRef,
     deleteChat,
-    exportChat,
     historyOpen,
     historyPanelRef,
     newChat,
@@ -104,7 +112,6 @@ function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean 
     savedChats,
     setHistoryOpen,
     setQuestion,
-    startNewChatAndAsk,
   } = chat;
   const { disableRemoteSync, syncError } = useTripPersistence({
     accessToken: auth.accessToken,
@@ -168,6 +175,7 @@ function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean 
     setActiveDay,
     setDetails: setTripDetails,
     setInlineTitle: setInlineTripTitle,
+    setPlans,
   });
   const { archiveTrip, copyInviteLink, deleteTrip } = useTripLifecycle({
     accessToken: auth.accessToken,
@@ -243,7 +251,7 @@ function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean 
         setTo={setTo}
         to={to}
       />
-      <TripWorkspace activeDay={activeDay} budgetItems={budgetItems} coverInputRef={coverInputRef} days={tripDays} details={tripDetails} editingPlan={editingPlan} editingRole={editingMemberRole} expenseAmount={ledgerAmount} expenseName={ledgerName} expenseOccurrence={ledgerOccurrence} expenseType={ledgerType} expenses={expenses} inlineEdit={inlinePlanEdit} inlineEditorRef={inlineEditorRef} inlineTitle={inlineTripTitle} manualPlan={manualPlan} memberRoleRef={memberRoleRef} menuRef={planMenuRef} newMember={newMember} newPlan={newPlan} onAddPlan={addPlan} onAmountChange={setLedgerAmount} onArchive={archiveTrip} onCoverChange={chooseCoverImage} onCopy={(item) => { copyPlan(item); setOpenPlanMenuId(null); }} onDelete={(id) => { deletePlan(id); setOpenPlanMenuId(null); }} onDeleteTrip={() => void deleteTrip()} onDetailsChange={updateTripDetails} onEdit={(item) => { setEditingPlan({ ...item, day: item.day || activeDay }); setOpenPlanMenuId(null); }} onEditBudget={(id) => editExpense(id, "estimated")} onEditExpense={(id) => editExpense(id, "actual")} onInlineChange={setInlinePlanEdit} onInvite={copyInviteLink} onManualAdd={openManualPlan} onMovePlan={movePlanToDay} onNameChange={setLedgerName} onNewPlanChange={setNewPlan} onOccurrenceChange={setLedgerOccurrence} onOptimize={() => { const route = plans.filter((plan) => (plan.day || 1) === activeDay).map((plan) => `${plan.time || "待定"} ${plan.title}`).join("；"); startNewChatAndAsk(`请优化${getTripDestination(tripDetails.title)} DAY ${activeDay} 的路线。现有安排：${route || "暂无安排"}`); document.querySelector("#ai")?.scrollIntoView({ behavior: "smooth" }); }} onRelatedItineraryChange={setLedgerRelatedItineraryItemId} onRemoveBudget={removeBudgetItem} onRemoveExpense={removeExpense} onSaveEdit={savePlan} onSaveExpense={addExpense} onSaveInline={saveInlinePlan} onSaveManual={saveManualPlan} onSelectDay={setActiveDay} onSelectTab={setWorkspaceTab} onTitleChange={setInlineTripTitle} onTitleSave={saveInlineTripTitle} onToggleExpense={() => setLedgerVisible(!ledgerVisible)} onToggleMenu={(id) => setOpenPlanMenuId((current) => current === id ? null : id)} onTypeChange={setLedgerType} openMenuId={openPlanMenuId} plans={plans} popover={tripPopover} relatedItineraryItemId={ledgerRelatedItineraryItemId} saveStatus={saveStatus} setEditingPlan={setEditingPlan} setEditingRole={setEditingMemberRole} setManualPlan={setManualPlan} setNewMember={setNewMember} setPopover={setTripPopover} shared={shared} shareStatus={shareStatus} showExpense={ledgerVisible} timelineRef={timelineListRef} tripPopoverRef={tripPopoverRef} workspaceTab={workspaceTab} />
+      <TripWorkspace activeDay={activeDay} budgetItems={budgetItems} coverInputRef={coverInputRef} days={tripDays} details={tripDetails} editingPlan={editingPlan} editingRole={editingMemberRole} expenseAmount={ledgerAmount} expenseName={ledgerName} expenseOccurrence={ledgerOccurrence} expenseType={ledgerType} expenses={expenses} inlineEdit={inlinePlanEdit} inlineEditorRef={inlineEditorRef} inlineTitle={inlineTripTitle} manualPlan={manualPlan} memberRoleRef={memberRoleRef} menuRef={planMenuRef} newMember={newMember} newPlan={newPlan} onAddPlan={addPlan} onAmountChange={setLedgerAmount} onArchive={archiveTrip} onCoverChange={chooseCoverImage} onCopy={(item) => { copyPlan(item); setOpenPlanMenuId(null); }} onDelete={(id) => { deletePlan(id); setOpenPlanMenuId(null); }} onDeleteTrip={() => void deleteTrip()} onDetailsChange={updateTripDetails} onEdit={(item) => { setEditingPlan({ ...item, day: item.day ?? activeDay }); setOpenPlanMenuId(null); }} onEditBudget={(id) => editExpense(id, "estimated")} onEditExpense={(id) => editExpense(id, "actual")} onInlineChange={setInlinePlanEdit} onInvite={copyInviteLink} onManualAdd={openManualPlan} onMovePlan={movePlanToDay} onNameChange={setLedgerName} onNewPlanChange={setNewPlan} onOccurrenceChange={setLedgerOccurrence} onOptimize={() => { const destination = getTripDestination(tripDetails.title); const route = plans.filter((plan) => (plan.day ?? 1) === activeDay).map((plan) => `${plan.time || "待定"} ${plan.title}`).join("；"); const prompt = `请优化${destination} DAY ${activeDay} 的路线。现有安排：${route || "暂无安排"}`; if (chatMessages.length && !isConversationAboutDestination(chatMessages, destination)) newChat(prompt); else setQuestion(prompt); document.querySelector("#ai")?.scrollIntoView({ behavior: "smooth" }); }} onRelatedItineraryChange={setLedgerRelatedItineraryItemId} onRemoveBudget={removeBudgetItem} onRemoveExpense={removeExpense} onSaveEdit={savePlan} onSaveExpense={addExpense} onSaveInline={saveInlinePlan} onSaveManual={saveManualPlan} onSelectDay={setActiveDay} onSelectTab={setWorkspaceTab} onTitleChange={setInlineTripTitle} onTitleSave={saveInlineTripTitle} onToggleExpense={() => setLedgerVisible(!ledgerVisible)} onToggleMenu={(id) => setOpenPlanMenuId((current) => current === id ? null : id)} onTypeChange={setLedgerType} openMenuId={openPlanMenuId} plans={plans} popover={tripPopover} relatedItineraryItemId={ledgerRelatedItineraryItemId} saveStatus={saveStatus} setEditingPlan={setEditingPlan} setEditingRole={setEditingMemberRole} setManualPlan={setManualPlan} setNewMember={setNewMember} setPopover={setTripPopover} shared={shared} shareStatus={shareStatus} showExpense={ledgerVisible} timelineRef={timelineListRef} tripPopoverRef={tripPopoverRef} workspaceTab={workspaceTab} />
 
       <AiAssistantSection
         activeChatId={activeChatId}
@@ -253,7 +261,6 @@ function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean 
         messages={chatMessages}
         onAsk={ask}
         onDelete={deleteChat}
-        onExport={exportChat}
         onNewChat={newChat}
         onOpen={openChat}
         onQuestionChange={setQuestion}
@@ -295,9 +302,9 @@ export function TravelApp() {
     getServerTripLocation,
   );
   return (
-    <TravelAppContent
+    <ConfirmDialogProvider><TravelAppContent
       key={`${hydrated ? "hydrated" : "server"}:${tripLocation}`}
       loadPersistedState={hydrated}
-    />
+    /></ConfirmDialogProvider>
   );
 }
