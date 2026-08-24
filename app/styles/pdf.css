@@ -1,4 +1,6 @@
 
+.pdf-preview-backdrop,.pdf-preview-scroll{overscroll-behavior:contain}
+
 .pdf-preview-dialog>.pdf-export-footer button{font-size:12px}
 
 .pdf-preview-dialog>.pdf-preview-header>.pdf-preview-close{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;background:transparent;color:#71877c;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif;font-size:28px;font-weight:500;line-height:1;cursor:pointer}

@@ -8,7 +8,7 @@
 
 
 
-.pdf-preview-backdrop,.pdf-preview-scroll,.auth-backdrop,.auth-dialog,.edit-plan-backdrop{overscroll-behavior:contain}
+.edit-plan-backdrop{overscroll-behavior:contain}
 
 
 
@@ -3189,3 +3189,177 @@
 
 
 #workspace .trip-sidebar-pending>p{margin:2px 0 0;color:#a0aea5;font-size:10px;line-height:16px}
+
+
+
+.planned-list{margin-top:14px}
+
+
+
+.add-item{margin-top:21px;background:white;border:1px dashed #b8cabd;padding:9px 14px;color:#557968;border-radius:4px;font-size:11px;cursor:pointer}
+
+
+
+.progress{flex:1}
+
+
+
+.progress p{font-size:12px;margin:0 0 8px;color:#6c8176}
+
+
+
+.progress i{height:8px;background:#dbe7de;border-radius:6px;display:block}
+
+
+
+.progress i b{display:block;width:36%;height:100%;background:#d96e40;border-radius:6px}
+
+
+
+.donut{width:128px;height:128px;border-radius:50%;background:conic-gradient(#d96e40 0 57%,#65a57b 57% 72%,#7599b6 72% 99%,#e3e9e3 99%);margin:15px auto;display:grid;place-items:center}
+
+
+
+.donut:before{content:"";position:absolute;width:94px;height:94px;border-radius:50%;background:#fff}
+
+
+
+.donut span{z-index:1;font:500 17px Georgia,serif;text-align:center}
+
+
+
+.donut small{display:block;font:10px Arial;color:#8a9a91;margin-top:3px}
+
+
+
+
+
+.place-facts{display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:6px;color:#5d7e71;font-size:11px;line-height:1.4}
+
+
+
+.place-facts span+span{border-left:1px solid #d7e3db;padding-left:8px}
+
+
+
+
+
+.inline-time-input{grid-column:1;grid-row:1;width:54px;align-self:start;border:1px solid #91aa9b;border-radius:4px;background:#fff;color:#31584a;font:700 12px/1.5 Arial,"PingFang SC","Microsoft YaHei",sans-serif;padding:1px 4px;outline:0}
+
+
+
+.inline-type-select{appearance:none;border:0;outline:0;cursor:pointer}
+
+
+
+.inline-readable{border:1px solid transparent;background:transparent;color:inherit;cursor:text;font:inherit;text-align:inherit}
+
+
+
+.inline-readable>span{display:inline-block;margin-left:5px;color:#9aa8a1;font-size:11px;opacity:0;transform:translateY(-1px);transition:opacity .15s ease}
+
+
+
+.inline-readable:hover,.inline-readable:focus-visible{border-color:#dce3de;background:#fbfcfb;outline:0}
+
+
+
+.inline-readable:hover>span,.inline-readable:focus-visible>span{opacity:1}
+
+
+
+.status-trigger{border:0;border-radius:10px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer}
+
+
+
+.status-trigger.inline-readable:hover,.status-trigger.inline-readable:focus-visible{border-color:#cfd9d2}
+
+
+
+.inline-title-input{display:block;width:min(100%,360px);margin:0 0 4px;border:1px solid #91aa9b;border-radius:5px;background:#fff;color:#1d342f;font:700 18px/1.35 Arial,"PingFang SC","Microsoft YaHei",sans-serif;padding:1px 5px;outline:0}
+
+
+
+.avatar-group-trigger{display:flex;align-items:center;border:1px solid transparent;background:transparent;border-radius:16px;padding:1px;cursor:pointer}
+
+
+
+.avatar-group-trigger:hover,.avatar-group-trigger:focus-visible{border-color:#dce3de;outline:0}
+
+
+
+.avatar-group-trigger i{margin-right:-5px}
+
+
+
+.avatar-group-trigger em{display:grid;place-items:center;width:20px;height:20px;margin-left:4px;border-radius:50%;background:#f2f6f3;color:#557065;font-style:normal;font-size:14px}
+
+
+
+.status-popover{left:0;top:29px}
+
+
+
+.status-popover button{display:flex;align-items:center;gap:7px;width:100%;border:0;border-radius:4px;background:transparent;padding:7px 8px;color:#456055;text-align:left;cursor:pointer}
+
+
+
+.status-popover button:hover{background:#f3f7f4}
+
+
+
+.status-popover i{width:9px;height:9px;border-radius:50%}
+
+
+
+.settings-popover{right:0;top:29px;display:grid;min-width:144px}
+
+
+
+.settings-popover button{border:0;border-radius:4px;background:transparent;padding:7px 8px;color:#456055;text-align:left;font-size:12px;cursor:pointer}
+
+
+
+.settings-popover button:hover{background:#f3f7f4}
+
+
+
+.settings-popover .danger{color:#bf624a}
+
+
+
+.save-status{color:#789084;font-size:11px}
+
+
+
+.settings-trigger{position:relative}
+
+
+
+
+
+.status-popover{min-width:112px;padding:4px}
+
+
+
+.status-popover button{gap:6px;padding:6px 7px;font-size:11px;line-height:1.2}
+
+
+
+.status-popover i{width:8px;height:8px}
+
+
+
+.avatar-group-trigger{width:94px;flex:0 0 94px;justify-content:flex-start}
+
+
+
+.avatar-group-trigger i{flex:0 0 25px!important;width:25px!important;margin:0!important;border:2px solid #fff}
+
+
+
+.avatar-group-trigger i+i{margin-left:-8px!important}
+
+
+
+.avatar-group-trigger em{display:grid;place-items:center;flex:0 0 26px!important;width:26px!important;height:26px!important;margin-left:4px!important;font-size:18px!important;line-height:1}
