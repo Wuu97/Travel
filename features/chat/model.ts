@@ -24,19 +24,21 @@ export function normalizeChatMessage(value: unknown): ChatMessage | null {
     ? raw.parts.map((part) => typeof part === "string" ? part : part && typeof part === "object" && typeof (part as Record<string, unknown>).text === "string" ? (part as Record<string, string>).text : "").join("")
     : "";
   const content = typeof raw.content === "string" ? raw.content : typeof raw.markdown === "string" ? raw.markdown : typeof raw.text === "string" ? raw.text : typeof objectContent?.text === "string" ? objectContent.text : partsContent;
+  const text = typeof objectContent?.text === "string" ? objectContent.text : partsContent;
   return {
     role: raw.role,
-    content,
+    content: typeof content === "string" ? content : text,
     itineraryItems: Array.isArray(raw.itineraryItems) ? raw.itineraryItems as ItineraryItem[] : [],
     expenseItems: Array.isArray(raw.expenseItems) ? raw.expenseItems as ExpenseItem[] : [],
   };
 }
 
 export function normalizeAssistantResponse(value: unknown, fallback: string): ChatMessage {
-  let payload = value;
+  let payload: unknown = value;
   if (typeof payload === "string") {
-    try { payload = JSON.parse(payload); }
-    catch { return { role: "assistant", content: payload, itineraryItems: [], expenseItems: [] }; }
+    const rawPayload = payload;
+    try { payload = JSON.parse(rawPayload); }
+    catch { return { role: "assistant", content: rawPayload, itineraryItems: [], expenseItems: [] }; }
   }
   const message = normalizeChatMessage({ ...(payload && typeof payload === "object" ? payload : {}), role: "assistant" });
   return message && message.content.trim() ? message : { role: "assistant", content: fallback, itineraryItems: [], expenseItems: [] };

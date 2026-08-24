@@ -3,10 +3,10 @@ import type { ItineraryItem } from "../model";
 import { typeColors } from "../utils";
 
 type InlineEdit = { id: string; field: "title" | "note" | "time" | "type"; value: string } | null;
-type Props = { index: number; inlineEdit: InlineEdit; inlineRef: RefObject<HTMLInputElement | HTMLTextAreaElement | null>; isMenuOpen: boolean; menuRef: RefObject<HTMLDivElement | null>; onChangeInline: (edit: InlineEdit) => void; onCopy: (plan: ItineraryItem) => void; onDelete: (id: string) => void; onEdit: (plan: ItineraryItem) => void; onSaveInline: () => void; onToggleMenu: () => void; plan: ItineraryItem };
+type Props = { index: number; inlineEdit: InlineEdit; inlineRef: RefObject<HTMLInputElement | null>; textareaRef: RefObject<HTMLTextAreaElement | null>; isMenuOpen: boolean; menuRef: RefObject<HTMLDivElement | null>; onChangeInline: (edit: InlineEdit) => void; onCopy: (plan: ItineraryItem) => void; onDelete: (id: string) => void; onEdit: (plan: ItineraryItem) => void; onSaveInline: () => void; onToggleMenu: () => void; plan: ItineraryItem };
 const itineraryTypes: ItineraryItem["type"][] = ["景点", "餐饮", "活动", "交通", "住宿", "购物", "其他"];
 
-export function ItineraryCard({ index, inlineEdit, inlineRef, isMenuOpen, menuRef, onChangeInline, onCopy, onDelete, onSaveInline, onToggleMenu, plan }: Props) {
+export function ItineraryCard({ index, inlineEdit, inlineRef, textareaRef, isMenuOpen, menuRef, onChangeInline, onCopy, onDelete, onSaveInline, onToggleMenu, plan }: Props) {
   const [opensUp, setOpensUp] = useState(false);
   const displayTime = plan.time || ["09:30", "11:30", "14:30"][index] || "待定";
   const editingTitle = inlineEdit?.id === plan.id && inlineEdit.field === "title";
@@ -25,7 +25,7 @@ export function ItineraryCard({ index, inlineEdit, inlineRef, isMenuOpen, menuRe
     <select className="type-tag inline-type-select" value={editingType ? inlineEdit.value : plan.type} aria-label="行程类型" onBlur={onSaveInline} onChange={(event) => onChangeInline({ id: plan.id, field: "type", value: event.target.value })} onKeyDown={(event) => { if (event.key === "Escape") onChangeInline(null); }}>{itineraryTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select>
     <div className="plan-content">
       {editingTitle ? <input className="inline-plan-input" ref={inlineRef} value={inlineEdit.value} aria-label="行程名称" onChange={(event) => onChangeInline({ ...inlineEdit, value: event.target.value })} onBlur={onSaveInline} onKeyDown={(event) => { if (event.key === "Enter") onSaveInline(); if (event.key === "Escape") onChangeInline(null); }} /> : <h4><button type="button" className="inline-readable" title="点击编辑行程名称" onClick={() => onChangeInline({ id: plan.id, field: "title", value: plan.title })}>{plan.title}<span aria-hidden="true">✎</span></button></h4>}
-      {editingNote ? <textarea className="inline-plan-note" ref={inlineRef} rows={2} value={inlineEdit.value} aria-label="行程备注" placeholder="添加备注" onChange={(event) => onChangeInline({ ...inlineEdit, value: event.target.value })} onBlur={onSaveInline} onKeyDown={(event) => { if (event.key === "Escape") onChangeInline(null); if ((event.metaKey || event.ctrlKey) && event.key === "Enter") onSaveInline(); }} /> : <p><button type="button" className="inline-readable" title="点击编辑备注" onClick={() => onChangeInline({ id: plan.id, field: "note", value: plan.note || "" })}>{plan.note || "暂无备注"}<span aria-hidden="true">✎</span></button></p>}
+      {editingNote ? <textarea className="inline-plan-note" ref={textareaRef} rows={2} value={inlineEdit.value} aria-label="行程备注" placeholder="添加备注" onChange={(event) => onChangeInline({ ...inlineEdit, value: event.target.value })} onBlur={onSaveInline} onKeyDown={(event) => { if (event.key === "Escape") onChangeInline(null); if ((event.metaKey || event.ctrlKey) && event.key === "Enter") onSaveInline(); }} /> : <p><button type="button" className="inline-readable" title="点击编辑备注" onClick={() => onChangeInline({ id: plan.id, field: "note", value: plan.note || "" })}>{plan.note || "暂无备注"}<span aria-hidden="true">✎</span></button></p>}
       {placeFacts.length > 0 && <div className="place-facts" aria-label="高德地点信息">{placeFacts.map((fact) => <span key={fact}>{fact}</span>)}</div>}
     </div>
     <small className="plan-creator">{plan.creator === "AI" ? "AI 规划" : `${plan.creator || "你"} 添加`}</small>

@@ -5,10 +5,14 @@ export type PlaceInfo = {
   openingHours?: string;
 };
 
+export const itineraryTypes = ["景点", "餐饮", "活动", "交通", "住宿", "购物", "其他"] as const;
+export type ItineraryType = (typeof itineraryTypes)[number];
+export const isItineraryType = (value: unknown): value is ItineraryType => typeof value === "string" && (itineraryTypes as readonly string[]).includes(value);
+
 export type ItineraryItem = {
   id: string;
   title: string;
-  type: "景点" | "餐饮" | "活动" | "交通" | "住宿" | "购物" | "其他";
+  type: ItineraryType;
   day?: number;
   date?: string;
   time?: string;

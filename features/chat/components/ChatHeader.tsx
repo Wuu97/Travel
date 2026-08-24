@@ -1,7 +1,6 @@
 type Props = {
   hasMessages: boolean;
   onExport: () => void;
-  onNewChat: () => void;
   provider: string;
 };
 

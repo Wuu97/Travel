@@ -1,19 +1,22 @@
 import { requireSupabaseUser } from "../../../features/auth/supabase";
-import { normalizeChatMessage, type SavedChat } from "../../../features/chat/model";
+import { normalizeChatMessage, type ChatMessage, type SavedChat } from "../../../features/chat/model";
 import { isShortString } from "../../../features/shared/validation";
 
 type ChatRow = { id: string; title: string; messages: unknown; created_at: number; updated_at: number };
 const MAX_CHAT_MESSAGES = 100;
 const MAX_MESSAGE_LENGTH = 12_000;
-const isChatId = (value: unknown) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value);
-const isTimestamp = (value: unknown) => typeof value === "number" && Number.isFinite(value) && value >= 0;
+const isChatId = (value: unknown): value is string => typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value);
+const isTimestamp = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
 
 function parseMessages(value: unknown): SavedChat["messages"] | null {
   if (!Array.isArray(value) || value.length > MAX_CHAT_MESSAGES) return null;
-  const messages = value.map(normalizeChatMessage);
-  return messages.every((message) => message && message.content.trim() && message.content.length <= MAX_MESSAGE_LENGTH)
-    ? messages
-    : null;
+  const messages: ChatMessage[] = [];
+  for (const rawMessage of value) {
+    const message = normalizeChatMessage(rawMessage);
+    if (!message || !message.content.trim() || message.content.length > MAX_MESSAGE_LENGTH) return null;
+    messages.push(message);
+  }
+  return messages;
 }
 
 function normalizeRow(row: ChatRow): SavedChat | null {
@@ -27,10 +30,11 @@ function parseChat(value: unknown): SavedChat | null {
   if (!value || typeof value !== "object") return null;
   const chat = value as Partial<SavedChat>;
   if (!isChatId(chat.id) || !isShortString(chat.title, 200) || !chat.title.trim()) return null;
+  const { id, title, createdAt, updatedAt } = chat;
   const messages = parseMessages(chat.messages);
   if (!messages) return null;
   const now = Date.now();
-  return { id: chat.id, title: chat.title.trim(), messages, createdAt: isTimestamp(chat.createdAt) ? chat.createdAt : now, updatedAt: isTimestamp(chat.updatedAt) ? chat.updatedAt : now };
+  return { id, title: title.trim(), messages, createdAt: isTimestamp(createdAt) ? createdAt : now, updatedAt: isTimestamp(updatedAt) ? updatedAt : now };
 }
 
 export async function GET(request: Request) {

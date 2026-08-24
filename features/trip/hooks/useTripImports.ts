@@ -8,7 +8,9 @@ type Options = { budgetItems: ExpenseItem[]; expenses: LedgerItem[]; plans: Itin
 /** Applies structured AI recommendations with stable, user-visible de-duplication rules. */
 export function useTripImports({ budgetItems, expenses, plans, setBudgetItems, setExpenses, setPlans }: Options) {
   const isPlanAdded = (item: ItineraryItem) => plans.some((plan) => plan.id === item.id || plan.title.trim() === item.title.trim());
-  const isExpenseAdded = (item: ExpenseItem, destination: "budget" | "ledger") => (destination === "budget" ? budgetItems : expenses).some((existing) => destination === "budget" ? existing.id === item.id || (existing.title === item.title && existing.amount === item.amount) : existing.id === item.id || (existing.item === item.title && existing.amount === item.amount));
+  const isExpenseAdded = (item: ExpenseItem, destination: "budget" | "ledger") => destination === "budget"
+    ? budgetItems.some((existing) => existing.id === item.id || (existing.title === item.title && existing.amount === item.amount))
+    : expenses.some((existing) => existing.id === item.id || (existing.item === item.title && existing.amount === item.amount));
   const addItineraryItems = (items: ItineraryItem[]) => setPlans((current) => sortItineraryItems([...current, ...items.filter((item) => !current.some((plan) => plan.id === item.id || plan.title.trim() === item.title.trim())).map((item) => ({ ...item, creator: item.creator || "AI" }))]));
   const addExpenseItems = (items: ExpenseItem[], destination: "budget" | "ledger") => {
     if (destination === "budget") {

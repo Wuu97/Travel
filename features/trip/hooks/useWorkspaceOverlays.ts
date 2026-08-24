@@ -4,8 +4,10 @@ import { useOutsideClick } from "../../shared/hooks/useOutsideClick";
 type Options = {
   editingMemberRole: string | null;
   historyOpen: boolean;
-  inlineEditorRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
-  inlinePlanEdit: unknown | null;
+  inlineTitleInputRef: React.RefObject<HTMLInputElement | null>;
+  inlinePlanInputRef: React.RefObject<HTMLInputElement | null>;
+  inlinePlanTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  inlinePlanEdit: { field: "title" | "note" | "time" | "type" } | null;
   inlineTripTitle: string | null;
   memberRoleRef: React.RefObject<HTMLDivElement | null>;
   onCloseHistory: () => void;
@@ -21,14 +23,14 @@ type Options = {
 
 /** Centralizes ephemeral popover dismissal and inline-editor focus management. */
 export function useWorkspaceOverlays(options: Options) {
-  const { editingMemberRole, historyOpen, historyPanelRef, inlineEditorRef, inlinePlanEdit, inlineTripTitle, memberRoleRef, onCloseHistory, onCloseMemberRole, onClosePlanMenu, onCloseTripPopover, openPlanMenuId, planMenuRef, tripPopover, tripPopoverRef } = options;
+  const { editingMemberRole, historyOpen, historyPanelRef, inlineTitleInputRef, inlinePlanInputRef, inlinePlanTextareaRef, inlinePlanEdit, inlineTripTitle, memberRoleRef, onCloseHistory, onCloseMemberRole, onClosePlanMenu, onCloseTripPopover, openPlanMenuId, planMenuRef, tripPopover, tripPopoverRef } = options;
   useOutsideClick(historyPanelRef, historyOpen, onCloseHistory);
   useOutsideClick(planMenuRef, Boolean(openPlanMenuId), onClosePlanMenu);
   useOutsideClick(tripPopoverRef, Boolean(tripPopover), onCloseTripPopover);
   useOutsideClick(memberRoleRef, Boolean(editingMemberRole), onCloseMemberRole);
   useEffect(() => {
     if (inlineTripTitle === null && !inlinePlanEdit) return;
-    const frame = requestAnimationFrame(() => inlineEditorRef.current?.focus());
+    const frame = requestAnimationFrame(() => (inlineTripTitle !== null ? inlineTitleInputRef : inlinePlanEdit?.field === "note" ? inlinePlanTextareaRef : inlinePlanInputRef).current?.focus());
     return () => cancelAnimationFrame(frame);
-  }, [inlineEditorRef, inlinePlanEdit, inlineTripTitle]);
+  }, [inlinePlanInputRef, inlinePlanTextareaRef, inlinePlanEdit, inlineTitleInputRef, inlineTripTitle]);
 }

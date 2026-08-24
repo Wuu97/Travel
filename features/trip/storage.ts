@@ -36,8 +36,8 @@ export function loadTripDetails(fallback: TripDetails, tripId?: string): TripDet
     const memberRoles = value.memberRoles && typeof value.memberRoles === "object"
       ? companions.reduce<Record<string, "协作者" | "同行人">>((roles, companion) => {
           const role = value.memberRoles?.[companion];
-          if (role === "协作者" || role === "编辑者") roles[companion] = "协作者";
-          if (role === "同行人" || role === "查看者") roles[companion] = "同行人";
+          if (role === "协作者") roles[companion] = "协作者";
+          if (role === "同行人") roles[companion] = "同行人";
           return roles;
         }, {})
       : undefined;

@@ -2,6 +2,8 @@ import { requireSupabaseUser } from "../../../features/auth/supabase";
 import { isStoredTrip } from "../../../features/trip/snapshotValidation";
 import { getTripId } from "../../../features/trip/tripId";
 
+const isVersion = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value) && value >= 1;
+
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const INVITE_TOKEN_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const invalidTripId = () => Response.json({ error: "行程 ID 格式无效。" }, { status: 400 });
@@ -23,7 +25,7 @@ export async function PUT(request: Request) {
   const context = await requireSupabaseUser(request, "请先登录后访问共享行程。");
   if ("error" in context) return context.error;
   const body = await request.json().catch(() => null) as { trip?: unknown; version?: unknown } | null;
-  if (!body || !isStoredTrip(body.trip) || (body.version !== undefined && (!Number.isInteger(body.version) || body.version < 1))) return Response.json({ error: "行程数据或版本号无效。" }, { status: 400 });
+  if (!body || !isStoredTrip(body.trip) || (body.version !== undefined && !isVersion(body.version))) return Response.json({ error: "行程数据或版本号无效。" }, { status: 400 });
   const id = getTripId(request);
   if (!id) return invalidTripId();
   const updatedAt = Date.now();

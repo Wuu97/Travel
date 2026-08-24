@@ -33,7 +33,7 @@ export async function requireSupabaseUser(request: Request, unauthorizedMessage:
   const accessToken = getBearerAccessToken(request);
   const client = accessToken ? createSupabaseServerClient(accessToken) : null;
   if (!client) return { error: Response.json({ error: "Supabase 云端服务尚未配置。" }, { status: 503 }) };
-  const { data, error } = await client.auth.getUser(accessToken);
+  const { data, error } = await client.auth.getUser(accessToken ?? undefined);
   if (error || !data.user) return { error: Response.json({ error: unauthorizedMessage }, { status: 401 }) };
   return { client, userId: data.user.id };
 }

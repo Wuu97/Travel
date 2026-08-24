@@ -93,7 +93,7 @@ export const parseTimeNumber = (value: string) => {
     return (digits[value[0]] || 0) * 10 + (digits[value[2]] || 0);
   return digits[value] || 0;
 };
-export const parsePlanInput = (input: string) => {
+export const parsePlanInput = (input: string): Pick<ItineraryItem, "title" | "time" | "type" | "note"> => {
   const value = input.trim();
   const type = classifyItinerary(value);
   const match = value.match(
@@ -144,7 +144,7 @@ export const planTimeValue = (plan: ItineraryItem) => {
 };
 
 export const sortItineraryItems = (plans: ItineraryItem[]) =>
-  plans.map((plan) => plan.type === "其他" && classifyItinerary(plan.title) === "餐饮" ? { ...plan, type: "餐饮" } : plan).sort(
+  plans.map((plan): ItineraryItem => plan.type === "其他" && classifyItinerary(plan.title) === "餐饮" ? { ...plan, type: "餐饮" } : plan).sort(
     (first, second) =>
       (first.day ?? 1) - (second.day ?? 1) ||
       planTimeValue(first) - planTimeValue(second),
