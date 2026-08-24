@@ -6,6 +6,7 @@ import { useSupabaseAuth } from "../../auth/useSupabaseAuth";
 import { AuthControl } from "../../auth/components/AuthControl";
 import { createTripImportRenderer } from "../../chat/components/TripImportRenderer";
 import { useTravelChat } from "../../chat/hooks/useTravelChat";
+import { useChatHistoryOverlay } from "../../chat/hooks/useChatHistoryOverlay";
 import { TravelDiscoverySections } from "../../landing/components/TravelDiscoverySections";
 import { SiteFooter } from "../../landing/components/SiteFooter";
 import { useAnchorNavigation } from "../../navigation/hooks/useAnchorNavigation";
@@ -18,15 +19,13 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
   const { active, from, notice, search, setActive, setFrom, setNotice, setTo, to } = useTravelSearch();
   const jumpTo = useAnchorNavigation();
   const chat = useTravelChat({ accessToken: auth.accessToken, authReady: auth.ready, enabled: loadPersistedState });
+  useChatHistoryOverlay(chat.historyOpen, chat.historyPanelRef, chat.setHistoryOpen);
   const workspace = useTripWorkspaceController({
     accessToken: auth.accessToken,
     authReady: auth.ready,
     chatMessages: chat.chatMessages,
-    historyOpen: chat.historyOpen,
-    historyPanelRef: chat.historyPanelRef,
     loadPersistedState,
     newChat: chat.newChat,
-    setHistoryOpen: chat.setHistoryOpen,
     setQuestion: chat.setQuestion,
   });
   const renderImportPanel = createTripImportRenderer({
