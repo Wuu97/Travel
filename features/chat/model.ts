@@ -1,10 +1,18 @@
 import type { ExpenseItem, ItineraryItem } from "../trip/model";
 
+export type RichPlace = { name: string; category?: string; area?: string; description?: string; rating?: string | number; reviewCount?: string; price?: string; openingHours?: string; recommendedDuration?: string; imageUrl?: string; itineraryItem?: ItineraryItem };
+export type RichRestaurant = { name: string; cuisine?: string; area?: string; description?: string; rating?: string | number; reviewCount?: string; averagePrice?: string; openingHours?: string; recommendedDishes?: string[]; imageUrl?: string; itineraryItem?: ItineraryItem };
+export type RichRoute = { from?: string; to?: string; mode?: string; duration?: string; distance?: string; cost?: string; description?: string; itineraryItem?: ItineraryItem };
+export type RichCost = { label: string; amount: string; note?: string; total?: string; perPerson?: string };
+export type RichImage = { url: string; alt?: string };
+export type RichContent = { places?: RichPlace[]; restaurants?: RichRestaurant[]; routes?: RichRoute[]; costs?: RichCost[]; images?: RichImage[] };
+
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   itineraryItems?: ItineraryItem[];
   expenseItems?: ExpenseItem[];
+  richContent?: RichContent;
 };
 
 export type SavedChat = {
@@ -30,6 +38,7 @@ export function normalizeChatMessage(value: unknown): ChatMessage | null {
     content: typeof content === "string" ? content : text,
     itineraryItems: Array.isArray(raw.itineraryItems) ? raw.itineraryItems as ItineraryItem[] : [],
     expenseItems: Array.isArray(raw.expenseItems) ? raw.expenseItems as ExpenseItem[] : [],
+    richContent: raw.richContent && typeof raw.richContent === "object" ? raw.richContent as RichContent : undefined,
   };
 }
 
