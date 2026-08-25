@@ -145,7 +145,7 @@ body{margin:0;background:var(--color-canvas);color:var(--color-text-primary);fon
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}
 
 button{transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease}
-button:disabled{cursor:not-allowed!important;opacity:.6}
+button:disabled{cursor:not-allowed;opacity:.6}
 
 
 

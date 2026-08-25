@@ -106,7 +106,7 @@
 
 
 
-.timeline .type-tag{display:inline-flex;align-items:center;width:max-content;color:var(--type-color);background:var(--type-tint);border-radius:10px;padding:3px 7px;font-weight:600}
+.timeline .type-tag{display:inline-flex;align-items:center;width:max-content;color:var(--type-color);background:var(--type-tint);border-radius:var(--radius-sm);padding:3px 7px;font-weight:600}
 
 
 
@@ -205,11 +205,13 @@
 
 
 
-.plan-menu-popover button:hover{background:#f1f6f2}
+.plan-menu-popover button:not(.danger):hover{background:#f1f6f2}
 
 
 
 .plan-menu-popover .danger{color:var(--color-danger-action)}
+
+.plan-menu-popover .danger:hover,.plan-menu-popover .danger:focus-visible{background:var(--color-danger-soft);color:var(--color-danger)}
 
 
 
@@ -320,7 +322,7 @@
 
 
 
-.empty-budget{font-size:var(--font-size-xs);color:#8a9b91;line-height:1.55;margin:13px 0 4px}
+.empty-budget{font-size:var(--font-size-xs);color:var(--color-text-muted);line-height:1.55;margin:13px 0 4px}
 
 
 
@@ -1136,7 +1138,7 @@
 
 
 
-.trip-library-heading button:hover{background:#e97843;color:var(--color-surface)}
+.trip-library-heading button:hover{background:var(--color-brand-hover);color:var(--color-surface)}
 
 
 
@@ -3167,7 +3169,7 @@
 
 
 
-.status-trigger{border:0;border-radius:10px;padding:4px 8px;font-size:var(--font-size-xs);font-weight:700;cursor:pointer}
+.status-trigger{display:inline-flex;align-items:center;min-height:22px;border:0;border-radius:var(--radius-sm);padding:4px 8px;font-size:var(--font-size-xs);font-weight:600;line-height:1.2;cursor:pointer}
 
 
 
