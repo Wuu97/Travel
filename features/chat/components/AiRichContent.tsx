@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- Rich content accepts optional remote URLs and degrades to text-only on image errors. */
 import type { ItineraryItem } from "../../trip/model";
 import type { RichContent, RichPlace, RichRestaurant, RichRoute, RichCostItem } from "../model";
+import { TravelImageGallery, type GalleryImage } from "./TravelImageGallery";
 
 type Props = { content?: RichContent; isPlanAdded: (item: ItineraryItem) => boolean; onAddItineraries: (items: ItineraryItem[]) => void };
 
@@ -16,9 +17,9 @@ function Card({ item, kind, isPlanAdded, onAddItineraries }: { item: RichPlace |
   const meta = kind === "place" ? [place.category, place.area].filter(Boolean).join(" · ") : [restaurant.cuisine, restaurant.area].filter(Boolean).join(" · ");
   const price = kind === "place" ? place.price : restaurant.averagePrice;
   const dishes = kind === "restaurant" ? (item as RichRestaurant).recommendedDishes?.slice(0, 4) : undefined;
-  const heroImage = item.images?.[0]?.url ?? item.imageUrl;
+  const galleryImages: GalleryImage[] = item.images?.length ? item.images.slice(0, 5) : item.imageUrl ? [{ url: item.imageUrl }] : [];
   return <article className="rich-card">
-    {heroImage && <img src={heroImage} alt={item.name} loading="lazy" onError={(event) => { event.currentTarget.hidden = true; }} />}
+    <TravelImageGallery images={galleryImages} name={item.name} />
     <div className="rich-card-body"><div className="rich-card-title"><b>{item.name}</b>{item.rating !== undefined && <span>★ {item.rating}{item.reviewCount ? ` · ${item.reviewCount}` : ""}</span>}</div>{meta && <small>{meta}</small>}{item.description && <p>{item.description}</p>}{dishes?.length && <div className="rich-card-tags">{dishes.map((dish) => <em key={dish}>{dish}</em>)}</div>}<div className="rich-card-facts">{price && <span>{price}</span>}{item.openingHours && <span>{item.openingHours}</span>}{kind === "place" && place.recommendedDuration && <span>{place.recommendedDuration}</span>}</div><ImportAction item={item.itineraryItem} isPlanAdded={isPlanAdded} onAddItineraries={onAddItineraries} /></div>
   </article>;
 }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -13,6 +13,18 @@ const sources = [
   "features/ai/providers/amap/client.ts", "features/ai/providers/amap/index.ts", "features/ai/providers/amap/mapper.ts", "features/ai/providers/amap/places.ts", "features/ai/providers/amap/restaurants.ts", "features/ai/providers/amap/routes.ts", "features/ai/providers/amap/types.ts", "features/ai/providers/types.ts",
   "features/ai/tools/executor.ts", "features/ai/tools/places.ts", "features/ai/tools/restaurants.ts", "features/ai/tools/routes.ts", "features/ai/tools/types.ts", "features/ai/schemas/context.ts", "features/ai/schemas/dataRequests.ts", "features/ai/schemas/response.ts", "features/chat/model.ts", "features/chat/requestValidation.ts", "features/shared/validation.ts", "features/trip/model.ts",
 ];
+
+test("keeps entity image gallery controls bounded and accessible", async () => {
+  const source = await readFile(new URL("../features/chat/components/TravelImageGallery.tsx", import.meta.url), "utf8");
+  assert.match(source, /images\.slice\(0, 5\)/);
+  assert.match(source, /loading="lazy"/);
+  assert.match(source, /aria-label="上一张图片"/);
+  assert.match(source, /aria-label="下一张图片"/);
+  assert.match(source, /galleryNextIndex/);
+  assert.match(source, /galleryPreviousIndex/);
+  assert.match(source, /setFailedState/);
+  assert.match(source, /if \(!availableImages\.length\) return null/);
+});
 
 test("does not re-query Amap when verified tool places enter the image pipeline", async () => {
   const output = await mkdtemp(join(tmpdir(), "travel-verified-images-"));
