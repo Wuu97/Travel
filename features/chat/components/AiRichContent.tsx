@@ -16,8 +16,9 @@ function Card({ item, kind, isPlanAdded, onAddItineraries }: { item: RichPlace |
   const meta = kind === "place" ? [place.category, place.area].filter(Boolean).join(" · ") : [restaurant.cuisine, restaurant.area].filter(Boolean).join(" · ");
   const price = kind === "place" ? place.price : restaurant.averagePrice;
   const dishes = kind === "restaurant" ? (item as RichRestaurant).recommendedDishes?.slice(0, 4) : undefined;
+  const heroImage = item.images?.[0]?.url ?? item.imageUrl;
   return <article className="rich-card">
-    {item.imageUrl && <img src={item.imageUrl} alt={item.name} onError={(event) => { event.currentTarget.hidden = true; }} />}
+    {heroImage && <img src={heroImage} alt={item.name} loading="lazy" onError={(event) => { event.currentTarget.hidden = true; }} />}
     <div className="rich-card-body"><div className="rich-card-title"><b>{item.name}</b>{item.rating !== undefined && <span>★ {item.rating}{item.reviewCount ? ` · ${item.reviewCount}` : ""}</span>}</div>{meta && <small>{meta}</small>}{item.description && <p>{item.description}</p>}{dishes?.length && <div className="rich-card-tags">{dishes.map((dish) => <em key={dish}>{dish}</em>)}</div>}<div className="rich-card-facts">{price && <span>{price}</span>}{item.openingHours && <span>{item.openingHours}</span>}{kind === "place" && place.recommendedDuration && <span>{place.recommendedDuration}</span>}</div><ImportAction item={item.itineraryItem} isPlanAdded={isPlanAdded} onAddItineraries={onAddItineraries} /></div>
   </article>;
 }

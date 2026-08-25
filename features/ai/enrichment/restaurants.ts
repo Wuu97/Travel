@@ -27,7 +27,7 @@ export function travelRestaurantToRichRestaurant(restaurant: TravelRestaurant, m
     ...(averagePrice(restaurant) ? { averagePrice: averagePrice(restaurant) } : {}),
     ...(openingHours(restaurant.openingHours) ? { openingHours: openingHours(restaurant.openingHours) } : {}),
     ...(restaurant.recommendedDishes?.length ? { recommendedDishes: restaurant.recommendedDishes } : {}),
-    ...(text(restaurant.images?.[0]?.url) ? { imageUrl: text(restaurant.images?.[0]?.url) } : {}),
+    ...(restaurant.images?.length ? { images: restaurant.images, imageUrl: restaurant.images[0].url } : {}),
     ...(text(meta.description) ? { description: text(meta.description) } : {}),
     ...(meta.itineraryItem ? { itineraryItem: meta.itineraryItem } : {}),
   };

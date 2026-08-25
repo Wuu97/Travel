@@ -22,7 +22,7 @@ export function travelPlaceToRichPlace(place: TravelPlace, meta: PlaceRecommenda
     ...(Number.isFinite(place.reviewCount) ? { reviewCount: String(place.reviewCount) } : {}),
     ...(text(place.priceText) ? { price: text(place.priceText) } : {}),
     ...(openingHours(place.openingHours) ? { openingHours: openingHours(place.openingHours) } : {}),
-    ...(text(place.images?.[0]?.url) ? { imageUrl: text(place.images?.[0]?.url) } : {}),
+    ...(place.images?.length ? { images: place.images, imageUrl: place.images[0].url } : {}),
     ...(text(meta.description) ? { description: text(meta.description) } : {}),
     ...(text(meta.recommendedDuration) ? { recommendedDuration: text(meta.recommendedDuration) } : {}),
     ...(meta.itineraryItem ? { itineraryItem: meta.itineraryItem } : {}),

@@ -1,7 +1,9 @@
 import { isItineraryType, type ExpenseItem, type ItineraryItem } from "../trip/model";
+import type { TravelImage } from "../ai/image/types";
+import { normalizeTravelImages } from "../ai/image/normalization";
 
-export type RichPlace = { name: string; category?: string; area?: string; description?: string; rating?: string | number; reviewCount?: string; price?: string; openingHours?: string; recommendedDuration?: string; imageUrl?: string; itineraryItem?: ItineraryItem };
-export type RichRestaurant = { name: string; cuisine?: string; area?: string; description?: string; rating?: string | number; reviewCount?: string; averagePrice?: string; openingHours?: string; recommendedDishes?: string[]; imageUrl?: string; itineraryItem?: ItineraryItem };
+export type RichPlace = { name: string; category?: string; area?: string; description?: string; rating?: string | number; reviewCount?: string; price?: string; openingHours?: string; recommendedDuration?: string; imageUrl?: string; images?: TravelImage[]; itineraryItem?: ItineraryItem };
+export type RichRestaurant = { name: string; cuisine?: string; area?: string; description?: string; rating?: string | number; reviewCount?: string; averagePrice?: string; openingHours?: string; recommendedDishes?: string[]; imageUrl?: string; images?: TravelImage[]; itineraryItem?: ItineraryItem };
 export type RichRoute = { from?: string; to?: string; mode?: string; duration?: string; distance?: string; cost?: string; description?: string; itineraryItem?: ItineraryItem };
 export type RichCostItem = { label: string; amount: string; note?: string };
 export type RichCostSummary = { items: RichCostItem[]; total?: string; perPerson?: string };
@@ -16,7 +18,14 @@ const dedupe = <T>(items: T[], key: (item: T) => string, limit: number) => items
 const imageUrl = (value: unknown) => { const url = text(value); return url && /^(https?:|blob:|\/data\/)/i.test(url) ? url : undefined; };
 const itineraryItem = (value: unknown): ItineraryItem | undefined => { const item = asRecord(value); const title = text(item?.title); const type = item?.type; if (!title || !isItineraryType(type)) return undefined; return { id: text(item?.id) || `rich-${title}-${type}`, title, type, day: typeof item?.day === "number" ? item.day : undefined, date: text(item?.date), time: text(item?.time), location: text(item?.location), note: text(item?.note), creator: text(item?.creator) }; };
 const dishes = (value: unknown) => dedupe(list(value).map(text).filter((item): item is string => Boolean(item)), (item) => item.toLowerCase(), 8);
-const common = (raw: Record<string, unknown>) => ({ area: text(raw.area), description: text(raw.description), rating: display(raw.rating), reviewCount: display(raw.reviewCount), openingHours: text(raw.openingHours), imageUrl: imageUrl(raw.imageUrl), itineraryItem: itineraryItem(raw.itineraryItem) });
+const providerImages = (value: unknown) => Array.isArray(value) ? normalizeTravelImages(value.map((item) => {
+  const image = asRecord(item);
+  return { url: image?.url, alt: image?.alt };
+})) : undefined;
+const common = (raw: Record<string, unknown>) => {
+  const images = providerImages(raw.images);
+  return { area: text(raw.area), description: text(raw.description), rating: display(raw.rating), reviewCount: display(raw.reviewCount), openingHours: text(raw.openingHours), ...(images?.length ? { images, imageUrl: images[0].url } : { imageUrl: imageUrl(raw.imageUrl) }), itineraryItem: itineraryItem(raw.itineraryItem) };
+};
 
 export function normalizeRichContent(value: unknown): RichContent | undefined {
   const raw = asRecord(value); if (!raw) return undefined;

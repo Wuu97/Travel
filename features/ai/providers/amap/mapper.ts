@@ -1,7 +1,6 @@
+import { normalizeTravelImages } from "../../image/normalization";
 import type { TravelImage, TravelPlace, TravelRestaurant } from "../../tools/types";
 import type { AmapPoi } from "./types";
-
-const MAX_PHOTOS = 5;
 
 function text(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
@@ -25,11 +24,7 @@ function openingHours(poi: AmapPoi): string[] | undefined {
 }
 
 function images(poi: AmapPoi): TravelImage[] | undefined {
-  const mapped = (Array.isArray(poi.photos) ? poi.photos : []).flatMap((photo) => {
-    const url = text(photo?.url);
-    return url ? [{ url, ...(text(photo.title) ? { alt: text(photo.title) } : {}), source: "amap" }] : [];
-  }).slice(0, MAX_PHOTOS);
-  return mapped.length ? mapped : undefined;
+  return normalizeTravelImages((Array.isArray(poi.photos) ? poi.photos : []).map((photo) => ({ url: photo?.url, alt: photo?.title })));
 }
 
 function commonPoiFields(poi: AmapPoi) {

@@ -8,10 +8,36 @@ import test from "node:test";
 
 const execFileAsync = promisify(execFile);
 const sources = [
+  "features/ai/image/types.ts", "features/ai/image/normalization.ts",
   "features/ai/core/client.ts", "features/ai/core/parser.ts", "features/ai/core/toolResultReasoning.ts", "features/ai/enrichment/enrichReply.ts", "features/ai/enrichment/matching.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
   "features/ai/providers/amap/client.ts", "features/ai/providers/amap/index.ts", "features/ai/providers/amap/mapper.ts", "features/ai/providers/amap/places.ts", "features/ai/providers/amap/restaurants.ts", "features/ai/providers/amap/routes.ts", "features/ai/providers/amap/types.ts", "features/ai/providers/types.ts",
   "features/ai/tools/executor.ts", "features/ai/tools/places.ts", "features/ai/tools/restaurants.ts", "features/ai/tools/routes.ts", "features/ai/tools/types.ts", "features/ai/schemas/context.ts", "features/ai/schemas/dataRequests.ts", "features/ai/schemas/response.ts", "features/chat/model.ts", "features/chat/requestValidation.ts", "features/shared/validation.ts", "features/trip/model.ts",
 ];
+
+test("normalizes provider photos safely and carries them into rich place and restaurant cards", async () => {
+  const output = await mkdtemp(join(tmpdir(), "travel-images-"));
+  try {
+    await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
+    const { mapAmapPoiToTravelPlace, mapAmapPoiToTravelRestaurant } = await import(new URL(`file://${join(output, "ai/providers/amap/mapper.js")}`).href);
+    const { travelPlaceToRichPlace } = await import(new URL(`file://${join(output, "ai/enrichment/places.js")}`).href);
+    const { travelRestaurantToRichRestaurant } = await import(new URL(`file://${join(output, "ai/enrichment/restaurants.js")}`).href);
+    const photos = [
+      { url: " https://images.example/A.jpg ", title: "A" }, { url: "https://images.example/B.jpg" }, { url: "https://images.example/A.jpg" },
+      { url: "javascript:alert(1)" }, { url: "data:image/png;base64,abc" }, { url: "file:///secret" }, { url: "blob:https://example.com/id" },
+      ...Array.from({ length: 7 }, (_, index) => ({ url: `https://images.example/${index}.jpg` })),
+    ];
+    const poi = { id: "poi-1", name: "测试地点", photos };
+    const place = mapAmapPoiToTravelPlace(poi);
+    const restaurant = mapAmapPoiToTravelRestaurant(poi);
+    assert.equal(place?.images?.length, 5);
+    assert.deepEqual(place?.images?.map((image) => image.url), ["https://images.example/A.jpg", "https://images.example/B.jpg", "https://images.example/0.jpg", "https://images.example/1.jpg", "https://images.example/2.jpg"]);
+    assert.ok(place?.images?.every((image) => image.source === "provider"));
+    assert.equal(travelPlaceToRichPlace(place ?? { id: "none", name: "none" })?.imageUrl, "https://images.example/A.jpg");
+    assert.deepEqual(travelPlaceToRichPlace(place ?? { id: "none", name: "none" })?.images, place?.images);
+    assert.equal(travelRestaurantToRichRestaurant(restaurant ?? { id: "none", name: "none" })?.imageUrl, "https://images.example/A.jpg");
+    assert.deepEqual(travelRestaurantToRichRestaurant(restaurant ?? { id: "none", name: "none" })?.images, restaurant?.images);
+  } finally { await rm(output, { recursive: true, force: true }); }
+});
 
 test("only verifies exact or strong POI name matches", async () => {
   const output = await mkdtemp(join(tmpdir(), "travel-matching-"));

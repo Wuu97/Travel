@@ -55,11 +55,26 @@ export function parseAiReply(content: string): AiReply {
     const parsed = payload as Record<string, unknown>;
     const answer = typeof parsed.answer === "string" && parsed.answer.trim() ? parsed.answer : typeof parsed.content === "string" && parsed.content.trim() ? parsed.content : "";
     const dataRequests = parseDataRequests(parsed.dataRequests);
-    if (answer) return {
+    if (answer) {
+      // Provider photos are presentation data. The model may retain legacy imageUrl
+      // fields, but cannot introduce a provider image collection.
+      const richContent = parsed.richContent && typeof parsed.richContent === "object" ? { ...(parsed.richContent as Record<string, unknown>) } : undefined;
+      if (richContent) {
+        for (const collection of ["places", "restaurants"]) {
+          if (Array.isArray(richContent[collection])) richContent[collection] = richContent[collection].map((item) => {
+            if (!item || typeof item !== "object" || Array.isArray(item)) return item;
+            const candidate = { ...(item as Record<string, unknown>) };
+            delete candidate.images;
+            return candidate;
+          });
+        }
+      }
+      return {
       content: answer.trim().replace(/\\n/g, "\n"),
-      ...(parsed.richContent && typeof parsed.richContent === "object" ? { richContent: parsed.richContent } : {}),
+      ...(richContent ? { richContent } : {}),
       itineraryItems: parseItineraryItems(parsed.itineraryItems), expenseItems: parseExpenseItems(parsed.expenseItems), ...(dataRequests.length ? { dataRequests } : {}),
-    };
+      };
+    }
   }
   const payloadMarker = normalized.search(/[,\n]\s*"(?:richContent|dataRequests|itineraryItems|expenseItems)"\s*:/);
   const visibleText = (payloadMarker >= 0 ? normalized.slice(0, payloadMarker) : normalized)

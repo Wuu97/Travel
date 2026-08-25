@@ -1,8 +1,6 @@
-export type TravelImage = {
-  url: string;
-  alt?: string;
-  source?: string;
-};
+import type { TravelImage } from "../image/types";
+
+export type { TravelImage } from "../image/types";
 
 export type TravelDataSource = {
   provider: string;
