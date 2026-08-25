@@ -1,0 +1,41 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { aiTestSources, compileTypeScript } from "./helpers/compile-typescript.mjs";
+
+test("keeps legacy context compatible and accepts complete current-trip context", async () => {
+  const compilation = await compileTypeScript(aiTestSources, "travel-context-");
+  try {
+    const { normalizeTravelContext, formatTravelContext } = await compilation.importModule("ai/schemas/context.js");
+    const { TRAVEL_CONTEXT_PROMPT } = await compilation.importModule("ai/core/prompt.js");
+    const legacy = normalizeTravelContext({ city: "成都" });
+    assert.deepEqual(legacy, { city: "成都", destination: undefined, region: undefined });
+
+    const context = normalizeTravelContext({ destination: "北疆", trip: { days: 10, travelers: 2, transportMode: "self_drive" } });
+    assert.equal(context.trip.days, 10);
+    assert.equal(context.trip.travelers, 2);
+    assert.equal(context.trip.transportMode, "self_drive");
+    const formatted = formatTravelContext(context);
+    assert.match(formatted, /10天/);
+    assert.match(formatted, /2人/);
+    assert.match(formatted, /自驾/);
+    assert.match(`${TRAVEL_CONTEXT_PROMPT}\n${formatted}`, /当前旅行信息/);
+  } finally { await compilation.cleanup(); }
+});
+
+test("keeps the response schema unchanged when trip context is available", async () => {
+  const compilation = await compileTypeScript(aiTestSources, "travel-context-response-");
+  try {
+    const { parseAiReply } = await compilation.importModule("ai/core/parser.js");
+    const reply = parseAiReply(JSON.stringify({ answer: "北疆建议", richContent: { places: [{ name: "喀纳斯" }] }, itineraryItems: [], expenseItems: [], dataRequests: [{ type: "place_lookup", query: "喀纳斯" }] }));
+    assert.deepEqual(Object.keys(reply).sort(), ["content", "dataRequests", "expenseItems", "itineraryItems", "richContent"]);
+  } finally { await compilation.cleanup(); }
+});
+
+test("prefers structured trip days for answer budget and keeps no-context requests working", async () => {
+  const compilation = await compileTypeScript(aiTestSources, "travel-context-budget-");
+  try {
+    const { ANSWER_BUDGET, getAnswerBudget } = await compilation.importModule("ai/core/answerBudget.js");
+    assert.equal(getAnswerBudget({ message: "帮我规划北疆", context: { trip: { days: 10 } } }), ANSWER_BUDGET.longTrip);
+    assert.equal(getAnswerBudget({ message: "成都怎么玩" }), ANSWER_BUDGET.guide);
+  } finally { await compilation.cleanup(); }
+});

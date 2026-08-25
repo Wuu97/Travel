@@ -9,6 +9,9 @@ const simple = /(?:几月份|什么时候|天气|值得去吗|是什么|在哪�
 
 export function getAnswerBudget(input: { message: string; context?: TravelContext }): number {
   const message = input.message.trim();
+  const tripDays = input.context?.trip?.days;
+  if (tripDays && tripDays >= 7) return ANSWER_BUDGET.longTrip;
+  if (tripDays && tripDays >= 2) return ANSWER_BUDGET.shortTrip;
   if (longTrip.test(message)) return ANSWER_BUDGET.longTrip;
   if (shortTrip.test(message)) return ANSWER_BUDGET.shortTrip;
   if (simple.test(message)) return ANSWER_BUDGET.simple;

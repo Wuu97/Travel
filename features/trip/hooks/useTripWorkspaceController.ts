@@ -349,5 +349,19 @@ export function useTripWorkspaceController({
     toggleImport,
   };
 
-  return { syncError, workspaceProps, importContext, travelContext: tripDestination ? { city: tripDestination, destination: tripDestination } : undefined };
+  return {
+    syncError,
+    workspaceProps,
+    importContext,
+    travelContext: tripDestination ? {
+      city: tripDestination,
+      destination: tripDestination,
+      trip: {
+        days: tripDays.length,
+        startDate: tripDetails.startDate,
+        endDate: tripDetails.endDate,
+        travelers: tripDetails.companions.length,
+      },
+    } : undefined,
+  };
 }

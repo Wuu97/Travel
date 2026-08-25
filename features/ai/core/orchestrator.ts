@@ -1,9 +1,9 @@
 import { requestLlmCompletion, type LlmMessage } from "./client";
 import { getAnswerBudget } from "./answerBudget";
 import { parseAiReply } from "./parser";
-import { TRAVEL_DATA_REQUESTS_PROMPT, TRAVEL_SYSTEM_PROMPT } from "./prompt";
+import { TRAVEL_CONTEXT_PROMPT, TRAVEL_DATA_REQUESTS_PROMPT, TRAVEL_SYSTEM_PROMPT } from "./prompt";
 import { mergeExecutedTravelData } from "../enrichment/richContent";
-import type { TravelContext } from "../schemas/context";
+import { formatTravelContext, type TravelContext } from "../schemas/context";
 import type { AiReply } from "../schemas/response";
 import { executeDataRequests } from "../tools/executor";
 import { reasonOverToolResults } from "./toolResultReasoning";
@@ -19,9 +19,11 @@ export type AiRequest = {
 };
 
 export async function requestTravelAdvice({ context, history, message, travelContext }: AiRequest): Promise<AiReply> {
+  const formattedTravelContext = formatTravelContext(travelContext);
   const messages: LlmMessage[] = [
     { role: "system", content: TRAVEL_SYSTEM_PROMPT },
     { role: "system", content: TRAVEL_DATA_REQUESTS_PROMPT },
+    ...(formattedTravelContext ? [{ role: "system" as const, content: `${TRAVEL_CONTEXT_PROMPT}\n\n${formattedTravelContext}` }] : []),
     ...(context ? [{ role: "system" as const, content: `仅在问题与当前行程相关时参考：${context}` }] : []),
     ...history,
     { role: "user", content: message },
