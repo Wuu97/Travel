@@ -8,7 +8,7 @@ type ItineraryType = (typeof itineraryTypes)[number];
 const expenseTypes = ["住宿", "餐饮", "交通", "门票", "活动", "其他"] as const;
 type ExpenseType = (typeof expenseTypes)[number];
 
-const SYSTEM_PROMPT = "你是途遇的中文旅行助手。回答简洁、实用、友好。只返回原始合法 JSON，不要 Markdown fence 或 HTML。顶层格式为 {answer:string,richContent?:{places?:[{name,category?,area?,description?,recommendedDuration?,itineraryItem?}],restaurants?:[{name,cuisine?,area?,description?,recommendedDishes?,itineraryItem?}],routes?:[{from?,to?,mode?,duration?,distance?,cost?,description?}],costs?:{items:[{label,amount,note?}],total?,perPerson?},images?:[{url,alt?}]},itineraryItems?:[],expenseItems?:[]}。answer 必须是 Markdown 正文，负责解释和建议，不要重复卡片事实字段。所有 richContent 字段可省略；景点和餐厅仅 name 必填，路线至少 from 或 to。评分、评论数、价格、营业时间、实时交通与图片 URL 没有可靠上下文时必须省略，绝不猜测或生成图片 URL；recommendedDuration 可作为建议生成。places 最多 6、restaurants 最多 6、routes 最多 4。itineraryItems 的 type 只能是 景点|餐饮|活动|交通|住宿|购物|其他，expenseItems 保持既有格式。";
+const SYSTEM_PROMPT = "你是途遇的中文旅行助手。回答简洁、实用、友好。只返回原始合法 JSON，不要 Markdown fence 或 HTML。顶层格式为 {answer:string,richContent?:{places?:[{name,category?,area?,description?,recommendedDuration?,itineraryItem?}],restaurants?:[{name,cuisine?,area?,description?,recommendedDishes?,itineraryItem?}],routes?:[{from?,to?,mode?,duration?,distance?,cost?,description?}],costs?:{items:[{label,amount,note?}],total?,perPerson?},images?:[{url,alt?}]},itineraryItems?:[],expenseItems?:[]}。answer 必须是 Markdown 正文，负责解释和建议，不要重复卡片事实字段。所有 richContent 字段可省略；景点和餐厅仅 name 必填，路线至少 from 或 to。评分、评论数、价格、营业时间、实时交通与图片 URL 没有可靠上下文时必须省略，绝不猜测或生成图片 URL；recommendedDuration 可作为建议生成。places 最多 6、restaurants 最多 6、routes 最多 4。普通知识、季节或文化问答只返回 answer；明确地点/餐厅推荐尽量同时给对应 rich card 与一致的 itineraryItem；完整行程规划才生成覆盖主要安排的 itineraryItems；仅预算问题、完整规划或明显费用估算才生成 expenseItems。richContent.costs 是展示字符串，expenseItems.amount 必须是 number、occurrence 为 estimated。itineraryItems 的 type 只能是 景点|餐饮|活动|交通|住宿|购物|其他；expenseItems 的 type 只能是 住宿|餐饮|交通|门票|活动|其他。";
 
 function isItineraryType(value: unknown): value is ItineraryType {
   return typeof value === "string" && itineraryTypes.includes(value as ItineraryType);
@@ -82,9 +82,9 @@ function parseAiReply(content: string): AiReply {
   // Do not leak a malformed response's import payload into the conversation.
   // The prose before that marker remains useful, while structured items are
   // intentionally omitted because their shape cannot be trusted.
-  const payloadMarker = normalized.search(/[,\n]\s*"(?:itineraryItems|expenseItems)"\s*:/);
+  const payloadMarker = normalized.search(/[,\n]\s*"(?:richContent|itineraryItems|expenseItems)"\s*:/);
   const visibleText = (payloadMarker >= 0 ? normalized.slice(0, payloadMarker) : normalized)
-    .replace(/^\s*\{?\s*"content"\s*:\s*"?/, "")
+    .replace(/^\s*\{?\s*"(?:answer|content)"\s*:\s*"?/, "")
     .replace(/"\s*$/, "")
     .replace(/\\n/g, "\n")
     .trim();
@@ -95,7 +95,7 @@ export async function requestTravelAdvice({ context, history, message }: AiReque
   const rawKey = process.env.DEEPSEEK_API_KEY?.trim();
   const apiKey = rawKey?.replace(/^(?:"([\s\S]*)"|'([\s\S]*)')$/, "$1$2");
   if (!apiKey) throw new Error("尚未配置 DeepSeek API Key。请在 .env.local 中设置 DEEPSEEK_API_KEY 后重启预览服务。");
-  const response = await fetch("https://api.deepseek.com/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }, body: JSON.stringify({ model: "deepseek-chat", response_format: { type: "json_object" }, messages: [{ role: "system", content: SYSTEM_PROMPT }, ...(context ? [{ role: "system" as const, content: `仅在问题与当前行程相关时参考：${context}` }] : []), ...history, { role: "user", content: message }], temperature: 0.7, max_tokens: 700 }) });
+  const response = await fetch("https://api.deepseek.com/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }, body: JSON.stringify({ model: "deepseek-chat", response_format: { type: "json_object" }, messages: [{ role: "system", content: SYSTEM_PROMPT }, ...(context ? [{ role: "system" as const, content: `仅在问题与当前行程相关时参考：${context}` }] : []), ...history, { role: "user", content: message }], temperature: 0.7, max_tokens: 1200 }) });
   if (!response.ok) throw new Error(response.status === 401 ? "DeepSeek 认证失败（401）：请确认 .env.local 中的 Key 完整、有效，并来自 DeepSeek 开放平台。" : `DeepSeek 请求失败（${response.status}）`);
   const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
   return parseAiReply(data.choices?.[0]?.message?.content || "");
