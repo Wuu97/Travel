@@ -381,6 +381,31 @@
 
 
 
+/* AI import cards */
+.ai-imports{border:1px solid var(--color-border-soft);border-radius:var(--radius-md);background:var(--color-surface-warm);padding:9px 10px}
+
+.ai-imports section+section{margin-top:8px}
+
+.ai-imports header{margin-bottom:6px}
+
+.ai-imports header b{font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-secondary)}
+
+.ai-imports header button{border-radius:var(--radius-sm);background:var(--color-success-soft);color:var(--color-success-strong)}
+
+.import-row{padding:8px 0;border-top-color:var(--color-border-soft)}
+
+.import-row:hover{background:var(--color-surface-soft)}
+
+.import-row strong{font-weight:600;color:var(--color-text-heading)}
+
+.import-row small{color:var(--color-text-muted)}
+
+.import-row button{border-color:var(--color-border);border-radius:var(--radius-sm);color:var(--color-success-strong)}
+
+@media(max-width:760px){.ai-imports{padding:8px}
+
+.import-row{gap:6px}}
+
 /* History sidebar navigation */
 #ai .ai-history-sidebar .history-row{display:grid!important;grid-template-columns:minmax(0,1fr) 28px!important;min-width:0!important;border-radius:var(--radius-sm)!important}
 
