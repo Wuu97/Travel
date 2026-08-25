@@ -1,5 +1,4 @@
 import { requestLlmCompletion, type LlmMessage } from "./client";
-import { getAnswerBudget } from "./answerBudget";
 import { parseAiReply } from "./parser";
 import { TRAVEL_CONTEXT_PROMPT, TRAVEL_DATA_REQUESTS_PROMPT, TRAVEL_SYSTEM_PROMPT } from "./prompt";
 import { mergeExecutedTravelData } from "../enrichment/richContent";
@@ -10,7 +9,8 @@ import { reasonOverToolResults } from "./toolResultReasoning";
 import { enrichExecutedTravelImages } from "../image/enrichExecutedTravelImages";
 import { createCachedImageSearchProvider } from "../image/enrichPlaceImages";
 import { WikimediaImageSearchProvider } from "../image/providers/wikimedia/provider";
-import { buildAiContextWithMemoryLoader } from "../context-builder";
+import { buildBudgetedAiContextWithMemoryLoader } from "../context-builder";
+import { resolveContextBudget } from "../context-budget";
 import type { TravelMemory } from "../../memory/model";
 
 export type AiRequest = {
@@ -22,8 +22,8 @@ export type AiRequest = {
 };
 
 export async function requestTravelAdvice({ context, history, loadMemories, message, travelContext }: AiRequest): Promise<AiReply> {
-  const answerBudget = getAnswerBudget({ message, context: travelContext });
-  const aiContext = await buildAiContextWithMemoryLoader({ userQuery: message, travelContext, loadMemories });
+  const contextBudget = resolveContextBudget({ query: message, tripDays: travelContext?.trip?.days });
+  const aiContext = await buildBudgetedAiContextWithMemoryLoader({ userQuery: message, travelContext, loadMemories, budget: contextBudget });
   const messages: LlmMessage[] = [
     { role: "system", content: TRAVEL_SYSTEM_PROMPT },
     { role: "system", content: TRAVEL_DATA_REQUESTS_PROMPT },
@@ -32,14 +32,14 @@ export async function requestTravelAdvice({ context, history, loadMemories, mess
     ...history,
     { role: "user", content: message },
   ];
-  const parsed = parseAiReply(await requestLlmCompletion(messages, { maxTokens: answerBudget }));
+  const parsed = parseAiReply(await requestLlmCompletion(messages, { maxTokens: contextBudget.maxOutputTokens }));
   const executed = await executeDataRequests(parsed.dataRequests ?? [], { travelContext });
   const imageSearchProvider = createCachedImageSearchProvider(new WikimediaImageSearchProvider());
   const imageEnrichedData = await enrichExecutedTravelImages(executed, imageSearchProvider, travelContext);
   const enriched = mergeExecutedTravelData(parsed, imageEnrichedData);
   const reasonedAnswer = await reasonOverToolResults(
-    { message, travelContext, firstAnswer: enriched.content, data: imageEnrichedData },
-    (reasoningMessages) => requestLlmCompletion(reasoningMessages, { maxTokens: answerBudget }),
+    { message, travelContext, firstAnswer: enriched.content, data: imageEnrichedData, toolResultBudget: contextBudget.maxToolResultTokens },
+    (reasoningMessages) => requestLlmCompletion(reasoningMessages, { maxTokens: contextBudget.maxOutputTokens }),
   );
   const reply = { ...enriched, ...(reasonedAnswer ? { content: reasonedAnswer } : {}) };
   delete reply.dataRequests;
