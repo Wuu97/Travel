@@ -22,7 +22,10 @@ export async function POST(request: Request) {
   }
   if (!payload) return Response.json({ error: "请输入有效的旅行问题。" }, { status: 400 });
   try {
-    const loadMemories = await getMemoryLoader(request).catch(() => undefined);
+    const loadMemories = async () => {
+      const loader = await getMemoryLoader(request);
+      return loader ? loader() : [];
+    };
     return Response.json({ reply: await requestTravelAdvice({ ...payload, loadMemories }) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "AI 服务暂时不可用。";

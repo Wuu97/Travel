@@ -21,8 +21,12 @@ test("keeps anonymous and failed memory loading non-blocking", async () => {
   try {
     const { buildAiContextWithMemoryLoader } = await compilation.importModule("ai/context-builder.js");
     let called = false;
+    const loader = async () => { called = true; return []; };
+    assert.equal(called, false);
     const anonymous = await buildAiContextWithMemoryLoader({ userQuery: "成都怎么玩" });
     assert.equal(anonymous.memoryContextText, "");
+    await buildAiContextWithMemoryLoader({ userQuery: "成都怎么玩", loadMemories: loader });
+    assert.equal(called, true);
     const failed = await buildAiContextWithMemoryLoader({ userQuery: "成都怎么玩", loadMemories: async () => { called = true; throw new Error("database unavailable"); } });
     assert.equal(called, true);
     assert.equal(failed.memoryContextText, "");
