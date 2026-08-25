@@ -47,6 +47,11 @@ export async function executeDataRequests(
       if (request.type === "place_search") {
         return { places: await lookupPlace(request.query, request.city ?? context?.city, request.area ?? context?.region).then((items) => items.slice(0, request.limit)) };
       }
+      if (request.type === "place_lookup") {
+        const candidates = await lookupPlace(request.query, request.city ?? context?.city, request.area ?? context?.region);
+        const match = findBestTravelMatch(request.query, candidates);
+        return match ? { places: [match] } : {};
+      }
       if (request.type === "restaurant_search") {
         const restaurants = await searchTravelRestaurants(providers.amapRestaurantProvider, {
           query: request.query, city: request.city ?? context?.city, area: request.area, cuisine: request.cuisine, limit: request.limit,

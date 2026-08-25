@@ -40,16 +40,17 @@ test("validates bounded dataRequests and keeps malformed parser fallbacks clean"
     await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
     const { parseAiReply } = await import(new URL(`file://${join(output, "ai/core/parser.js")}`).href);
     const parsed = parseAiReply(JSON.stringify({ answer: "好的", dataRequests: [
-      { type: "place_search", query: "武侯祠", limit: 99 }, { type: "restaurant_search", cuisine: "川菜", limit: 0 },
+      { type: "place_lookup", query: "武侯祠" }, { type: "place_lookup", query: 123 }, { type: "place_search", query: "景点", limit: 99 }, { type: "restaurant_search", cuisine: "川菜", limit: 0 },
       { type: "route", from: "武侯祠", to: "宽窄巷子", mode: "walking" }, { type: "weather", city: "成都" }, { type: "route", from: 1, to: "x" },
     ] }));
     assert.deepEqual(parsed.dataRequests, [
-      { type: "place_search", query: "武侯祠", city: undefined, area: undefined, limit: 5 },
+      { type: "place_lookup", query: "武侯祠", city: undefined, area: undefined },
+      { type: "place_search", query: "景点", city: undefined, area: undefined, limit: 5 },
       { type: "restaurant_search", query: undefined, city: undefined, area: undefined, cuisine: "川菜", limit: 1 },
       { type: "route", from: "武侯祠", to: "宽窄巷子", mode: "walking" },
     ]);
     const capped = parseAiReply(JSON.stringify({ answer: "好的", dataRequests: Array.from({ length: 6 }, (_, index) => ({ type: "place_search", query: `地点${index}` })) }));
-    assert.equal(capped.dataRequests?.length, 4);
+    assert.equal(capped.dataRequests?.length, 3);
     assert.equal(parseAiReply('{"answer":"半截", "dataRequests":').dataRequests, undefined);
   } finally { await rm(output, { recursive: true, force: true }); }
 });
@@ -61,16 +62,19 @@ test("executes requests with context, matching, deduplication, and isolated fail
     const { executeDataRequests } = await import(new URL(`file://${join(output, "ai/tools/executor.js")}`).href);
     const inputs = [];
     const providers = {
-      amapPlaceProvider: { async searchPlaces(input) { inputs.push(input); return [{ id: input.query, name: input.query, source: { provider: "fake" } }]; }, async getPlaceDetails() { return null; } },
+      amapPlaceProvider: { async searchPlaces(input) { inputs.push(input); return input.query === "错误地点" ? [{ id: "wrong", name: "成都欢乐谷", source: { provider: "fake" } }] : [{ id: input.query, name: input.query, source: { provider: "fake" } }]; }, async getPlaceDetails() { return null; } },
       amapRestaurantProvider: { async searchRestaurants(input) { if (input.query === "失败") throw new Error("expected"); return [{ id: "r1", name: "川菜馆", source: { provider: "fake" } }]; }, async getRestaurantDetails() { return null; } },
       amapRouteProvider: { async getRoute(input) { return { from: input.from, to: input.to, mode: input.mode, source: { provider: "fake" } }; } },
     };
     const result = await executeDataRequests([
-      { type: "place_search", query: "武侯祠", limit: 3 }, { type: "place_search", query: "武侯祠", limit: 3 },
+      { type: "place_lookup", query: "武侯祠" }, { type: "place_lookup", query: "错误地点" },
+      { type: "place_search", query: "景点", limit: 3 }, { type: "place_search", query: "景点", limit: 3 },
       { type: "restaurant_search", query: "川菜", limit: 3 }, { type: "restaurant_search", query: "失败", limit: 3 },
       { type: "route", from: "武侯祠", to: "宽窄巷子", mode: "walking" },
     ], { providers, travelContext: { city: "成都", region: "四川" } });
-    assert.equal(result.places.length, 1);
+    assert.equal(result.places.length, 2);
+    assert.ok(result.places.some((place) => place.name === "武侯祠"));
+    assert.ok(!result.places.some((place) => place.name === "成都欢乐谷"));
     assert.equal(result.restaurants.length, 1);
     assert.equal(result.routes.length, 1);
     assert.ok(inputs.every((input) => input.city === "成都"));
