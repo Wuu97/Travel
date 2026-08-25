@@ -36,7 +36,10 @@ test("generates and stores provider bytes through the standalone generate_image 
       assert.equal(result.aspectRatio, "16:9");
     }
     assert.equal(calls.length, 3);
-    for (const invalid of [null, { type: "generate_image", prompt: "" }, { type: "generate_image", prompt: " ".repeat(4_001) }, { type: "generate_image", prompt: "x", aspectRatio: "100:1" }]) assert.equal(parseGenerateImageRequest(invalid), null);
+    for (const invalid of [null, { type: "generate_image", prompt: "" }, { type: "generate_image", prompt: "   " }, { type: "generate_image", prompt: "x".repeat(4_001) }, { type: "generate_image", prompt: "x", aspectRatio: "100:1" }]) assert.equal(parseGenerateImageRequest(invalid), null);
+    const maximumLengthPrompt = parseGenerateImageRequest({ type: "generate_image", prompt: "x".repeat(4_000) });
+    assert.ok(maximumLengthPrompt);
+    assert.equal(maximumLengthPrompt.prompt.length, 4_000);
     const valid = parseGenerateImageRequest({ type: "generate_image", prompt: "x" });
     assert.ok(valid);
     await assert.rejects(() => executeGenerateImage(valid, { generationProvider: { async generateImage() { return { bytes: new Uint8Array(), contentType: "image/png" }; } }, storageProvider: storage }));
@@ -44,6 +47,44 @@ test("generates and stores provider bytes through the standalone generate_image 
     await assert.rejects(() => executeGenerateImage(valid, { generationProvider: { async generateImage() { throw new Error("provider failure"); } }, storageProvider: storage }), /provider failure/);
     await assert.rejects(() => executeGenerateImage(valid, { generationProvider: { async generateImage() { return { bytes: new Uint8Array([1]), contentType: "image/png" }; } }, storageProvider: { async storeImage() { throw new Error("storage failure"); } } }), /storage failure/);
   } finally { await rm(output, { recursive: true, force: true }); }
+});
+
+test("generates, stores, and reads a generated image through the real local storage pipeline", async () => {
+  const output = await mkdtemp(join(tmpdir(), "travel-generation-local-build-"));
+  const root = await mkdtemp(join(tmpdir(), "travel-generated-image-integration-"));
+  try {
+    await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, "features/ai/image/storage/types.ts", "features/ai/image/storage/validation.ts", "features/ai/image/storage/local/provider.ts", "features/ai/image/generation/types.ts", "features/ai/image/generation/validation.ts", "features/ai/image/generation/service.ts", "features/ai/schemas/imageRequests.ts", "features/ai/tools/generateImage.ts"], { cwd: new URL("../", import.meta.url) });
+    const { parseGenerateImageRequest } = await import(new URL(`file://${join(output, "schemas/imageRequests.js")}`).href);
+    const { executeGenerateImage } = await import(new URL(`file://${join(output, "tools/generateImage.js")}`).href);
+    const { LocalGeneratedImageStorageProvider } = await import(new URL(`file://${join(output, "image/storage/local/provider.js")}`).href);
+    const expectedBytes = new Uint8Array([1, 2, 3, 4, 5]);
+    const request = parseGenerateImageRequest({ type: "generate_image", prompt: "  Autumn Kanas Lake  ", aspectRatio: "16:9" });
+    assert.ok(request);
+
+    const result = await executeGenerateImage(request, {
+      generationProvider: {
+        async generateImage(input) {
+          assert.deepEqual(input, { prompt: "Autumn Kanas Lake", aspectRatio: "16:9" });
+          return { bytes: expectedBytes, contentType: "image/png" };
+        },
+      },
+      storageProvider: new LocalGeneratedImageStorageProvider({ rootDirectory: root }),
+    });
+
+    assert.equal(result.type, "generated_image");
+    assert.match(result.id, /^generated-image-[0-9a-f-]{36}$/);
+    assert.match(result.url, /^\/generated-images\/[0-9a-f-]{36}\.png$/);
+    assert.equal(result.storageKey, result.url.slice(1));
+    assert.equal(result.prompt, "Autumn Kanas Lake");
+    assert.equal(result.contentType, "image/png");
+    assert.equal(result.aspectRatio, "16:9");
+    const filename = result.url.split("/").at(-1);
+    assert.ok(filename);
+    assert.deepEqual(new Uint8Array(await readFile(join(root, filename))), expectedBytes);
+  } finally {
+    await rm(output, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test("stores generated image bytes locally behind safe UUID references", async () => {
