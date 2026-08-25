@@ -83,6 +83,14 @@
 
 .nav-links a:focus-visible{border-radius:var(--radius-sm);outline-offset:4px}
 
+.account-menu{position:relative;display:flex;align-items:center;gap:8px}
+
+.account-menu>span{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-muted);font-size:var(--font-size-sm)}
+
+.account-memory-panel{position:absolute;z-index:30;right:0;top:calc(100% + 10px);width:min(460px,calc(100vw - 32px));max-height:min(560px,calc(100vh - 110px));overflow:auto;border-radius:var(--radius-md);box-shadow:var(--shadow-popover)}
+
+@media(max-width:760px){.account-menu>span{display:none}.account-memory-panel{position:fixed;right:16px;top:74px;max-height:calc(100vh - 90px)}}
+
 
 
 .hero{height:490px;background:#dceae4;position:relative;overflow:hidden}

@@ -45,6 +45,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
     <main>
       <TravelDiscoverySections
         accountLabel={auth.user?.email || auth.user?.phone || null}
+        accessToken={auth.accessToken}
         active={active}
         from={from}
         notice={notice}

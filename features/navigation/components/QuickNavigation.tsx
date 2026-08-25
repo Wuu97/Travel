@@ -1,14 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { MemoryList } from "../../memory/components/MemoryList";
 
 type QuickNavigationProps = {
   onNavigate: (event: React.MouseEvent<HTMLAnchorElement>, target: string) => void;
   accountLabel?: string | null;
+  accessToken?: string | null;
   onSignOut?: () => void;
 };
 
-export function QuickNavigation({ accountLabel, onNavigate, onSignOut }: QuickNavigationProps) {
+export function QuickNavigation({ accountLabel, accessToken = null, onNavigate, onSignOut }: QuickNavigationProps) {
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+
   return (
     <>
       <aside className="quick-nav" aria-label="快速导航">
@@ -73,7 +78,21 @@ export function QuickNavigation({ accountLabel, onNavigate, onSignOut }: QuickNa
         {accountLabel ? (
           <div className="account-menu">
             <span title={accountLabel}>{accountLabel}</span>
+            <button
+              aria-expanded={preferencesOpen}
+              aria-controls="travel-preferences-panel"
+              className="login"
+              type="button"
+              onClick={() => setPreferencesOpen((open) => !open)}
+            >
+              旅行偏好
+            </button>
             <button className="login" type="button" onClick={onSignOut}>退出</button>
+            {preferencesOpen ? (
+              <div className="account-memory-panel" id="travel-preferences-panel">
+                <MemoryList accessToken={accessToken} />
+              </div>
+            ) : null}
           </div>
         ) : (
           <button className="login" type="button" onClick={() => window.dispatchEvent(new Event("travel:open-auth"))}>登录 / 注册</button>
