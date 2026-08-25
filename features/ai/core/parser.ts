@@ -1,0 +1,66 @@
+import { isItineraryType, type ExpenseItem, type ItineraryItem } from "../../trip/model";
+import type { AiReply } from "../schemas/response";
+
+const expenseTypes = ["住宿", "餐饮", "交通", "门票", "活动", "其他"] as const;
+type ExpenseType = (typeof expenseTypes)[number];
+
+function isExpenseType(value: unknown): value is ExpenseType {
+  return typeof value === "string" && expenseTypes.includes(value as ExpenseType);
+}
+
+function parseItineraryItems(value: unknown): ItineraryItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index) => {
+    if (!item || typeof item !== "object") return [];
+    const raw = item as Record<string, unknown>;
+    if (typeof raw.title !== "string" || !raw.title.trim() || !isItineraryType(raw.type)) return [];
+    return [{
+      id: typeof raw.id === "string" && raw.id.trim() ? raw.id : `ai-${Date.now()}-${index}`,
+      title: raw.title.trim(), type: raw.type,
+      ...(typeof raw.day === "number" && Number.isInteger(raw.day) && raw.day > 0 ? { day: raw.day } : {}),
+      ...(typeof raw.date === "string" && raw.date.trim() ? { date: raw.date.trim() } : {}),
+      ...(typeof raw.time === "string" && raw.time.trim() ? { time: raw.time.trim() } : {}),
+      ...(typeof raw.location === "string" && raw.location.trim() ? { location: raw.location.trim() } : {}),
+      ...(typeof raw.note === "string" && raw.note.trim() ? { note: raw.note.trim() } : {}),
+    }];
+  });
+}
+
+function parseExpenseItems(value: unknown): ExpenseItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index) => {
+    if (!item || typeof item !== "object") return [];
+    const raw = item as Record<string, unknown>;
+    if (typeof raw.title !== "string" || !raw.title.trim() || typeof raw.amount !== "number" || !Number.isFinite(raw.amount) || raw.amount < 0 || !isExpenseType(raw.type)) return [];
+    return [{
+      id: typeof raw.id === "string" && raw.id.trim() ? raw.id : `ai-expense-${Date.now()}-${index}`,
+      title: raw.title.trim(), amount: Math.round(raw.amount * 100) / 100, type: raw.type,
+      occurrence: raw.occurrence === "actual" ? "actual" : "estimated",
+      ...(typeof raw.note === "string" && raw.note.trim() ? { note: raw.note.trim() } : {}),
+      ...(typeof raw.relatedItineraryItemId === "string" && raw.relatedItineraryItemId.trim() ? { relatedItineraryItemId: raw.relatedItineraryItemId.trim() } : {}),
+      ...(typeof raw.relatedItineraryTitle === "string" && raw.relatedItineraryTitle.trim() ? { relatedItineraryTitle: raw.relatedItineraryTitle.trim() } : {}),
+    }];
+  });
+}
+
+export function parseAiReply(content: string): AiReply {
+  const normalized = content.trim().replace(/^```(?:json)?\s*|\s*```$/gi, "");
+  let payload: unknown = normalized;
+  for (let attempt = 0; attempt < 2 && typeof payload === "string"; attempt += 1) {
+    try { payload = JSON.parse(payload); }
+    catch { break; }
+  }
+  if (payload && typeof payload === "object") {
+    const parsed = payload as Record<string, unknown>;
+    const answer = typeof parsed.answer === "string" && parsed.answer.trim() ? parsed.answer : typeof parsed.content === "string" && parsed.content.trim() ? parsed.content : "";
+    if (answer) return {
+      content: answer.trim().replace(/\\n/g, "\n"),
+      ...(parsed.richContent && typeof parsed.richContent === "object" ? { richContent: parsed.richContent } : {}),
+      itineraryItems: parseItineraryItems(parsed.itineraryItems), expenseItems: parseExpenseItems(parsed.expenseItems),
+    };
+  }
+  const payloadMarker = normalized.search(/[,\n]\s*"(?:richContent|itineraryItems|expenseItems)"\s*:/);
+  const visibleText = (payloadMarker >= 0 ? normalized.slice(0, payloadMarker) : normalized)
+    .replace(/^\s*\{?\s*"(?:answer|content)"\s*:\s*"?/, "").replace(/"\s*$/, "").replace(/\\n/g, "\n").trim();
+  return { content: visibleText || "暂时没有生成回复，请再试一次。", itineraryItems: [], expenseItems: [] };
+}

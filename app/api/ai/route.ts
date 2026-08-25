@@ -1,4 +1,4 @@
-import { requestTravelAdvice } from "../../../features/chat/deepseek";
+import { requestTravelAdvice } from "../../../features/ai/core/orchestrator";
 import { parseAiRequest } from "../../../features/chat/requestValidation";
 
 export async function POST(request: Request) {
