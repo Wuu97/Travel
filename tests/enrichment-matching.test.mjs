@@ -8,12 +8,43 @@ import test from "node:test";
 
 const execFileAsync = promisify(execFile);
 const sources = [
+  "features/ai/image/generation/types.ts", "features/ai/image/generation/validation.ts", "features/ai/image/generation/service.ts", "features/ai/schemas/imageRequests.ts", "features/ai/tools/generateImage.ts",
   "features/ai/image/storage/types.ts", "features/ai/image/storage/validation.ts", "features/ai/image/storage/local/provider.ts",
   "features/ai/image/types.ts", "features/ai/image/normalization.ts", "features/ai/image/enrichPlaceImages.ts", "features/ai/image/enrichExecutedTravelImages.ts", "features/ai/image/providers/types.ts", "features/ai/image/providers/wikimedia/mapper.ts", "features/ai/image/providers/wikimedia/provider.ts",
   "features/ai/core/client.ts", "features/ai/core/parser.ts", "features/ai/core/toolResultReasoning.ts", "features/ai/enrichment/enrichReply.ts", "features/ai/enrichment/matching.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
   "features/ai/providers/amap/client.ts", "features/ai/providers/amap/index.ts", "features/ai/providers/amap/mapper.ts", "features/ai/providers/amap/places.ts", "features/ai/providers/amap/restaurants.ts", "features/ai/providers/amap/routes.ts", "features/ai/providers/amap/types.ts", "features/ai/providers/types.ts",
   "features/ai/tools/executor.ts", "features/ai/tools/places.ts", "features/ai/tools/restaurants.ts", "features/ai/tools/routes.ts", "features/ai/tools/types.ts", "features/ai/schemas/context.ts", "features/ai/schemas/dataRequests.ts", "features/ai/schemas/response.ts", "features/chat/model.ts", "features/chat/requestValidation.ts", "features/shared/validation.ts", "features/trip/model.ts",
 ];
+
+test("generates and stores provider bytes through the standalone generate_image tool", async () => {
+  const output = await mkdtemp(join(tmpdir(), "travel-generation-build-"));
+  try {
+    await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, "features/ai/image/storage/types.ts", "features/ai/image/storage/validation.ts", "features/ai/image/generation/types.ts", "features/ai/image/generation/validation.ts", "features/ai/image/generation/service.ts", "features/ai/schemas/imageRequests.ts", "features/ai/tools/generateImage.ts"], { cwd: new URL("../", import.meta.url) });
+    const { parseGenerateImageRequest } = await import(new URL(`file://${join(output, "schemas/imageRequests.js")}`).href);
+    const { executeGenerateImage } = await import(new URL(`file://${join(output, "tools/generateImage.js")}`).href);
+    const calls = [];
+    const storage = { async storeImage(input) { calls.push(input); return { url: "/generated-images/test.png", storageKey: "generated-images/test.png" }; } };
+    for (const contentType of ["image/png", "image/jpeg", "image/webp"]) {
+      const request = parseGenerateImageRequest({ type: "generate_image", prompt: "  Autumn Kanas Lake  ", aspectRatio: "16:9" });
+      assert.ok(request);
+      const result = await executeGenerateImage(request, { generationProvider: { async generateImage(input) { assert.deepEqual(input, { prompt: "Autumn Kanas Lake", aspectRatio: "16:9" }); return { bytes: new Uint8Array([1, 2, 3]), contentType }; } }, storageProvider: storage });
+      assert.equal(result.type, "generated_image");
+      assert.match(result.id, /^generated-image-[0-9a-f-]{36}$/);
+      assert.equal(result.url, "/generated-images/test.png");
+      assert.equal(result.prompt, "Autumn Kanas Lake");
+      assert.equal(result.contentType, contentType);
+      assert.equal(result.aspectRatio, "16:9");
+    }
+    assert.equal(calls.length, 3);
+    for (const invalid of [null, { type: "generate_image", prompt: "" }, { type: "generate_image", prompt: " ".repeat(4_001) }, { type: "generate_image", prompt: "x", aspectRatio: "100:1" }]) assert.equal(parseGenerateImageRequest(invalid), null);
+    const valid = parseGenerateImageRequest({ type: "generate_image", prompt: "x" });
+    assert.ok(valid);
+    await assert.rejects(() => executeGenerateImage(valid, { generationProvider: { async generateImage() { return { bytes: new Uint8Array(), contentType: "image/png" }; } }, storageProvider: storage }));
+    await assert.rejects(() => executeGenerateImage(valid, { generationProvider: { async generateImage() { return { bytes: new Uint8Array([1]), contentType: "image/gif" }; } }, storageProvider: storage }));
+    await assert.rejects(() => executeGenerateImage(valid, { generationProvider: { async generateImage() { throw new Error("provider failure"); } }, storageProvider: storage }), /provider failure/);
+    await assert.rejects(() => executeGenerateImage(valid, { generationProvider: { async generateImage() { return { bytes: new Uint8Array([1]), contentType: "image/png" }; } }, storageProvider: { async storeImage() { throw new Error("storage failure"); } } }), /storage failure/);
+  } finally { await rm(output, { recursive: true, force: true }); }
+});
 
 test("stores generated image bytes locally behind safe UUID references", async () => {
   const output = await mkdtemp(join(tmpdir(), "travel-image-storage-build-"));
