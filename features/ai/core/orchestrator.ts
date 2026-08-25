@@ -19,6 +19,7 @@ export type AiRequest = {
 };
 
 export async function requestTravelAdvice({ context, history, message, travelContext }: AiRequest): Promise<AiReply> {
+  const answerBudget = getAnswerBudget({ message, context: travelContext });
   const formattedTravelContext = formatTravelContext(travelContext);
   const messages: LlmMessage[] = [
     { role: "system", content: TRAVEL_SYSTEM_PROMPT },
@@ -28,12 +29,15 @@ export async function requestTravelAdvice({ context, history, message, travelCon
     ...history,
     { role: "user", content: message },
   ];
-  const parsed = parseAiReply(await requestLlmCompletion(messages, { maxTokens: getAnswerBudget({ message, context: travelContext }) }));
+  const parsed = parseAiReply(await requestLlmCompletion(messages, { maxTokens: answerBudget }));
   const executed = await executeDataRequests(parsed.dataRequests ?? [], { travelContext });
   const imageSearchProvider = createCachedImageSearchProvider(new WikimediaImageSearchProvider());
   const imageEnrichedData = await enrichExecutedTravelImages(executed, imageSearchProvider, travelContext);
   const enriched = mergeExecutedTravelData(parsed, imageEnrichedData);
-  const reasonedAnswer = await reasonOverToolResults({ message, travelContext, firstAnswer: enriched.content, data: imageEnrichedData });
+  const reasonedAnswer = await reasonOverToolResults(
+    { message, travelContext, firstAnswer: enriched.content, data: imageEnrichedData },
+    (reasoningMessages) => requestLlmCompletion(reasoningMessages, { maxTokens: answerBudget }),
+  );
   const reply = { ...enriched, ...(reasonedAnswer ? { content: reasonedAnswer } : {}) };
   delete reply.dataRequests;
   return reply;

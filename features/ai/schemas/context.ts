@@ -11,8 +11,15 @@ export type TravelContext = {
   };
 };
 
-const text = (value: unknown) => typeof value === "string" && value.trim() ? value.trim() : undefined;
-const positiveInteger = (value: unknown) => typeof value === "number" && Number.isInteger(value) && value > 0 ? value : undefined;
+const text = (value: unknown, maxLength = 200) =>
+  typeof value === "string" && value.trim() && value.trim().length <= maxLength && !/\p{Cc}/u.test(value) ? value.trim() : undefined;
+const positiveInteger = (value: unknown, maximum: number) => typeof value === "number" && Number.isInteger(value) && value > 0 && value <= maximum ? value : undefined;
+const date = (value: unknown) => {
+  const candidate = text(value, 10);
+  if (!candidate || !/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/.test(candidate)) return undefined;
+  const parsed = new Date(`${candidate}T00:00:00Z`);
+  return Number.isNaN(parsed.valueOf()) || parsed.toISOString().slice(0, 10) !== candidate ? undefined : candidate;
+};
 const transportModes = ["self_drive", "public_transport", "mixed"] as const;
 type TransportMode = NonNullable<TravelContext["trip"]>["transportMode"];
 const transportMode = (value: unknown): TransportMode | undefined =>
@@ -23,10 +30,10 @@ export function normalizeTravelContext(value: unknown): TravelContext | undefine
   const raw = value as Record<string, unknown>;
   const rawTrip = raw.trip && typeof raw.trip === "object" && !Array.isArray(raw.trip) ? raw.trip as Record<string, unknown> : undefined;
   const trip = rawTrip ? {
-    days: positiveInteger(rawTrip.days),
-    startDate: text(rawTrip.startDate),
-    endDate: text(rawTrip.endDate),
-    travelers: positiveInteger(rawTrip.travelers),
+    days: positiveInteger(rawTrip.days, 365),
+    startDate: date(rawTrip.startDate),
+    endDate: date(rawTrip.endDate),
+    travelers: positiveInteger(rawTrip.travelers, 100),
     transportMode: transportMode(rawTrip.transportMode),
   } : undefined;
   const context = {

@@ -17,6 +17,8 @@ test("uses structured trip duration before intent and keyword signals", async ()
     assert.equal(getAnswerBudget({ message: "成都攻略", context: { trip: { days: 10 } } }), ANSWER_BUDGET.longTrip);
     assert.equal(getAnswerBudget({ message: "成都怎么玩", context: { trip: { days: 3 } } }), ANSWER_BUDGET.shortTrip);
     assert.equal(getAnswerBudget({ message: "帮我规划北疆", context: { trip: { days: 5 } } }), ANSWER_BUDGET.longTrip);
+    assert.equal(getAnswerBudget({ message: "武侯祠值得去吗", context: { trip: { days: 10 } } }), ANSWER_BUDGET.simple);
+    assert.equal(getAnswerBudget({ message: "成都什么时候下雨？", context: { trip: { days: 10 } } }), ANSWER_BUDGET.simple);
     assert.doesNotThrow(() => getAnswerBudget({ message: "成都怎么玩", context: { city: "成都" } }));
   } finally { await compilation.cleanup(); }
 });
