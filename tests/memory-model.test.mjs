@@ -31,7 +31,7 @@ test("performs memory CRUD through a user-scoped repository", async () => {
       insert(values) { const next = row({ ...values }); rows.push(next); return { select() { return { async single() { return { data: next, error: null }; } }; } }; },
       select() { return { eq(_column, value) { return { async order() { return { data: rows.filter((item) => item.user_id === value), error: null }; } }; } }; },
       update(values) { return { eq(_column, id) { return { eq(_userColumn, ownerId) { return { select() { return { async single() { const found = rows.find((item) => item.id === id && item.user_id === ownerId); if (!found) return { data: null, error: { message: "not found" } }; Object.assign(found, values, { updated_at: "2026-08-26T00:00:00.000Z" }); return { data: found, error: null }; } }; } }; } }; } }; },
-      delete() { return { eq(_column, id) { return { async eq(_userColumn, ownerId) { const index = rows.findIndex((item) => item.id === id && item.user_id === ownerId); if (index < 0) return { data: null, error: { message: "not found" } }; rows.splice(index, 1); return { data: null, error: null }; } }; } }; },
+      delete() { return { eq(_column, id) { return { eq(_userColumn, ownerId) { return { select() { return { async maybeSingle() { const index = rows.findIndex((item) => item.id === id && item.user_id === ownerId); if (index < 0) return { data: null, error: null }; rows.splice(index, 1); return { data: { id }, error: null }; } }; } }; } }; } }; },
     }; } };
     const repository = createTravelMemoryRepository(client);
     const created = await repository.createMemory({ userId, preference: { pace: "relaxed", interests: ["nature"] }, confidence: 1, source: "explicit" });
@@ -40,6 +40,7 @@ test("performs memory CRUD through a user-scoped repository", async () => {
     assert.equal((await repository.updateMemory(userId, memoryId, { confidence: 0.6 })).confidence, 0.6);
     await repository.deleteMemory(userId, memoryId);
     assert.equal((await repository.getUserMemories(userId)).length, 0);
+    await assert.rejects(() => repository.deleteMemory(userId, memoryId), /无删除权限/);
   } finally { await compilation.cleanup(); }
 });
 

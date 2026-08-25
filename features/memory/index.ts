@@ -4,3 +4,4 @@ export * from "./extractor";
 export * from "./trigger";
 export * from "./retrieval";
 export * from "./context";
+export * from "./components";

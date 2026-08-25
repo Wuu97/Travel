@@ -10,7 +10,7 @@ export type MemoryRepositoryClient = {
     insert(values: MemoryInsert): { select(columns: string): { single(): RepositoryResult } };
     select(columns: string): { eq(column: "user_id", value: string): { order(column: "updated_at", options: { ascending: boolean }): RepositoryResult } };
     update(values: MemoryUpdate): { eq(column: "id", value: string): { eq(column: "user_id", value: string): { select(columns: string): { single(): RepositoryResult } } } };
-    delete(): { eq(column: "id", value: string): { eq(column: "user_id", value: string): RepositoryResult } };
+    delete(): { eq(column: "id", value: string): { eq(column: "user_id", value: string): { select(columns: string): { maybeSingle(): RepositoryResult } } } };
   };
 };
 
@@ -80,8 +80,9 @@ export function createTravelMemoryRepository(client: MemoryRepositoryClient) {
 
     async deleteMemory(userId: string, memoryId: string): Promise<void> {
       if (!uuid(userId) || !uuid(memoryId)) throw new Error("旅行偏好 ID 无效。");
-      const { error } = await client.from("travel_memories").delete().eq("id", memoryId).eq("user_id", userId);
+      const { data, error } = await client.from("travel_memories").delete().eq("id", memoryId).eq("user_id", userId).select("id").maybeSingle();
       if (error) return throwRepositoryError(error, "无法删除旅行偏好");
+      if (!data) throw new Error("旅行偏好不存在或无删除权限。");
     },
   };
 }
