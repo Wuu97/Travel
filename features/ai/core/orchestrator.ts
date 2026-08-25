@@ -3,28 +3,31 @@ import { getAnswerBudget } from "./answerBudget";
 import { parseAiReply } from "./parser";
 import { TRAVEL_CONTEXT_PROMPT, TRAVEL_DATA_REQUESTS_PROMPT, TRAVEL_SYSTEM_PROMPT } from "./prompt";
 import { mergeExecutedTravelData } from "../enrichment/richContent";
-import { formatTravelContext, type TravelContext } from "../schemas/context";
+import type { TravelContext } from "../schemas/context";
 import type { AiReply } from "../schemas/response";
 import { executeDataRequests } from "../tools/executor";
 import { reasonOverToolResults } from "./toolResultReasoning";
 import { enrichExecutedTravelImages } from "../image/enrichExecutedTravelImages";
 import { createCachedImageSearchProvider } from "../image/enrichPlaceImages";
 import { WikimediaImageSearchProvider } from "../image/providers/wikimedia/provider";
+import { buildAiContextWithMemoryLoader } from "../context-builder";
+import type { TravelMemory } from "../../memory/model";
 
 export type AiRequest = {
   message: string;
   context?: string;
   travelContext?: TravelContext;
+  loadMemories?: () => Promise<TravelMemory[]>;
   history: Array<{ role: "user" | "assistant"; content: string }>;
 };
 
-export async function requestTravelAdvice({ context, history, message, travelContext }: AiRequest): Promise<AiReply> {
+export async function requestTravelAdvice({ context, history, loadMemories, message, travelContext }: AiRequest): Promise<AiReply> {
   const answerBudget = getAnswerBudget({ message, context: travelContext });
-  const formattedTravelContext = formatTravelContext(travelContext);
+  const aiContext = await buildAiContextWithMemoryLoader({ userQuery: message, travelContext, loadMemories });
   const messages: LlmMessage[] = [
     { role: "system", content: TRAVEL_SYSTEM_PROMPT },
     { role: "system", content: TRAVEL_DATA_REQUESTS_PROMPT },
-    ...(formattedTravelContext ? [{ role: "system" as const, content: `${TRAVEL_CONTEXT_PROMPT}\n\n${formattedTravelContext}` }] : []),
+    ...(aiContext.combinedContext ? [{ role: "system" as const, content: `${TRAVEL_CONTEXT_PROMPT}\n\n${aiContext.combinedContext}` }] : []),
     ...(context ? [{ role: "system" as const, content: `仅在问题与当前行程相关时参考：${context}` }] : []),
     ...history,
     { role: "user", content: message },

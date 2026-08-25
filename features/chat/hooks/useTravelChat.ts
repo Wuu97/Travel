@@ -122,7 +122,7 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
     setChatMessages(messagesWithQuestion);
     setAiBusy(true);
     try {
-      const response = await fetch("/api/ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: userMessage, history, ...(travelContextRef.current ? { travelContext: travelContextRef.current } : {}) }) });
+      const response = await fetch("/api/ai", { method: "POST", headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({ message: userMessage, history, ...(travelContextRef.current ? { travelContext: travelContextRef.current } : {}) }) });
       const data = await response.json();
       const messages = [...messagesWithQuestion, normalizeAssistantResponse(data.reply ?? data, data.error || "暂时无法生成回复。")];
       setChatMessages(messages);
