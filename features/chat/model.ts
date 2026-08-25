@@ -20,8 +20,8 @@ const itineraryItem = (value: unknown): ItineraryItem | undefined => { const ite
 const dishes = (value: unknown) => dedupe(list(value).map(text).filter((item): item is string => Boolean(item)), (item) => item.toLowerCase(), 8);
 const providerImages = (value: unknown) => Array.isArray(value) ? normalizeTravelImages(value.map((item) => {
   const image = asRecord(item);
-  return { url: image?.url, alt: image?.alt };
-})) : undefined;
+  return { url: image?.url, alt: image?.alt, sourceUrl: image?.sourceUrl };
+}), (() => { const first = asRecord(value[0]); return { source: first?.source === "search" ? "search" : "provider", ...(text(first?.provider) ? { provider: text(first?.provider) } : {}) }; })()) : undefined;
 const common = (raw: Record<string, unknown>) => {
   const images = providerImages(raw.images);
   return { area: text(raw.area), description: text(raw.description), rating: display(raw.rating), reviewCount: display(raw.reviewCount), openingHours: text(raw.openingHours), ...(images?.length ? { images, imageUrl: images[0].url } : { imageUrl: imageUrl(raw.imageUrl) }), itineraryItem: itineraryItem(raw.itineraryItem) };

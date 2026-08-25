@@ -8,11 +8,52 @@ import test from "node:test";
 
 const execFileAsync = promisify(execFile);
 const sources = [
-  "features/ai/image/types.ts", "features/ai/image/normalization.ts",
+  "features/ai/image/types.ts", "features/ai/image/normalization.ts", "features/ai/image/enrichPlaceImages.ts", "features/ai/image/providers/types.ts", "features/ai/image/providers/wikimedia/mapper.ts", "features/ai/image/providers/wikimedia/provider.ts",
   "features/ai/core/client.ts", "features/ai/core/parser.ts", "features/ai/core/toolResultReasoning.ts", "features/ai/enrichment/enrichReply.ts", "features/ai/enrichment/matching.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
   "features/ai/providers/amap/client.ts", "features/ai/providers/amap/index.ts", "features/ai/providers/amap/mapper.ts", "features/ai/providers/amap/places.ts", "features/ai/providers/amap/restaurants.ts", "features/ai/providers/amap/routes.ts", "features/ai/providers/amap/types.ts", "features/ai/providers/types.ts",
   "features/ai/tools/executor.ts", "features/ai/tools/places.ts", "features/ai/tools/restaurants.ts", "features/ai/tools/routes.ts", "features/ai/tools/types.ts", "features/ai/schemas/context.ts", "features/ai/schemas/dataRequests.ts", "features/ai/schemas/response.ts", "features/chat/model.ts", "features/chat/requestValidation.ts", "features/shared/validation.ts", "features/trip/model.ts",
 ];
+
+test("uses Wikimedia only as a safe place-image fallback", async () => {
+  const output = await mkdtemp(join(tmpdir(), "travel-image-search-"));
+  try {
+    await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
+    const { enrichPlaceImages, buildPlaceImageQuery } = await import(new URL(`file://${join(output, "ai/image/enrichPlaceImages.js")}`).href);
+    const { mapWikimediaPages } = await import(new URL(`file://${join(output, "ai/image/providers/wikimedia/mapper.js")}`).href);
+    const mapped = mapWikimediaPages({ a: { title: "File:景点.jpg", imageinfo: [{ thumburl: "https://upload.wikimedia.org/thumb.jpg", descriptionurl: "https://commons.wikimedia.org/wiki/File:景点.jpg", mime: "image/jpeg", mediatype: "BITMAP" }] }, b: { title: "File:logo.svg", imageinfo: [{ thumburl: "https://upload.wikimedia.org/logo.svg", mime: "image/svg+xml", mediatype: "DRAWING" }] } });
+    assert.deepEqual(mapped, [{ url: "https://upload.wikimedia.org/thumb.jpg", source: "search", provider: "wikimedia", alt: "File:景点.jpg", sourceUrl: "https://commons.wikimedia.org/wiki/File:景点.jpg" }]);
+    assert.equal(buildPlaceImageQuery({ id: "p", name: "人民公园" }, { city: "成都" }), "成都 人民公园");
+    assert.equal(buildPlaceImageQuery({ id: "p", name: "成都人民公园" }, { city: "成都" }), "成都人民公园");
+    let calls = 0;
+    const search = { async searchImages(input) { calls += 1; assert.deepEqual(input, { query: "成都 人民公园", limit: 3 }); return mapped; } };
+    const fallback = await enrichPlaceImages({ id: "p", name: "人民公园" }, search, { city: "成都" });
+    assert.deepEqual(fallback.images, mapped);
+    const providerImage = { id: "p", name: "人民公园", images: [{ url: "https://amap.example/p.jpg", source: "provider", provider: "amap" }] };
+    assert.strictEqual(await enrichPlaceImages(providerImage, search, { city: "成都" }), providerImage);
+    assert.equal(calls, 1);
+    assert.deepEqual(await enrichPlaceImages({ id: "p", name: "无结果" }, { async searchImages() { return []; } }), { id: "p", name: "无结果" });
+    assert.deepEqual(await enrichPlaceImages({ id: "p", name: "失败" }, { async searchImages() { throw new Error("expected"); } }), { id: "p", name: "失败" });
+  } finally { await rm(output, { recursive: true, force: true }); }
+});
+
+test("enrichment applies image search only to verified places, never restaurants", async () => {
+  const output = await mkdtemp(join(tmpdir(), "travel-image-enrichment-"));
+  try {
+    await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
+    const { enrichAiReply } = await import(new URL(`file://${join(output, "ai/enrichment/enrichReply.js")}`).href);
+    let imageCalls = 0;
+    const providers = {
+      amapPlaceProvider: { async searchPlaces() { return [{ id: "p", name: "人民公园", source: { provider: "amap" } }]; }, async getPlaceDetails() { return null; } },
+      amapRestaurantProvider: { async searchRestaurants() { return [{ id: "r", name: "川菜馆", source: { provider: "amap" } }]; }, async getRestaurantDetails() { return null; } },
+      amapRouteProvider: { async getRoute() { return null; } },
+      imageSearchProvider: { async searchImages() { imageCalls += 1; return [{ url: "https://upload.wikimedia.org/place.jpg", source: "search", provider: "wikimedia" }]; } },
+    };
+    const reply = await enrichAiReply({ content: "回答", itineraryItems: [], expenseItems: [], richContent: { places: [{ name: "人民公园" }], restaurants: [{ name: "川菜馆" }] } }, providers, { city: "成都" });
+    assert.equal(imageCalls, 1);
+    assert.equal(reply.richContent?.places?.[0]?.images?.[0]?.source, "search");
+    assert.equal(reply.richContent?.restaurants?.[0]?.images, undefined);
+  } finally { await rm(output, { recursive: true, force: true }); }
+});
 
 test("normalizes provider photos safely and carries them into rich place and restaurant cards", async () => {
   const output = await mkdtemp(join(tmpdir(), "travel-images-"));

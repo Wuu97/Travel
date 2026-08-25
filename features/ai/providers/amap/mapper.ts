@@ -24,7 +24,7 @@ function openingHours(poi: AmapPoi): string[] | undefined {
 }
 
 function images(poi: AmapPoi): TravelImage[] | undefined {
-  return normalizeTravelImages((Array.isArray(poi.photos) ? poi.photos : []).map((photo) => ({ url: photo?.url, alt: photo?.title })));
+  return normalizeTravelImages((Array.isArray(poi.photos) ? poi.photos : []).map((photo) => ({ url: photo?.url, alt: photo?.title })), { provider: "amap" });
 }
 
 function commonPoiFields(poi: AmapPoi) {
