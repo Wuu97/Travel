@@ -37,12 +37,13 @@ test("rejects oversized or invalid travel context values before prompt formattin
   } finally { await compilation.cleanup(); }
 });
 
-test("keeps the response schema unchanged when trip context is available", async () => {
+test("keeps legacy response fields while adding the structured travel response", async () => {
   const compilation = await compileTypeScript(aiTestSources, "travel-context-response-");
   try {
     const { parseAiReply } = await compilation.importModule("ai/core/parser.js");
     const reply = parseAiReply(JSON.stringify({ answer: "北疆建议", richContent: { places: [{ name: "喀纳斯" }] }, itineraryItems: [], expenseItems: [], dataRequests: [{ type: "place_lookup", query: "喀纳斯" }] }));
-    assert.deepEqual(Object.keys(reply).sort(), ["content", "dataRequests", "expenseItems", "itineraryItems", "richContent"]);
+    assert.deepEqual(Object.keys(reply).sort(), ["content", "dataRequests", "expenseItems", "itineraryItems", "richContent", "structuredTravelResponse"]);
+    assert.equal(reply.structuredTravelResponse?.answer, "北疆建议");
   } finally { await compilation.cleanup(); }
 });
 

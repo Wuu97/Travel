@@ -1,6 +1,6 @@
 import { requestLlmCompletion, type LlmMessage } from "./client";
 import { parseAiReply } from "./parser";
-import { TRAVEL_CONTEXT_PROMPT, TRAVEL_DATA_REQUESTS_PROMPT, TRAVEL_SYSTEM_PROMPT } from "./prompt";
+import { STRUCTURED_TRAVEL_RESPONSE_PROMPT, TRAVEL_CONTEXT_PROMPT, TRAVEL_DATA_REQUESTS_PROMPT, TRAVEL_SYSTEM_PROMPT } from "./prompt";
 import { mergeExecutedTravelData } from "../enrichment/richContent";
 import type { TravelContext } from "../schemas/context";
 import type { AiReply } from "../schemas/response";
@@ -26,6 +26,7 @@ export async function requestTravelAdvice({ context, history, loadMemories, mess
   const aiContext = await buildBudgetedAiContextWithMemoryLoader({ userQuery: message, travelContext, loadMemories, budget: contextBudget });
   const baseMessages: LlmMessage[] = [
     { role: "system", content: TRAVEL_SYSTEM_PROMPT },
+    { role: "system", content: STRUCTURED_TRAVEL_RESPONSE_PROMPT },
     { role: "system", content: TRAVEL_DATA_REQUESTS_PROMPT },
     ...(context ? [{ role: "system" as const, content: `仅在问题与当前行程相关时参考：${context}` }] : []),
   ];

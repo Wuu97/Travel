@@ -1,6 +1,8 @@
 import { isItineraryType, type ExpenseItem, type ItineraryItem } from "../trip/model";
 import type { TravelImage } from "../ai/image/types";
 import { normalizeTravelImages } from "../ai/image/normalization";
+import { parseStructuredTravelResponse } from "../ai/parser/travel-response-parser";
+import type { StructuredTravelResponse } from "../ai/schemas/travel-response";
 
 export type RichPlace = { name: string; category?: string; area?: string; description?: string; rating?: string | number; reviewCount?: string; price?: string; openingHours?: string; recommendedDuration?: string; imageUrl?: string; images?: TravelImage[]; itineraryItem?: ItineraryItem };
 export type RichRestaurant = { name: string; cuisine?: string; area?: string; description?: string; rating?: string | number; reviewCount?: string; averagePrice?: string; openingHours?: string; recommendedDishes?: string[]; imageUrl?: string; images?: TravelImage[]; itineraryItem?: ItineraryItem };
@@ -45,6 +47,7 @@ export type ChatMessage = {
   itineraryItems?: ItineraryItem[];
   expenseItems?: ExpenseItem[];
   richContent?: RichContent;
+  structuredTravelResponse?: StructuredTravelResponse;
 };
 
 export type SavedChat = {
@@ -65,12 +68,14 @@ export function normalizeChatMessage(value: unknown): ChatMessage | null {
     : "";
   const content = typeof raw.content === "string" ? raw.content : typeof raw.markdown === "string" ? raw.markdown : typeof raw.text === "string" ? raw.text : typeof objectContent?.text === "string" ? objectContent.text : partsContent;
   const text = typeof objectContent?.text === "string" ? objectContent.text : partsContent;
+  const structured = raw.structuredTravelResponse === undefined ? undefined : parseStructuredTravelResponse(raw.structuredTravelResponse);
   return {
     role: raw.role,
     content: typeof content === "string" ? content : text,
     itineraryItems: Array.isArray(raw.itineraryItems) ? raw.itineraryItems as ItineraryItem[] : [],
     expenseItems: Array.isArray(raw.expenseItems) ? raw.expenseItems as ExpenseItem[] : [],
     richContent: normalizeRichContent(raw.richContent),
+    ...(structured?.isStructured ? { structuredTravelResponse: structured.response } : {}),
   };
 }
 

@@ -1,6 +1,7 @@
 import { isItineraryType, type ExpenseItem, type ItineraryItem } from "../../trip/model";
 import type { AiReply } from "../schemas/response";
 import { parseDataRequests } from "../schemas/dataRequests";
+import { parseStructuredTravelResponse, structuredTravelResponseToRichContent } from "../parser/travel-response-parser";
 
 const expenseTypes = ["住宿", "餐饮", "交通", "门票", "活动", "其他"] as const;
 type ExpenseType = (typeof expenseTypes)[number];
@@ -53,12 +54,16 @@ export function parseAiReply(content: string): AiReply {
   }
   if (payload && typeof payload === "object") {
     const parsed = payload as Record<string, unknown>;
-    const answer = typeof parsed.answer === "string" && parsed.answer.trim() ? parsed.answer : typeof parsed.content === "string" && parsed.content.trim() ? parsed.content : "";
+    const structured = parseStructuredTravelResponse(parsed);
+    const answer = structured.response.answer;
     const dataRequests = parseDataRequests(parsed.dataRequests);
     if (answer) {
       // Provider photos are presentation data. The model may retain legacy imageUrl
       // fields, but cannot introduce a provider image collection.
-      const richContent = parsed.richContent && typeof parsed.richContent === "object" ? { ...(parsed.richContent as Record<string, unknown>) } : undefined;
+      const structuredRichContent = structuredTravelResponseToRichContent(structured.response);
+      const richContent: Record<string, unknown> | undefined = parsed.richContent && typeof parsed.richContent === "object"
+        ? { ...(parsed.richContent as Record<string, unknown>) }
+        : structuredRichContent ? { ...structuredRichContent } : undefined;
       if (richContent) {
         for (const collection of ["places", "restaurants"]) {
           if (Array.isArray(richContent[collection])) richContent[collection] = richContent[collection].map((item) => {
@@ -72,6 +77,7 @@ export function parseAiReply(content: string): AiReply {
       return {
       content: answer.trim().replace(/\\n/g, "\n"),
       ...(richContent ? { richContent } : {}),
+      ...(structured.isStructured ? { structuredTravelResponse: structured.response } : {}),
       itineraryItems: parseItineraryItems(parsed.itineraryItems), expenseItems: parseExpenseItems(parsed.expenseItems), ...(dataRequests.length ? { dataRequests } : {}),
       };
     }
