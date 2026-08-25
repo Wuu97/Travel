@@ -1,3 +1,104 @@
+/* 途遇 Design System · Foundation tokens */
+:root {
+  /* Brand / Accent */
+  --color-brand: #d96e40;
+  --color-brand-hover: #c95f31;
+  --color-brand-active: #b95b34;
+  --color-brand-soft: #fff0e8;
+  --color-brand-tint: var(--color-brand-soft);
+
+  /* Text */
+  --color-text-primary: #1d342f;
+  --color-text-heading: #24483b;
+  --color-text-secondary: #426257;
+  --color-text-body: #587167;
+  --color-text-muted: #71877c;
+  --color-text-meta: #819388;
+  --color-text-disabled: #a0aea6;
+  --color-text-subtle: #82958b;
+  --color-text-link: #315c49;
+  --color-text-action: #315c46;
+  --color-text-tertiary: #557065;
+  --color-text-navigation: #587367;
+  --color-text-control: #557568;
+  --color-text-muted-strong: #6d8579;
+
+  /* Surface */
+  --color-page-bg: #f9f7f1;
+  --color-page-bg-subtle: #fcfbf8;
+  --color-canvas: var(--color-page-bg);
+  --color-surface: #fff;
+  --color-surface-warm: #fffdf9;
+  --color-surface-soft: #f5f8f5;
+  --color-surface-green: #edf4ee;
+  --color-surface-subtle: #fbfcfa;
+  --color-surface-muted: var(--color-surface-soft);
+  --color-surface-tint: var(--color-surface-green);
+  --color-surface-tint-strong: #dfece2;
+
+  /* Border */
+  --color-border: #dfece2;
+  --color-border-soft: #d8dfd8;
+  --color-border-strong: #bfd0c4;
+  --color-border-subtle: #e4e9e3;
+
+  /* Green semantic */
+  --color-success: #3f7654;
+  --color-success-strong: #315c46;
+  --color-success-soft: #f2f6f1;
+  --color-success-tint: #edf6ef;
+  --color-success-hover: #f1f5f1;
+  --color-success-tint-strong: #e5ebe6;
+
+  /* Danger / Error */
+  --color-danger: #b6382a;
+  --color-danger-hover: #b9573d;
+  --color-danger-soft: #fff0ed;
+  --color-danger-border: #e8a59a;
+  --color-danger-tint: var(--color-danger-soft);
+  --color-danger-action: #c96545;
+
+  /* Warning and overlays */
+  --color-warning: #bf6a2f;
+  --color-warning-soft: #fff4e7;
+  --color-overlay: rgba(24, 58, 50, 0.34);
+  --color-focus: var(--color-brand);
+
+  /* Status and categories */
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* Shadow */
+  --shadow-sm: 0 2px 8px rgb(24 58 50 / 0.09);
+  --shadow-md: 0 12px 28px #27483a1f;
+  --shadow-popover: var(--shadow-md);
+  --shadow-lg: 0 20px 45px #355b4b20;
+  --shadow-overlay: 0 22px 70px #183a3266;
+  --shadow-dialog: 0 20px 60px #18342d36;
+
+  /* Typography */
+  --font-ui: Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans: var(--font-ui);
+  --font-display: Georgia, "Songti SC", serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-title: 18px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.65;
+}
+
 .scroll-area {
   overscroll-behavior: contain;
 }
@@ -19,7 +120,7 @@ html{scroll-behavior:smooth}
 
 
 
-body{margin:0;background:#f9f7f1;color:#1d342f;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}
+body{margin:0;background:var(--color-canvas);color:var(--color-text-primary);font-family:var(--font-ui)}
 
 
 
@@ -31,7 +132,7 @@ body{margin:0;background:#f9f7f1;color:#1d342f;font-family:Arial,"PingFang SC","
 
 
 
-.login{border:1px solid #b9c8bc;border-radius:22px;background:transparent;padding:9px 17px;color:#234238}
+.login{border:1px solid #b9c8bc;border-radius:var(--radius-pill);background:transparent;padding:9px 17px;color:#234238}
 
 
 
@@ -39,7 +140,7 @@ body{margin:0;background:#f9f7f1;color:#1d342f;font-family:Arial,"PingFang SC","
 
 
 
-button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:1px solid #d96e40;outline-offset:2px}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:1px solid var(--color-focus);outline-offset:2px}
 
 
 
@@ -56,7 +157,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 
 @media print{@page{size:A4 portrait;margin:12mm}
 
-html,body{background:#fff!important}
+html,body{background:var(--color-surface)!important}
 
 body *{visibility:hidden!important}}
 

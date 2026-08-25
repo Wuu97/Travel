@@ -81,7 +81,7 @@
 .confirm-dialog footer .confirm-dialog-danger {
   border-color: #df8a62;
   background: #ed9b70;
-  color: #ffffff;
+  color: var(--color-surface);
 }
 
 
