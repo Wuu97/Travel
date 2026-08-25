@@ -11,7 +11,7 @@ const sources = [
   "features/ai/image/generation/types.ts", "features/ai/image/generation/validation.ts", "features/ai/image/generation/service.ts", "features/ai/schemas/imageRequests.ts", "features/ai/tools/generateImage.ts",
   "features/ai/image/storage/types.ts", "features/ai/image/storage/validation.ts", "features/ai/image/storage/local/provider.ts",
   "features/ai/image/types.ts", "features/ai/image/normalization.ts", "features/ai/image/enrichPlaceImages.ts", "features/ai/image/enrichExecutedTravelImages.ts", "features/ai/image/providers/types.ts", "features/ai/image/providers/wikimedia/mapper.ts", "features/ai/image/providers/wikimedia/provider.ts",
-  "features/ai/core/client.ts", "features/ai/core/parser.ts", "features/ai/core/toolResultReasoning.ts", "features/ai/enrichment/enrichReply.ts", "features/ai/enrichment/matching.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
+  "features/ai/core/client.ts", "features/ai/core/parser.ts", "features/ai/core/toolResultReasoning.ts", "features/ai/enrichment/matching.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
   "features/ai/providers/amap/client.ts", "features/ai/providers/amap/index.ts", "features/ai/providers/amap/mapper.ts", "features/ai/providers/amap/places.ts", "features/ai/providers/amap/restaurants.ts", "features/ai/providers/amap/routes.ts", "features/ai/providers/amap/types.ts", "features/ai/providers/types.ts",
   "features/ai/tools/executor.ts", "features/ai/tools/places.ts", "features/ai/tools/restaurants.ts", "features/ai/tools/routes.ts", "features/ai/tools/types.ts", "features/ai/schemas/context.ts", "features/ai/schemas/dataRequests.ts", "features/ai/schemas/response.ts", "features/chat/model.ts", "features/chat/requestValidation.ts", "features/shared/validation.ts", "features/trip/model.ts",
 ];
@@ -145,13 +145,12 @@ test("keeps entity image gallery controls bounded and accessible", async () => {
   assert.match(source, /if \(!availableImages\.length\) return null/);
 });
 
-test("does not re-query Amap when verified tool places enter the image pipeline", async () => {
+test("keeps tool and image enrichment as the only provider-backed pipeline", async () => {
   const output = await mkdtemp(join(tmpdir(), "travel-verified-images-"));
   try {
     await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
     const { executeDataRequests } = await import(new URL(`file://${join(output, "ai/tools/executor.js")}`).href);
     const { enrichExecutedTravelImages } = await import(new URL(`file://${join(output, "ai/image/enrichExecutedTravelImages.js")}`).href);
-    const { enrichAiReply } = await import(new URL(`file://${join(output, "ai/enrichment/enrichReply.js")}`).href);
     const { mergeExecutedTravelData } = await import(new URL(`file://${join(output, "ai/enrichment/richContent.js")}`).href);
     let amapCalls = 0;
     let wikimediaCalls = 0;
@@ -164,17 +163,29 @@ test("does not re-query Amap when verified tool places enter the image pipeline"
     const data = await executeDataRequests([{ type: "place_lookup", query: "武侯祠" }], { providers, travelContext: { city: "成都" } });
     assert.equal(amapCalls, 1);
     const withImages = await enrichExecutedTravelImages(data, providers.imageSearchProvider, { city: "成都" });
-    const legacy = await enrichAiReply({ content: "回答", itineraryItems: [], expenseItems: [], richContent: { places: [{ name: "武侯祠" }] } }, providers, { city: "成都" }, withImages.places);
-    const reply = mergeExecutedTravelData(legacy, withImages);
+    const reply = mergeExecutedTravelData({ content: "回答", itineraryItems: [], expenseItems: [], richContent: {
+      places: [{ name: "武侯祠", description: "模型说明", recommendedDuration: "2小时", itineraryItem: { title: "Day 1", type: "活动" } }],
+      restaurants: [{ name: "模型餐厅", description: "模型餐厅说明", recommendedDishes: ["回锅肉"], itineraryItem: { title: "Day 1 午餐", type: "餐饮" } }],
+      routes: [{ from: "武侯祠", to: "宽窄巷子", description: "模型路线说明", itineraryItem: { title: "Day 1 下午", type: "交通" } }],
+    } }, withImages);
     assert.equal(amapCalls, 1);
     assert.equal(wikimediaCalls, 1);
     assert.equal(reply.richContent?.places?.[0]?.images?.[0]?.source, "search");
+    assert.equal(reply.richContent?.places?.[1]?.description, "模型说明");
+    assert.equal(reply.richContent?.places?.[1]?.recommendedDuration, "2小时");
+    assert.equal(reply.richContent?.places?.[1]?.itineraryItem?.title, "Day 1");
+    assert.equal(reply.richContent?.restaurants?.[0]?.description, "模型餐厅说明");
+    assert.deepEqual(reply.richContent?.restaurants?.[0]?.recommendedDishes, ["回锅肉"]);
+    assert.equal(reply.richContent?.restaurants?.[0]?.itineraryItem?.title, "Day 1 午餐");
+    assert.equal(reply.richContent?.routes?.[0]?.description, "模型路线说明");
+    assert.equal(reply.richContent?.routes?.[0]?.itineraryItem?.title, "Day 1 下午");
 
     const searchData = await executeDataRequests([{ type: "place_search", query: "成都景点", limit: 1 }], { providers, travelContext: { city: "成都" } });
     const callsAfterToolSearch = amapCalls;
     const searchImages = await enrichExecutedTravelImages(searchData, providers.imageSearchProvider, { city: "成都" });
-    await enrichAiReply({ content: "回答", itineraryItems: [], expenseItems: [], richContent: { places: [{ name: "成都武侯祠博物馆" }] } }, providers, { city: "成都" }, searchImages.places);
+    mergeExecutedTravelData({ content: "回答", itineraryItems: [], expenseItems: [], richContent: { places: [{ name: "成都武侯祠博物馆" }] } }, searchImages);
     assert.equal(amapCalls, callsAfterToolSearch);
+    assert.equal(wikimediaCalls, 2);
   } finally { await rm(output, { recursive: true, force: true }); }
 });
 
@@ -200,22 +211,17 @@ test("uses Wikimedia only as a safe place-image fallback", async () => {
   } finally { await rm(output, { recursive: true, force: true }); }
 });
 
-test("enrichment applies image search only to verified places, never restaurants", async () => {
+test("executed image enrichment searches only verified places, never restaurants", async () => {
   const output = await mkdtemp(join(tmpdir(), "travel-image-enrichment-"));
   try {
     await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
-    const { enrichAiReply } = await import(new URL(`file://${join(output, "ai/enrichment/enrichReply.js")}`).href);
+    const { enrichExecutedTravelImages } = await import(new URL(`file://${join(output, "ai/image/enrichExecutedTravelImages.js")}`).href);
     let imageCalls = 0;
-    const providers = {
-      amapPlaceProvider: { async searchPlaces() { return [{ id: "p", name: "人民公园", source: { provider: "amap" } }]; }, async getPlaceDetails() { return null; } },
-      amapRestaurantProvider: { async searchRestaurants() { return [{ id: "r", name: "川菜馆", source: { provider: "amap" } }]; }, async getRestaurantDetails() { return null; } },
-      amapRouteProvider: { async getRoute() { return null; } },
-      imageSearchProvider: { async searchImages() { imageCalls += 1; return [{ url: "https://upload.wikimedia.org/place.jpg", source: "search", provider: "wikimedia" }]; } },
-    };
-    const reply = await enrichAiReply({ content: "回答", itineraryItems: [], expenseItems: [], richContent: { places: [{ name: "人民公园" }], restaurants: [{ name: "川菜馆" }] } }, providers, { city: "成都" });
+    const provider = { async searchImages() { imageCalls += 1; return [{ url: "https://upload.wikimedia.org/place.jpg", source: "search", provider: "wikimedia" }]; } };
+    const data = await enrichExecutedTravelImages({ places: [{ id: "p", name: "人民公园" }], restaurants: [{ id: "r", name: "川菜馆" }], routes: [] }, provider, { city: "成都" });
     assert.equal(imageCalls, 1);
-    assert.equal(reply.richContent?.places?.[0]?.images?.[0]?.source, "search");
-    assert.equal(reply.richContent?.restaurants?.[0]?.images, undefined);
+    assert.equal(data.places[0]?.images?.[0]?.source, "search");
+    assert.equal(data.restaurants[0]?.images, undefined);
   } finally { await rm(output, { recursive: true, force: true }); }
 });
 
@@ -248,7 +254,7 @@ test("only verifies exact or strong POI name matches", async () => {
   const output = await mkdtemp(join(tmpdir(), "travel-matching-"));
   try {
     await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
-    const { findBestTravelMatch } = await import(new URL(`file://${join(output, "ai/enrichment/enrichReply.js")}`).href);
+    const { findBestTravelMatch } = await import(new URL(`file://${join(output, "ai/enrichment/matching.js")}`).href);
     const match = (query, names) => findBestTravelMatch(query, names.map((name) => ({ name })))?.name;
 
     assert.equal(match("成都大熊猫繁育研究基地", ["成都大熊猫繁育研究基地"]), "成都大熊猫繁育研究基地");
@@ -315,6 +321,7 @@ test("executes requests with context, matching, deduplication, and isolated fail
   try {
     await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
     const { executeDataRequests } = await import(new URL(`file://${join(output, "ai/tools/executor.js")}`).href);
+    const { mergeExecutedTravelData } = await import(new URL(`file://${join(output, "ai/enrichment/richContent.js")}`).href);
     const inputs = [];
     const providers = {
       amapPlaceProvider: { async searchPlaces(input) { inputs.push(input); return input.query === "错误地点" ? [{ id: "wrong", name: "成都欢乐谷", source: { provider: "fake" } }] : [{ id: input.query, name: input.query, source: { provider: "fake" } }]; }, async getPlaceDetails() { return null; } },
@@ -333,6 +340,7 @@ test("executes requests with context, matching, deduplication, and isolated fail
     assert.equal(result.restaurants.length, 1);
     assert.equal(result.routes.length, 1);
     assert.ok(inputs.every((input) => input.city === "成都"));
+    assert.equal(mergeExecutedTravelData({ content: "文字回答仍可返回", itineraryItems: [], expenseItems: [] }, result).content, "文字回答仍可返回");
   } finally { await rm(output, { recursive: true, force: true }); }
 });
 
@@ -340,7 +348,7 @@ test("uses structured travel context to narrow place, restaurant, and route look
   const output = await mkdtemp(join(tmpdir(), "travel-context-"));
   try {
     await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
-    const { enrichAiReply } = await import(new URL(`file://${join(output, "ai/enrichment/enrichReply.js")}`).href);
+    const { executeDataRequests } = await import(new URL(`file://${join(output, "ai/tools/executor.js")}`).href);
     const { parseAiRequest } = await import(new URL(`file://${join(output, "chat/requestValidation.js")}`).href);
     const placeInputs = [];
     const restaurantInputs = [];
@@ -357,13 +365,16 @@ test("uses structured travel context to narrow place, restaurant, and route look
         async getRoute(input) { return { from: input.from, to: input.to, mode: "driving", durationMinutes: 20, distanceMeters: 5_000, source: { provider: "amap" } }; },
       },
     };
-    const reply = { content: "回答", itineraryItems: [], expenseItems: [], richContent: { places: [{ name: "人民公园" }], restaurants: [{ name: "饕林餐厅", area: "春熙路" }], routes: [{ from: "人民公园", to: "万象城" }] } };
-    await enrichAiReply(reply, providers, { city: "成都", region: "四川" });
+    await executeDataRequests([
+      { type: "place_lookup", query: "人民公园" },
+      { type: "restaurant_search", query: "饕林餐厅", area: "春熙路", limit: 5 },
+      { type: "route", from: "人民公园", to: "万象城", mode: "driving" },
+    ], { providers, travelContext: { city: "成都", region: "四川" } });
     assert.ok(placeInputs.every((input) => input.city === "成都"));
     assert.deepEqual(restaurantInputs[0], { query: "饕林餐厅", city: "成都", area: "春熙路", cuisine: undefined, limit: 5 });
 
     placeInputs.length = 0;
-    await enrichAiReply({ ...reply, richContent: { places: [{ name: "人民公园" }] } }, providers);
+    await executeDataRequests([{ type: "place_lookup", query: "人民公园" }], { providers });
     assert.equal(placeInputs[0].city, undefined);
     assert.equal(parseAiRequest({ message: "测试", travelContext: { city: 123 } })?.travelContext, undefined);
     assert.deepEqual(parseAiRequest({ message: "测试", travelContext: { city: "成都", region: "四川" } })?.travelContext, { city: "成都", destination: undefined, region: "四川" });
