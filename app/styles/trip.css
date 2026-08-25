@@ -289,7 +289,7 @@
 
 
 
-.timeline article{grid-template-columns:54px minmax(0,1fr) 28px;gap:11px}
+.timeline article:not(.itinerary-card){grid-template-columns:54px minmax(0,1fr) 28px;gap:11px}
 
 
 
@@ -311,7 +311,7 @@
 
 @media(max-width:760px){.timeline{min-height:480px}
 
-.timeline article{grid-template-columns:43px minmax(0,1fr) 24px;gap:7px}}
+.timeline article:not(.itinerary-card){grid-template-columns:43px minmax(0,1fr) 24px;gap:7px}}
 
 
 
@@ -477,7 +477,7 @@
 
 
 
-.timeline article{display:grid;grid-template-columns:54px 20px 1fr 28px;gap:11px;padding:20px 0 2px}
+.timeline article:not(.itinerary-card){display:grid;grid-template-columns:54px 20px 1fr 28px;gap:11px;padding:20px 0 2px}
 
 
 
@@ -621,7 +621,7 @@
 
 .timeline{padding:20px}
 
-.timeline article{grid-template-columns:43px 16px 1fr 24px;gap:7px}
+.timeline article:not(.itinerary-card){grid-template-columns:43px 16px 1fr 24px;gap:7px}
 
 .budget-board{padding:13px}
 
@@ -658,6 +658,8 @@
 
 
 /* itinerary layout final overrides */
+.timeline article.itinerary-card{display:grid;grid-template-columns:54px max-content minmax(0,1fr) max-content 28px;gap:11px;padding:20px 0 2px}
+
 .timeline article.itinerary-card>time{grid-column:1!important;grid-row:1!important;padding-top:1px!important;color:#5d7e71;font-size:var(--font-size-sm)!important;font-weight:700;line-height:1.5}
 
 
@@ -698,7 +700,9 @@
 
 
 
-@media(max-width:760px){.timeline article.itinerary-card>.plan-creator{grid-column:3!important;grid-row:2!important}
+@media(max-width:760px){.timeline article.itinerary-card{grid-template-columns:43px max-content minmax(0,1fr) 24px;gap:7px}
+
+.timeline article.itinerary-card>.plan-creator{grid-column:3!important;grid-row:2!important}
 
 .timeline article.itinerary-card>.plan-menu{grid-column:4!important}
 
