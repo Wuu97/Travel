@@ -8,9 +8,9 @@ import test from "node:test";
 
 const execFileAsync = promisify(execFile);
 const sources = [
-  "features/ai/enrichment/enrichReply.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
+  "features/ai/core/parser.ts", "features/ai/enrichment/enrichReply.ts", "features/ai/enrichment/matching.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
   "features/ai/providers/amap/client.ts", "features/ai/providers/amap/index.ts", "features/ai/providers/amap/mapper.ts", "features/ai/providers/amap/places.ts", "features/ai/providers/amap/restaurants.ts", "features/ai/providers/amap/routes.ts", "features/ai/providers/amap/types.ts", "features/ai/providers/types.ts",
-  "features/ai/tools/places.ts", "features/ai/tools/restaurants.ts", "features/ai/tools/routes.ts", "features/ai/tools/types.ts", "features/ai/schemas/context.ts", "features/chat/model.ts", "features/chat/requestValidation.ts", "features/shared/validation.ts", "features/trip/model.ts",
+  "features/ai/tools/executor.ts", "features/ai/tools/places.ts", "features/ai/tools/restaurants.ts", "features/ai/tools/routes.ts", "features/ai/tools/types.ts", "features/ai/schemas/context.ts", "features/ai/schemas/dataRequests.ts", "features/ai/schemas/response.ts", "features/chat/model.ts", "features/chat/requestValidation.ts", "features/shared/validation.ts", "features/trip/model.ts",
 ];
 
 test("only verifies exact or strong POI name matches", async () => {
@@ -32,6 +32,49 @@ test("only verifies exact or strong POI name matches", async () => {
   } finally {
     await rm(output, { recursive: true, force: true });
   }
+});
+
+test("validates bounded dataRequests and keeps malformed parser fallbacks clean", async () => {
+  const output = await mkdtemp(join(tmpdir(), "travel-data-requests-"));
+  try {
+    await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
+    const { parseAiReply } = await import(new URL(`file://${join(output, "ai/core/parser.js")}`).href);
+    const parsed = parseAiReply(JSON.stringify({ answer: "好的", dataRequests: [
+      { type: "place_search", query: "武侯祠", limit: 99 }, { type: "restaurant_search", cuisine: "川菜", limit: 0 },
+      { type: "route", from: "武侯祠", to: "宽窄巷子", mode: "walking" }, { type: "weather", city: "成都" }, { type: "route", from: 1, to: "x" },
+    ] }));
+    assert.deepEqual(parsed.dataRequests, [
+      { type: "place_search", query: "武侯祠", city: undefined, area: undefined, limit: 5 },
+      { type: "restaurant_search", query: undefined, city: undefined, area: undefined, cuisine: "川菜", limit: 1 },
+      { type: "route", from: "武侯祠", to: "宽窄巷子", mode: "walking" },
+    ]);
+    const capped = parseAiReply(JSON.stringify({ answer: "好的", dataRequests: Array.from({ length: 6 }, (_, index) => ({ type: "place_search", query: `地点${index}` })) }));
+    assert.equal(capped.dataRequests?.length, 4);
+    assert.equal(parseAiReply('{"answer":"半截", "dataRequests":').dataRequests, undefined);
+  } finally { await rm(output, { recursive: true, force: true }); }
+});
+
+test("executes requests with context, matching, deduplication, and isolated failures", async () => {
+  const output = await mkdtemp(join(tmpdir(), "travel-executor-"));
+  try {
+    await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
+    const { executeDataRequests } = await import(new URL(`file://${join(output, "ai/tools/executor.js")}`).href);
+    const inputs = [];
+    const providers = {
+      amapPlaceProvider: { async searchPlaces(input) { inputs.push(input); return [{ id: input.query, name: input.query, source: { provider: "fake" } }]; }, async getPlaceDetails() { return null; } },
+      amapRestaurantProvider: { async searchRestaurants(input) { if (input.query === "失败") throw new Error("expected"); return [{ id: "r1", name: "川菜馆", source: { provider: "fake" } }]; }, async getRestaurantDetails() { return null; } },
+      amapRouteProvider: { async getRoute(input) { return { from: input.from, to: input.to, mode: input.mode, source: { provider: "fake" } }; } },
+    };
+    const result = await executeDataRequests([
+      { type: "place_search", query: "武侯祠", limit: 3 }, { type: "place_search", query: "武侯祠", limit: 3 },
+      { type: "restaurant_search", query: "川菜", limit: 3 }, { type: "restaurant_search", query: "失败", limit: 3 },
+      { type: "route", from: "武侯祠", to: "宽窄巷子", mode: "walking" },
+    ], { providers, travelContext: { city: "成都", region: "四川" } });
+    assert.equal(result.places.length, 1);
+    assert.equal(result.restaurants.length, 1);
+    assert.equal(result.routes.length, 1);
+    assert.ok(inputs.every((input) => input.city === "成都"));
+  } finally { await rm(output, { recursive: true, force: true }); }
 });
 
 test("uses structured travel context to narrow place, restaurant, and route lookups", async () => {

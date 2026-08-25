@@ -1,5 +1,6 @@
 import { isItineraryType, type ExpenseItem, type ItineraryItem } from "../../trip/model";
 import type { AiReply } from "../schemas/response";
+import { parseDataRequests } from "../schemas/dataRequests";
 
 const expenseTypes = ["住宿", "餐饮", "交通", "门票", "活动", "其他"] as const;
 type ExpenseType = (typeof expenseTypes)[number];
@@ -53,13 +54,14 @@ export function parseAiReply(content: string): AiReply {
   if (payload && typeof payload === "object") {
     const parsed = payload as Record<string, unknown>;
     const answer = typeof parsed.answer === "string" && parsed.answer.trim() ? parsed.answer : typeof parsed.content === "string" && parsed.content.trim() ? parsed.content : "";
+    const dataRequests = parseDataRequests(parsed.dataRequests);
     if (answer) return {
       content: answer.trim().replace(/\\n/g, "\n"),
       ...(parsed.richContent && typeof parsed.richContent === "object" ? { richContent: parsed.richContent } : {}),
-      itineraryItems: parseItineraryItems(parsed.itineraryItems), expenseItems: parseExpenseItems(parsed.expenseItems),
+      itineraryItems: parseItineraryItems(parsed.itineraryItems), expenseItems: parseExpenseItems(parsed.expenseItems), ...(dataRequests.length ? { dataRequests } : {}),
     };
   }
-  const payloadMarker = normalized.search(/[,\n]\s*"(?:richContent|itineraryItems|expenseItems)"\s*:/);
+  const payloadMarker = normalized.search(/[,\n]\s*"(?:richContent|dataRequests|itineraryItems|expenseItems)"\s*:/);
   const visibleText = (payloadMarker >= 0 ? normalized.slice(0, payloadMarker) : normalized)
     .replace(/^\s*\{?\s*"(?:answer|content)"\s*:\s*"?/, "").replace(/"\s*$/, "").replace(/\\n/g, "\n").trim();
   return { content: visibleText || "暂时没有生成回复，请再试一次。", itineraryItems: [], expenseItems: [] };

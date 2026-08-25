@@ -9,36 +9,16 @@ import type { TravelPlace, TravelRouteMode } from "../tools/types";
 import { travelPlaceToRichPlace } from "./places";
 import { travelRestaurantToRichRestaurant } from "./restaurants";
 import { travelRouteToRichRoute } from "./routes";
+import { findBestTravelMatch, normalizeName } from "./matching";
 
 const PLACE_LIMIT = 5;
 const RESTAURANT_LIMIT = 5;
 const ROUTE_LIMIT = 3;
-const MIN_CONTAINS_MATCH_LENGTH = 3;
-const MIN_CONTAINS_MATCH_RATIO = 0.35;
 
 type EnrichmentProviders = { amapPlaceProvider: PlaceProvider; amapRestaurantProvider: RestaurantProvider; amapRouteProvider: RouteProvider };
 
-export const normalizeName = (value: string) => value.trim().toLowerCase().replace(/[\s()（）]/g, "");
-export const extractBaseEntityName = (value: string) => normalizeName(value.replace(/[（(][^（）()]*[）)]/g, ""));
+export { extractBaseEntityName, findBestTravelMatch, normalizeName } from "./matching";
 const routeModes: Record<string, TravelRouteMode> = { driving: "driving", "驾车": "driving", walking: "walking", "步行": "walking", transit: "transit", "公共交通": "transit", cycling: "cycling", "骑行": "cycling" };
-
-function isStrongContainsMatch(left: string, right: string): boolean {
-  const shorter = left.length <= right.length ? left : right;
-  const longer = left.length > right.length ? left : right;
-  return shorter.length >= MIN_CONTAINS_MATCH_LENGTH && longer.includes(shorter) && shorter.length / longer.length >= MIN_CONTAINS_MATCH_RATIO;
-}
-
-export function findBestTravelMatch<T extends { name: string }>(query: string, candidates: T[]): T | undefined {
-  const normalizedQuery = normalizeName(query);
-  const baseQuery = extractBaseEntityName(query);
-  if (!normalizedQuery) return undefined;
-  return candidates.find((candidate) => normalizeName(candidate.name) === normalizedQuery)
-    ?? candidates.find((candidate) => baseQuery && extractBaseEntityName(candidate.name) === baseQuery)
-    ?? candidates.find((candidate) => {
-      const normalizedCandidate = normalizeName(candidate.name);
-      return normalizedCandidate && isStrongContainsMatch(normalizedQuery, normalizedCandidate);
-    });
-}
 
 function placeLookupCache(provider: PlaceProvider, travelContext?: TravelContext) {
   const cache = new Map<string, Promise<TravelPlace[]>>();
