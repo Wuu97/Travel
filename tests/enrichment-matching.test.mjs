@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -8,12 +8,42 @@ import test from "node:test";
 
 const execFileAsync = promisify(execFile);
 const sources = [
-  "features/ai/image/storage/types.ts", "features/ai/image/storage/validation.ts",
+  "features/ai/image/storage/types.ts", "features/ai/image/storage/validation.ts", "features/ai/image/storage/local/provider.ts",
   "features/ai/image/types.ts", "features/ai/image/normalization.ts", "features/ai/image/enrichPlaceImages.ts", "features/ai/image/enrichExecutedTravelImages.ts", "features/ai/image/providers/types.ts", "features/ai/image/providers/wikimedia/mapper.ts", "features/ai/image/providers/wikimedia/provider.ts",
   "features/ai/core/client.ts", "features/ai/core/parser.ts", "features/ai/core/toolResultReasoning.ts", "features/ai/enrichment/enrichReply.ts", "features/ai/enrichment/matching.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
   "features/ai/providers/amap/client.ts", "features/ai/providers/amap/index.ts", "features/ai/providers/amap/mapper.ts", "features/ai/providers/amap/places.ts", "features/ai/providers/amap/restaurants.ts", "features/ai/providers/amap/routes.ts", "features/ai/providers/amap/types.ts", "features/ai/providers/types.ts",
   "features/ai/tools/executor.ts", "features/ai/tools/places.ts", "features/ai/tools/restaurants.ts", "features/ai/tools/routes.ts", "features/ai/tools/types.ts", "features/ai/schemas/context.ts", "features/ai/schemas/dataRequests.ts", "features/ai/schemas/response.ts", "features/chat/model.ts", "features/chat/requestValidation.ts", "features/shared/validation.ts", "features/trip/model.ts",
 ];
+
+test("stores generated image bytes locally behind safe UUID references", async () => {
+  const output = await mkdtemp(join(tmpdir(), "travel-image-storage-build-"));
+  const root = join(await mkdtemp(join(tmpdir(), "travel-generated-images-")), "nested", "images");
+  try {
+    await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, "features/ai/image/storage/types.ts", "features/ai/image/storage/validation.ts", "features/ai/image/storage/local/provider.ts"], { cwd: new URL("../", import.meta.url) });
+    const { LocalGeneratedImageStorageProvider } = await import(new URL(`file://${join(output, "local/provider.js")}`).href);
+    const provider = new LocalGeneratedImageStorageProvider({ rootDirectory: root, publicBasePath: "/generated-images/" });
+    for (const [contentType, extension] of [["image/png", ".png"], ["image/jpeg", ".jpg"], ["image/webp", ".webp"]]) {
+      const bytes = new Uint8Array([1, 2, 3]);
+      const stored = await provider.storeImage({ bytes, contentType });
+      assert.match(stored.url, new RegExp(`^/generated-images/[0-9a-f-]{36}\\${extension}$`));
+      assert.equal(stored.storageKey, stored.url.slice(1));
+      assert.ok(!stored.url.includes("/tmp/") && !stored.storageKey.includes("/tmp/"));
+      assert.deepEqual(
+        new Uint8Array(await readFile(join(root, stored.url.split("/").at(-1)))),
+        bytes,
+      );
+      assert.deepEqual(Object.keys(stored).sort(), ["storageKey", "url"]);
+    }
+    assert.equal((await readdir(root)).length, 3);
+    await assert.rejects(() => provider.storeImage({ bytes: new Uint8Array(), contentType: "image/png" }));
+    await assert.rejects(() => provider.storeImage({ bytes: new Uint8Array(10 * 1024 * 1024 + 1), contentType: "image/png" }));
+    await assert.rejects(() => provider.storeImage({ bytes: new Uint8Array([1]), contentType: "image/gif" }));
+    assert.throws(() => new LocalGeneratedImageStorageProvider({ rootDirectory: "" }));
+  } finally {
+    await rm(output, { recursive: true, force: true });
+    await rm(root.split("/nested/")[0], { recursive: true, force: true });
+  }
+});
 
 test("validates generated image storage inputs without accepting base64 payloads", async () => {
   const output = await mkdtemp(join(tmpdir(), "travel-image-storage-"));

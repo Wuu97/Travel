@@ -9,7 +9,7 @@ const extensions: Record<GeneratedImageContentType, ".png" | ".jpg" | ".webp"> =
 };
 
 export function isGeneratedImageContentType(value: unknown): value is GeneratedImageContentType {
-  return typeof value === "string" && value in extensions;
+  return typeof value === "string" && Object.prototype.hasOwnProperty.call(extensions, value);
 }
 
 export function generatedImageExtension(contentType: GeneratedImageContentType): ".png" | ".jpg" | ".webp" {
