@@ -13,7 +13,7 @@ export async function requestLlmCompletion(messages: LlmMessage[]): Promise<stri
       response_format: { type: "json_object" },
       messages,
       temperature: 0.7,
-      max_tokens: 1200,
+      max_tokens: 2400,
     }),
   });
   if (!response.ok) throw new Error(response.status === 401 ? "DeepSeek 认证失败（401）：请确认 .env.local 中的 Key 完整、有效，并来自 DeepSeek 开放平台。" : `DeepSeek 请求失败（${response.status}）`);

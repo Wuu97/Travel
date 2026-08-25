@@ -2,7 +2,7 @@ import { requestLlmCompletion, type LlmMessage } from "./client";
 import type { TravelContext } from "../schemas/context";
 import type { ExecutedTravelData } from "../tools/executor";
 
-export const TRAVEL_TOOL_RESULT_REASONING_PROMPT = "You are given verified travel data from external providers. Return only JSON {\"answer\": string}. Use provider facts as authoritative for rating, price, opening hours, route distance, and route duration. Do not invent missing facts, image URLs, or new factual POIs as primary recommendations. Explain and compare only the supplied results in relation to the user question.";
+export const TRAVEL_TOOL_RESULT_REASONING_PROMPT = "You are given a first travel answer and verified travel data from external providers. Return only JSON {\"answer\": string}. Preserve useful itinerary logic, visiting order, qualitative advice, cautions, and practical travel guidance from the first answer; tool results must enhance the answer, never collapse it into a short fact list. Use provider facts as authoritative for rating, price, opening hours, route distance, route duration, and cost. Remove or rewrite any specific numerical rating, price, opening hour, route metric, or other factual claim in the first answer that is not supported by verifiedTravelData. Do not invent missing facts, image URLs, or new factual POIs as primary recommendations. Integrate verified facts naturally and keep the response proportional to the user question.";
 
 type LlmCompletion = (messages: LlmMessage[]) => Promise<string>;
 

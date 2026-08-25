@@ -49,13 +49,42 @@ test("reasons only over bounded provider facts and safely falls back", async () 
   try {
     const { reasonOverToolResults } = await compilation.importModule("ai/core/toolResultReasoning.js");
     const data = { places: [{ id: "p", name: "武侯祠", rating: 4.8, openingHours: ["08:30-18:30"], images: [{ url: "https://secret.example/image.jpg" }] }], restaurants: [{ id: "r", name: "川菜馆A", rating: 4.8, averagePrice: 70, openingHours: ["11:00-22:00"] }], routes: [{ from: { name: "武侯祠" }, to: { name: "宽窄巷子" }, mode: "walking", durationMinutes: 58, distanceMeters: 24800 }] };
-    let prompt = "";
-    const answer = await reasonOverToolResults({ message: "怎么去", firstAnswer: "旧回答", data }, async (messages) => { prompt = messages[1].content; return '{"answer":"基于真实路线约58分钟、24.8公里。"}'; });
+    const firstAnswer = "武侯祠建议按 A→B→C 顺序游览，适合上午前往；门票50元，评分4.9。";
+    let prompt = ""; let systemPrompt = "";
+    const answer = await reasonOverToolResults({ message: "怎么去", firstAnswer, data }, async (messages) => { systemPrompt = messages[0].content; prompt = messages[1].content; return '{"answer":"基于真实路线约58分钟、24.8公里。"}'; });
     assert.equal(answer, "基于真实路线约58分钟、24.8公里。");
-    assert.match(prompt, /4.8/); assert.match(prompt, /70/); assert.match(prompt, /08:30-18:30/); assert.match(prompt, /24800/); assert.ok(!prompt.includes("https://secret.example/image.jpg"));
+    assert.match(prompt, /4.8/); assert.match(prompt, /70/); assert.match(prompt, /08:30-18:30/); assert.match(prompt, /24800/); assert.match(prompt, /A→B→C/); assert.match(prompt, /门票50元/); assert.ok(!prompt.includes("https://secret.example/image.jpg"));
+    assert.match(systemPrompt, /Preserve useful itinerary logic/); assert.match(systemPrompt, /not supported by verifiedTravelData/);
     assert.equal(await reasonOverToolResults({ message: "普通问题", firstAnswer: "旧回答", data: { places: [], restaurants: [], routes: [] } }, async () => { throw new Error("must not call"); }), undefined);
     assert.equal(await reasonOverToolResults({ message: "失败", firstAnswer: "旧回答", data }, async () => { throw new Error("expected"); }), undefined);
     assert.equal(await reasonOverToolResults({ message: "错误 JSON", firstAnswer: "旧回答", data }, async () => "not json"), undefined);
+  } finally { await compilation.cleanup(); }
+});
+
+test("defines detailed travel answer depth while preserving the existing JSON response contract", async () => {
+  const compilation = await compileTypeScript(aiTestSources, "travel-answer-depth-");
+  try {
+    const { TRAVEL_DATA_REQUESTS_PROMPT, TRAVEL_SYSTEM_PROMPT } = await compilation.importModule("ai/core/prompt.js");
+    const { parseAiReply } = await compilation.importModule("ai/core/parser.js");
+    assert.match(TRAVEL_SYSTEM_PROMPT, /简单事实、季节或文化问答保持简洁直接/);
+    assert.match(TRAVEL_SYSTEM_PROMPT, /单景点\/单餐厅问题写成详细指南/);
+    assert.match(TRAVEL_SYSTEM_PROMPT, /## Day 标题/);
+    assert.match(TRAVEL_SYSTEM_PROMPT, /评分、评论数、票价或人均、营业时间、实时路线距离\/耗时\/费用/);
+    assert.match(TRAVEL_SYSTEM_PROMPT, /没有可靠 provider 上下文时必须省略/);
+    assert.match(TRAVEL_DATA_REQUESTS_PROMPT, /具体地点怎么玩、是否值得去等问题应优先使用 place_lookup/);
+    assert.match(TRAVEL_DATA_REQUESTS_PROMPT, /餐厅推荐应使用 restaurant_search/);
+    assert.match(TRAVEL_DATA_REQUESTS_PROMPT, /明确两点之间怎么去应使用 route/);
+
+    const parsed = parseAiReply(JSON.stringify({
+      answer: "## Day 1｜老成都文化线\n\n09:00–11:00 武侯祠\n- 建议按文物区到惠陵的顺序游览。\n- 注意：留出午餐和步行缓冲。",
+      richContent: { places: [{ name: "武侯祠", description: "三国文化主题", recommendedDuration: "约2小时" }] },
+      itineraryItems: [{ title: "武侯祠", type: "景点", day: 1, time: "09:00" }],
+      dataRequests: [{ type: "place_lookup", query: "武侯祠" }],
+    }));
+    assert.match(parsed.content, /^## Day 1/);
+    assert.equal(parsed.richContent?.places?.[0]?.name, "武侯祠");
+    assert.equal(parsed.itineraryItems[0]?.day, 1);
+    assert.deepEqual(parsed.dataRequests, [{ type: "place_lookup", query: "武侯祠", city: undefined, area: undefined }]);
   } finally { await compilation.cleanup(); }
 });
 
