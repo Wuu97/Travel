@@ -10,7 +10,7 @@ import { enrichExecutedTravelImages } from "../image/enrichExecutedTravelImages"
 import { createCachedImageSearchProvider } from "../image/enrichPlaceImages";
 import { WikimediaImageSearchProvider } from "../image/providers/wikimedia/provider";
 import { buildBudgetedAiContextWithMemoryLoader } from "../context-builder";
-import { resolveContextBudget } from "../context-budget";
+import { estimateTokenCount, limitContextText, resolveContextBudget, trimHistoryByBudget } from "../context-budget";
 import type { TravelMemory } from "../../memory/model";
 
 export type AiRequest = {
@@ -24,12 +24,21 @@ export type AiRequest = {
 export async function requestTravelAdvice({ context, history, loadMemories, message, travelContext }: AiRequest): Promise<AiReply> {
   const contextBudget = resolveContextBudget({ query: message, tripDays: travelContext?.trip?.days });
   const aiContext = await buildBudgetedAiContextWithMemoryLoader({ userQuery: message, travelContext, loadMemories, budget: contextBudget });
-  const messages: LlmMessage[] = [
+  const baseMessages: LlmMessage[] = [
     { role: "system", content: TRAVEL_SYSTEM_PROMPT },
     { role: "system", content: TRAVEL_DATA_REQUESTS_PROMPT },
-    ...(aiContext.combinedContext ? [{ role: "system" as const, content: `${TRAVEL_CONTEXT_PROMPT}\n\n${aiContext.combinedContext}` }] : []),
     ...(context ? [{ role: "system" as const, content: `仅在问题与当前行程相关时参考：${context}` }] : []),
-    ...history,
+  ];
+  const contextAllowance = Math.max(0, contextBudget.maxContextTokens - estimateTokenCount(message) - baseMessages.reduce((total, item) => total + estimateTokenCount(item.content), 0));
+  const boundedContext = limitContextText(aiContext.combinedContext, contextAllowance);
+  const fixedMessages: LlmMessage[] = [
+    ...baseMessages,
+    ...(boundedContext ? [{ role: "system" as const, content: `${TRAVEL_CONTEXT_PROMPT}\n\n${boundedContext}` }] : []),
+  ];
+  const historyBudget = Math.max(0, contextBudget.maxContextTokens - estimateTokenCount(message) - fixedMessages.reduce((total, item) => total + estimateTokenCount(item.content), 0));
+  const messages: LlmMessage[] = [
+    ...fixedMessages,
+    ...trimHistoryByBudget(history, historyBudget),
     { role: "user", content: message },
   ];
   const parsed = parseAiReply(await requestLlmCompletion(messages, { maxTokens: contextBudget.maxOutputTokens }));
