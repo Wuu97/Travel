@@ -2,6 +2,7 @@ import { normalizeRichContent, type RichPlace, type RichRestaurant, type RichRou
 import { createAmapProviders } from "../providers/amap";
 import type { PlaceProvider, RestaurantProvider, RouteProvider } from "../providers/types";
 import type { AiReply } from "../schemas/response";
+import type { TravelContext } from "../schemas/context";
 import { searchTravelPlaces } from "../tools/places";
 import { searchTravelRestaurants } from "../tools/restaurants";
 import type { TravelPlace, TravelRouteMode } from "../tools/types";
@@ -18,6 +19,7 @@ const MIN_CONTAINS_MATCH_RATIO = 0.35;
 type EnrichmentProviders = { amapPlaceProvider: PlaceProvider; amapRestaurantProvider: RestaurantProvider; amapRouteProvider: RouteProvider };
 
 export const normalizeName = (value: string) => value.trim().toLowerCase().replace(/[\s()（）]/g, "");
+export const extractBaseEntityName = (value: string) => normalizeName(value.replace(/[（(][^（）()]*[）)]/g, ""));
 const routeModes: Record<string, TravelRouteMode> = { driving: "driving", "驾车": "driving", walking: "walking", "步行": "walking", transit: "transit", "公共交通": "transit", cycling: "cycling", "骑行": "cycling" };
 
 function isStrongContainsMatch(left: string, right: string): boolean {
@@ -28,21 +30,25 @@ function isStrongContainsMatch(left: string, right: string): boolean {
 
 export function findBestTravelMatch<T extends { name: string }>(query: string, candidates: T[]): T | undefined {
   const normalizedQuery = normalizeName(query);
+  const baseQuery = extractBaseEntityName(query);
   if (!normalizedQuery) return undefined;
   return candidates.find((candidate) => normalizeName(candidate.name) === normalizedQuery)
+    ?? candidates.find((candidate) => baseQuery && extractBaseEntityName(candidate.name) === baseQuery)
     ?? candidates.find((candidate) => {
       const normalizedCandidate = normalizeName(candidate.name);
       return normalizedCandidate && isStrongContainsMatch(normalizedQuery, normalizedCandidate);
     });
 }
 
-function placeLookupCache(provider: PlaceProvider) {
+function placeLookupCache(provider: PlaceProvider, travelContext?: TravelContext) {
   const cache = new Map<string, Promise<TravelPlace[]>>();
-  return (query: string, region?: string) => {
-    const key = `${normalizeName(query)}|${normalizeName(region ?? "")}`;
+  return (query: string, area?: string) => {
+    const city = travelContext?.city;
+    const region = area || travelContext?.region;
+    const key = `${normalizeName(query)}|${normalizeName(city ?? "")}|${normalizeName(region ?? "")}`;
     let result = cache.get(key);
     if (!result) {
-      result = searchTravelPlaces(provider, { query, ...(region ? { region } : {}), limit: PLACE_LIMIT });
+      result = searchTravelPlaces(provider, { query, ...(city ? { city } : {}), ...(region ? { region } : {}), limit: PLACE_LIMIT });
       cache.set(key, result);
     }
     return result;
@@ -58,9 +64,9 @@ async function enrichPlace(candidate: RichPlace, lookup: ReturnType<typeof place
   }
 }
 
-async function enrichRestaurant(candidate: RichRestaurant, provider: RestaurantProvider): Promise<RichRestaurant> {
+async function enrichRestaurant(candidate: RichRestaurant, provider: RestaurantProvider, travelContext?: TravelContext): Promise<RichRestaurant> {
   try {
-    const matches = await searchTravelRestaurants(provider, { query: candidate.name, area: candidate.area, cuisine: candidate.cuisine, limit: RESTAURANT_LIMIT });
+    const matches = await searchTravelRestaurants(provider, { query: candidate.name, city: travelContext?.city, area: candidate.area, cuisine: candidate.cuisine, limit: RESTAURANT_LIMIT });
     const matched = findBestTravelMatch(candidate.name, matches);
     if (!matched) return candidate;
     const enriched = travelRestaurantToRichRestaurant(matched, { description: candidate.description, itineraryItem: candidate.itineraryItem });
@@ -90,13 +96,13 @@ function resolveProviders(): EnrichmentProviders | null {
   catch { return null; }
 }
 
-export async function enrichAiReply(reply: AiReply, providers: EnrichmentProviders | null = resolveProviders()): Promise<AiReply> {
+export async function enrichAiReply(reply: AiReply, providers: EnrichmentProviders | null = resolveProviders(), travelContext?: TravelContext): Promise<AiReply> {
   const original = normalizeRichContent(reply.richContent);
   if (!original || !providers) return reply;
-  const lookup = placeLookupCache(providers.amapPlaceProvider);
+  const lookup = placeLookupCache(providers.amapPlaceProvider, travelContext);
   const [places, restaurants, routes] = await Promise.all([
     original.places ? Promise.all(original.places.slice(0, PLACE_LIMIT).map((candidate) => enrichPlace(candidate, lookup))) : undefined,
-    original.restaurants ? Promise.all(original.restaurants.slice(0, RESTAURANT_LIMIT).map((candidate) => enrichRestaurant(candidate, providers.amapRestaurantProvider))) : undefined,
+    original.restaurants ? Promise.all(original.restaurants.slice(0, RESTAURANT_LIMIT).map((candidate) => enrichRestaurant(candidate, providers.amapRestaurantProvider, travelContext))) : undefined,
     original.routes ? Promise.all(original.routes.slice(0, ROUTE_LIMIT).map((candidate) => enrichRoute(candidate, lookup, providers.amapRouteProvider))) : undefined,
   ]);
   return {

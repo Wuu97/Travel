@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { downloadChatTranscript } from "../export";
 import { useChatScroll } from "./useChatScroll";
 import { normalizeAssistantResponse, type ChatMessage, type SavedChat } from "../model";
 import { loadSavedChats, saveChats } from "../storage";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
+import type { TravelContext } from "../../ai/schemas/context";
 
 type Options = { accessToken: string | null; authReady: boolean; enabled: boolean };
 
@@ -45,6 +46,8 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
   const savedChatsRef = useRef<SavedChat[]>(
     enabled && typeof window !== "undefined" ? loadSavedChats() : [],
   );
+  const travelContextRef = useRef<TravelContext | undefined>(undefined);
+  const setTravelContext = useCallback((travelContext: TravelContext | undefined) => { travelContextRef.current = travelContext; }, []);
 
   const replaceSavedChats = (next: SavedChat[]) => {
     savedChatsRef.current = next;
@@ -119,7 +122,7 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
     setChatMessages(messagesWithQuestion);
     setAiBusy(true);
     try {
-      const response = await fetch("/api/ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: userMessage, history }) });
+      const response = await fetch("/api/ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: userMessage, history, ...(travelContextRef.current ? { travelContext: travelContextRef.current } : {}) }) });
       const data = await response.json();
       const messages = [...messagesWithQuestion, normalizeAssistantResponse(data.reply ?? data, data.error || "暂时无法生成回复。")];
       setChatMessages(messages);
@@ -172,5 +175,5 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
     downloadChatTranscript(title, chatMessages);
   };
 
-  return { activeChatId, aiBusy, ask, chatMessages, chatScrollRef, deleteChat, exportChat, historyOpen, historyPanelRef, newChat, openChat, question, savedChats, setHistoryOpen, setQuestion, startNewChatAndAsk };
+  return { activeChatId, aiBusy, ask, chatMessages, chatScrollRef, deleteChat, exportChat, historyOpen, historyPanelRef, newChat, openChat, question, savedChats, setHistoryOpen, setQuestion, setTravelContext, startNewChatAndAsk };
 }

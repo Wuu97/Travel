@@ -13,6 +13,7 @@ import { useAnchorNavigation } from "../../navigation/hooks/useAnchorNavigation"
 import { useTravelSearch } from "../../search/hooks/useTravelSearch";
 import { TripWorkspace } from "../../trip/components/TripWorkspace";
 import { useTripWorkspaceController } from "../../trip/hooks/useTripWorkspaceController";
+import { useEffect } from "react";
 
 export function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean }) {
   const auth = useSupabaseAuth();
@@ -28,6 +29,8 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
     newChat: chat.newChat,
     setQuestion: chat.setQuestion,
   });
+  const { setTravelContext } = chat;
+  useEffect(() => setTravelContext(workspace.travelContext), [setTravelContext, workspace.travelContext]);
   const renderImportPanel = createTripImportRenderer({
     isExpenseAdded: workspace.importContext.isExpenseAdded,
     isPlanAdded: workspace.importContext.isPlanAdded,

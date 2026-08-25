@@ -349,5 +349,5 @@ export function useTripWorkspaceController({
     toggleImport,
   };
 
-  return { syncError, workspaceProps, importContext };
+  return { syncError, workspaceProps, importContext, travelContext: tripDestination ? { city: tripDestination, destination: tripDestination } : undefined };
 }

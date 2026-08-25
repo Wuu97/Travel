@@ -11,7 +11,7 @@ export class AmapPlaceProvider implements PlaceProvider {
 
   async searchPlaces(input: PlaceSearchInput): Promise<TravelPlace[]> {
     const data = await this.client.request<AmapPoiResponse>("/v5/place/text", {
-      keywords: input.query, region: input.city ?? input.region, city_limit: input.city ? "true" : undefined,
+      keywords: input.query, region: input.region ?? input.city, city_limit: input.city || input.region ? "true" : undefined,
       page_size: Math.min(25, Math.max(1, input.limit ?? 5)), page_num: 1, show_fields: POI_SHOW_FIELDS,
     });
     return (data.pois ?? []).flatMap((poi) => {
