@@ -45,9 +45,9 @@
 
 
 
-.pdf-preview-backdrop{position:fixed;z-index:60;inset:0;display:grid;place-items:center;padding:24px;background:#183a3266}
+.pdf-preview-backdrop{position:fixed;z-index:60;inset:0;display:grid;place-items:center;padding:24px;background:var(--color-overlay)}
 
-.pdf-preview-dialog{display:grid;grid-template-rows:auto minmax(0,1fr) auto;width:min(920px,100%);height:min(880px,calc(100vh - 48px));border-radius:var(--radius-lg);background:#f3f5f1;box-shadow:var(--shadow-overlay);overflow:hidden}
+.pdf-preview-dialog{display:grid;grid-template-rows:auto minmax(0,1fr) auto;width:min(920px,100%);height:min(880px,calc(100vh - 48px));border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-surface-soft);box-shadow:var(--shadow-overlay);overflow:hidden}
 
 .pdf-preview-dialog>header,.pdf-preview-dialog>footer{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;background:var(--color-surface);border-bottom:1px solid #e0e7e1}
 

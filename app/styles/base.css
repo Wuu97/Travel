@@ -6,6 +6,7 @@
   --color-brand-active: #b95b34;
   --color-brand-soft: #fff0e8;
   --color-brand-tint: var(--color-brand-soft);
+  --color-brand-focus: rgb(217 110 64 / 0.16);
 
   /* Text */
   --color-text-primary: #1d342f;
@@ -57,6 +58,7 @@
   --color-danger-border: #e8a59a;
   --color-danger-tint: var(--color-danger-soft);
   --color-danger-action: #c96545;
+  --color-danger-focus: rgb(182 56 42 / 0.12);
 
   /* Warning and overlays */
   --color-warning: #bf6a2f;
@@ -140,7 +142,10 @@ body{margin:0;background:var(--color-canvas);color:var(--color-text-primary);fon
 
 
 
-button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:1px solid var(--color-focus);outline-offset:2px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}
+
+button{transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease}
+button:disabled{cursor:not-allowed!important;opacity:.6}
 
 
 
