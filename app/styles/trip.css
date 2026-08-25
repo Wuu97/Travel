@@ -3270,43 +3270,43 @@
 ======================================== */
 
 /* Trip header */
-#workspace .trip-workspace-panel>.trip-head{border-color:var(--color-border)!important;border-radius:var(--radius-md) var(--radius-md) 0 0!important;background:var(--color-surface)!important;padding:16px 18px!important;gap:16px!important}
+#workspace .trip-workspace-panel>.trip-head{border-color:var(--color-border)!important;border-radius:var(--radius-md) var(--radius-md) 0 0!important;background:var(--color-surface);padding:16px 18px!important;gap:16px!important}
 
-#workspace .trip-meta h3,#workspace .trip-title{color:var(--color-text-heading)!important;font-size:20px!important;line-height:1.3!important}
+#workspace .trip-meta h3,#workspace .trip-title{color:var(--color-text-heading);font-size:20px!important;line-height:1.3!important}
 
-#workspace .trip-meta>p,#workspace .trip-date-row{color:var(--color-text-secondary)!important}
+#workspace .trip-meta>p,#workspace .trip-date-row{color:var(--color-text-secondary)}
 
-#workspace .trip-meta>span{border-radius:var(--radius-sm)!important;font-size:10px!important;font-weight:600!important}
+#workspace .trip-meta>span{border-radius:var(--radius-sm);font-size:10px;font-weight:600}
 
 #workspace .trip-actions{gap:8px!important}
 
 /* Timeline cards: list-card treatment only; the explicit Grid remains unchanged. */
-#workspace .timeline article.itinerary-card{border-radius:var(--radius-md)!important}
+#workspace .timeline article.itinerary-card{border-radius:var(--radius-md)}
 
-#workspace .timeline article.itinerary-card>.plan-content h4{color:var(--color-text-heading)!important;font-size:var(--font-size-base)!important;font-weight:600!important;line-height:1.45!important}
+#workspace .timeline article.itinerary-card>.plan-content h4{color:var(--color-text-heading);font-size:var(--font-size-base);font-weight:600;line-height:1.45}
 
 #workspace .timeline article.itinerary-card>.plan-content p{color:var(--color-text-muted)!important;font-size:var(--font-size-sm)!important;font-weight:400!important}
 
-#workspace .timeline article.itinerary-card>.plan-creator{color:var(--color-text-muted)!important}
+#workspace .timeline article.itinerary-card>.plan-creator{color:var(--color-text-muted)}
 
-#workspace .timeline article.itinerary-card>.plan-menu-trigger{border-radius:var(--radius-sm)!important}
+#workspace .timeline article.itinerary-card>.plan-menu-trigger{border-radius:var(--radius-sm)}
 
 /* Budget */
-#workspace .budget-board{border-color:var(--color-border)!important;border-radius:0 0 var(--radius-md) var(--radius-md)!important;background:var(--color-surface)!important;padding:20px!important}
+#workspace .budget-board{border-color:var(--color-border)!important;border-radius:0 0 var(--radius-md) var(--radius-md)!important;background:var(--color-surface);padding:20px!important}
 
-#workspace .budget-summary{border:1px solid var(--color-border-soft)!important;border-radius:var(--radius-md)!important;background:var(--color-surface-soft)!important;padding:16px 18px!important;gap:28px!important}
+#workspace .budget-summary{border:1px solid var(--color-border-soft);border-radius:var(--radius-md);background:var(--color-surface-soft);padding:16px 18px;gap:28px}
 
-#workspace .budget-summary strong{font-family:var(--font-display)!important;font-size:26px!important;color:var(--color-text-heading)!important}
+#workspace .budget-summary strong{font-family:var(--font-display);font-size:26px;color:var(--color-text-heading)}
 
-#workspace .expense-list,#workspace .budget-side{border-color:var(--color-border-soft)!important;border-radius:var(--radius-md)!important;padding:14px!important}
+#workspace .expense-list,#workspace .budget-side{border-color:var(--color-border-soft);border-radius:var(--radius-md);padding:14px}
 
-#workspace .expense-list article{gap:10px!important;padding:12px 0!important;border-bottom-color:var(--color-border-soft)!important}
+#workspace .expense-list article{gap:10px;padding:12px 0;border-bottom-color:var(--color-border-soft)}
 
-#workspace .expense-list h4{color:var(--color-text-heading)!important;font-weight:600!important}
+#workspace .expense-list h4{color:var(--color-text-heading);font-weight:600}
 
-#workspace .expense-list p{color:var(--color-text-muted)!important}
+#workspace .expense-list p{color:var(--color-text-muted)}
 
-#workspace .expense-list strong{color:var(--color-text-heading)!important}
+#workspace .expense-list strong{color:var(--color-text-heading)}
 
 @media(max-width:760px){#workspace .trip-workspace-panel>.trip-head{padding:12px!important}
 

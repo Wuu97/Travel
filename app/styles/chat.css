@@ -390,7 +390,11 @@
 
 .ai-imports header b{font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-secondary)}
 
-.ai-imports header button{border-radius:var(--radius-sm);background:var(--color-success-soft);color:var(--color-success-strong)}
+.ai-imports header button{border-radius:var(--radius-sm);background:var(--color-brand);color:var(--color-surface)}
+
+.ai-imports header button:hover{background:var(--color-brand-hover)}
+
+.ai-imports header button:active{background:var(--color-brand-active)}
 
 .import-row{padding:8px 0;border-top-color:var(--color-border-soft)}
 
