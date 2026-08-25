@@ -25,7 +25,7 @@ export type AmapPoi = {
 export type AmapApiResponse = { status?: unknown; info?: unknown; infocode?: unknown };
 export type AmapPoiResponse = AmapApiResponse & { pois?: AmapPoi[] };
 
-export type AmapRoutePath = { distance?: unknown; duration?: unknown };
+export type AmapRoutePath = { distance?: unknown; duration?: unknown; cost?: { duration?: unknown } };
 export type AmapRouteResponse = AmapApiResponse & {
   route?: { paths?: AmapRoutePath[] };
 };

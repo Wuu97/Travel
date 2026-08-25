@@ -1,6 +1,7 @@
 import { requestLlmCompletion, type LlmMessage } from "./client";
 import { parseAiReply } from "./parser";
 import { TRAVEL_SYSTEM_PROMPT } from "./prompt";
+import { enrichAiReply } from "../enrichment/enrichReply";
 import type { AiReply } from "../schemas/response";
 
 export type AiRequest = {
@@ -16,5 +17,5 @@ export async function requestTravelAdvice({ context, history, message }: AiReque
     ...history,
     { role: "user", content: message },
   ];
-  return parseAiReply(await requestLlmCompletion(messages));
+  return enrichAiReply(parseAiReply(await requestLlmCompletion(messages)));
 }
