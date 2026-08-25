@@ -1,4 +1,5 @@
 import { requestLlmCompletion, type LlmMessage } from "./client";
+import { getAnswerBudget } from "./answerBudget";
 import { parseAiReply } from "./parser";
 import { TRAVEL_DATA_REQUESTS_PROMPT, TRAVEL_SYSTEM_PROMPT } from "./prompt";
 import { mergeExecutedTravelData } from "../enrichment/richContent";
@@ -25,7 +26,7 @@ export async function requestTravelAdvice({ context, history, message, travelCon
     ...history,
     { role: "user", content: message },
   ];
-  const parsed = parseAiReply(await requestLlmCompletion(messages));
+  const parsed = parseAiReply(await requestLlmCompletion(messages, { maxTokens: getAnswerBudget({ message, context: travelContext }) }));
   const executed = await executeDataRequests(parsed.dataRequests ?? [], { travelContext });
   const imageSearchProvider = createCachedImageSearchProvider(new WikimediaImageSearchProvider());
   const imageEnrichedData = await enrichExecutedTravelImages(executed, imageSearchProvider, travelContext);
