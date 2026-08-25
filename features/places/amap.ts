@@ -1,4 +1,5 @@
 import type { PlaceInfo } from "../trip/model";
+import { AmapHttpError, AmapClient, AmapStatusError } from "../shared/amap/client";
 import type { PlaceCategory, PlaceLookupResult, PlaceProvider } from "./model";
 
 type AmapBusiness = { business_time?: unknown; cost?: unknown; rating?: unknown };
@@ -43,31 +44,21 @@ function mapAmapBusiness(poi: AmapPoi): PlaceInfo | undefined {
 }
 
 export class AmapPlaceProvider implements PlaceProvider {
-  private readonly apiKey: string;
-  private readonly fetcher: typeof fetch;
+  private readonly client: AmapClient;
 
   constructor(apiKey: string, fetcher: typeof fetch = fetch) {
-    this.apiKey = apiKey;
-    this.fetcher = fetcher;
+    this.client = new AmapClient(apiKey, fetcher);
   }
 
   async lookup(query: string, city?: string): Promise<PlaceLookupResult | null> {
-    const params = new URLSearchParams({ key: this.apiKey, keywords: query, show_fields: "business" });
-    if (city) params.set("city", city);
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), PLACE_LOOKUP_TIMEOUT_MS);
     try {
-      const response = await this.fetcher(`https://restapi.amap.com/v5/place/text?${params}`, { signal: controller.signal });
-      if (!response.ok) return null;
-
-      const data = await response.json() as AmapResponse;
-      if (data.status !== "1") return null;
+      const data = await this.client.request<AmapResponse>("/v5/place/text", { keywords: query, show_fields: "business", ...(city ? { city } : {}) }, { timeoutMs: PLACE_LOOKUP_TIMEOUT_MS });
       const poi = data.pois?.find((candidate) => mapAmapPoi(candidate) !== null);
       const category = poi ? mapAmapPoi(poi) : null;
       return category ? { category, confidence: "high", provider: "amap", place: mapAmapBusiness(poi!) } : null;
-    } finally {
-      clearTimeout(timeout);
+    } catch (error) {
+      if (error instanceof AmapHttpError || error instanceof AmapStatusError) return null;
+      throw error;
     }
   }
 }

@@ -1,4 +1,4 @@
-import { AmapClient } from "./client";
+import { AmapClient } from "../../../shared/amap/client";
 import { AmapPlaceProvider } from "./places";
 import { AmapRestaurantProvider } from "./restaurants";
 import { AmapRouteProvider } from "./routes";
@@ -13,5 +13,5 @@ export function createAmapProviders(apiKey = process.env.AMAP_WEB_SERVICE_KEY?.t
   };
 }
 
-export { AmapClient } from "./client";
+export { AmapClient } from "../../../shared/amap/client";
 export { mapAmapPoiToTravelPlace, mapAmapPoiToTravelRestaurant } from "./mapper";

@@ -101,3 +101,34 @@ test("uses structured travel context to narrow place, restaurant, and route look
     assert.deepEqual(parseAiRequest({ message: "测试", travelContext: { city: "成都", region: "四川" } })?.travelContext, { city: "成都", destination: undefined, region: "四川" });
   } finally { await compilation.cleanup(); }
 });
+
+test("keeps Amap AI place, restaurant, and route providers compatible with shared transport", async () => {
+  const compilation = await compileTypeScript(aiTestSources, "travel-ai-amap-");
+  try {
+    const { AmapClient } = await compilation.importModule("shared/amap/client.js");
+    const { AmapPlaceProvider } = await compilation.importModule("ai/providers/amap/places.js");
+    const { AmapRestaurantProvider } = await compilation.importModule("ai/providers/amap/restaurants.js");
+    const { AmapRouteProvider } = await compilation.importModule("ai/providers/amap/routes.js");
+    const { executeDataRequests } = await compilation.importModule("ai/tools/executor.js");
+    const paths = [];
+    const client = new AmapClient("key", async (url) => {
+      const request = new URL(url); paths.push(request.pathname);
+      if (request.pathname.includes("direction")) return new Response(JSON.stringify({ status: "1", route: { paths: [{ duration: "120", distance: "800" }] } }));
+      return new Response(JSON.stringify({ status: "1", pois: [{ id: "p1", name: "人民公园", location: "104,30", type: "景点" }] }));
+    });
+    assert.equal((await new AmapPlaceProvider(client).searchPlaces({ query: "人民公园" }))[0]?.name, "人民公园");
+    assert.equal((await new AmapRestaurantProvider(client).searchRestaurants({ query: "川菜", limit: 1 }))[0]?.name, "人民公园");
+    const route = await new AmapRouteProvider(client).getRoute({ from: { name: "A", longitude: 104, latitude: 30 }, to: { name: "B", longitude: 105, latitude: 31 }, mode: "walking" });
+    assert.deepEqual(route && { mode: route.mode, durationMinutes: route.durationMinutes, distanceMeters: route.distanceMeters }, { mode: "walking", durationMinutes: 2, distanceMeters: 800 });
+    assert.deepEqual(paths, ["/v5/place/text", "/v5/place/text", "/v5/direction/walking"]);
+    const failedClient = new AmapClient("key", async () => new Response("failure", { status: 500 }));
+    await assert.rejects(() => new AmapPlaceProvider(failedClient).searchPlaces({ query: "失败" }));
+    assert.deepEqual(await executeDataRequests([{ type: "place_lookup", query: "失败" }], {
+      providers: {
+        amapPlaceProvider: new AmapPlaceProvider(failedClient),
+        amapRestaurantProvider: new AmapRestaurantProvider(failedClient),
+        amapRouteProvider: new AmapRouteProvider(failedClient),
+      },
+    }), { places: [], restaurants: [], routes: [] });
+  } finally { await compilation.cleanup(); }
+});

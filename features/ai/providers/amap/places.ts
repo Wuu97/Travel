@@ -1,6 +1,6 @@
 import type { PlaceProvider } from "../types";
 import type { PlaceSearchInput, TravelPlace } from "../../tools/types";
-import { AmapClient } from "./client";
+import { AmapClient } from "../../../shared/amap/client";
 import { mapAmapPoiToTravelPlace } from "./mapper";
 import type { AmapPoiResponse } from "./types";
 

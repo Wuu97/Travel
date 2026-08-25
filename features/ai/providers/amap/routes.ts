@@ -1,6 +1,6 @@
 import type { RouteProvider } from "../types";
 import type { RouteInput, TravelLocationRef, TravelRoute } from "../../tools/types";
-import { AmapClient } from "./client";
+import { AmapClient } from "../../../shared/amap/client";
 import type { AmapRouteResponse } from "./types";
 
 const routePaths = { driving: "/v5/direction/driving", walking: "/v5/direction/walking", cycling: "/v5/direction/bicycling" } as const;

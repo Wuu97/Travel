@@ -1,6 +1,6 @@
 import type { RestaurantProvider } from "../types";
 import type { RestaurantSearchInput, TravelRestaurant } from "../../tools/types";
-import { AmapClient } from "./client";
+import { AmapClient } from "../../../shared/amap/client";
 import { mapAmapPoiToTravelRestaurant } from "./mapper";
 import type { AmapPoiResponse } from "./types";
 
