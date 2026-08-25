@@ -6,6 +6,7 @@ import { mergeExecutedTravelData } from "../enrichment/richContent";
 import type { TravelContext } from "../schemas/context";
 import type { AiReply } from "../schemas/response";
 import { executeDataRequests } from "../tools/executor";
+import { reasonOverToolResults } from "./toolResultReasoning";
 
 export type AiRequest = {
   message: string;
@@ -25,7 +26,8 @@ export async function requestTravelAdvice({ context, history, message, travelCon
   const parsed = parseAiReply(await requestLlmCompletion(messages));
   const executed = await executeDataRequests(parsed.dataRequests ?? [], { travelContext });
   const enriched = await enrichAiReply(mergeExecutedTravelData(parsed, executed), undefined, travelContext);
-  const reply = { ...enriched };
+  const reasonedAnswer = await reasonOverToolResults({ message, travelContext, firstAnswer: enriched.content, data: executed });
+  const reply = { ...enriched, ...(reasonedAnswer ? { content: reasonedAnswer } : {}) };
   delete reply.dataRequests;
   return reply;
 }

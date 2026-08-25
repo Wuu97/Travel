@@ -8,7 +8,7 @@ import test from "node:test";
 
 const execFileAsync = promisify(execFile);
 const sources = [
-  "features/ai/core/parser.ts", "features/ai/enrichment/enrichReply.ts", "features/ai/enrichment/matching.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
+  "features/ai/core/client.ts", "features/ai/core/parser.ts", "features/ai/core/toolResultReasoning.ts", "features/ai/enrichment/enrichReply.ts", "features/ai/enrichment/matching.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
   "features/ai/providers/amap/client.ts", "features/ai/providers/amap/index.ts", "features/ai/providers/amap/mapper.ts", "features/ai/providers/amap/places.ts", "features/ai/providers/amap/restaurants.ts", "features/ai/providers/amap/routes.ts", "features/ai/providers/amap/types.ts", "features/ai/providers/types.ts",
   "features/ai/tools/executor.ts", "features/ai/tools/places.ts", "features/ai/tools/restaurants.ts", "features/ai/tools/routes.ts", "features/ai/tools/types.ts", "features/ai/schemas/context.ts", "features/ai/schemas/dataRequests.ts", "features/ai/schemas/response.ts", "features/chat/model.ts", "features/chat/requestValidation.ts", "features/shared/validation.ts", "features/trip/model.ts",
 ];
@@ -32,6 +32,30 @@ test("only verifies exact or strong POI name matches", async () => {
   } finally {
     await rm(output, { recursive: true, force: true });
   }
+});
+
+test("reasons only over bounded provider facts and safely falls back", async () => {
+  const output = await mkdtemp(join(tmpdir(), "travel-reasoning-"));
+  try {
+    await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
+    const { reasonOverToolResults } = await import(new URL(`file://${join(output, "ai/core/toolResultReasoning.js")}`).href);
+    const data = {
+      places: [{ id: "p", name: "武侯祠", rating: 4.8, openingHours: ["08:30-18:30"], images: [{ url: "https://secret.example/image.jpg" }] }],
+      restaurants: [{ id: "r", name: "川菜馆A", rating: 4.8, averagePrice: 70, openingHours: ["11:00-22:00"] }],
+      routes: [{ from: { name: "武侯祠" }, to: { name: "宽窄巷子" }, mode: "walking", durationMinutes: 58, distanceMeters: 24800 }],
+    };
+    let prompt = "";
+    const answer = await reasonOverToolResults({ message: "怎么去", firstAnswer: "旧回答", data }, async (messages) => { prompt = messages[1].content; return '{"answer":"基于真实路线约58分钟、24.8公里。"}'; });
+    assert.equal(answer, "基于真实路线约58分钟、24.8公里。");
+    assert.match(prompt, /4.8/);
+    assert.match(prompt, /70/);
+    assert.match(prompt, /08:30-18:30/);
+    assert.match(prompt, /24800/);
+    assert.ok(!prompt.includes("https://secret.example/image.jpg"));
+    assert.equal(await reasonOverToolResults({ message: "普通问题", firstAnswer: "旧回答", data: { places: [], restaurants: [], routes: [] } }, async () => { throw new Error("must not call"); }), undefined);
+    assert.equal(await reasonOverToolResults({ message: "失败", firstAnswer: "旧回答", data }, async () => { throw new Error("expected"); }), undefined);
+    assert.equal(await reasonOverToolResults({ message: "错误 JSON", firstAnswer: "旧回答", data }, async () => "not json"), undefined);
+  } finally { await rm(output, { recursive: true, force: true }); }
 });
 
 test("validates bounded dataRequests and keeps malformed parser fallbacks clean", async () => {
