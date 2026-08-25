@@ -1,14 +1,14 @@
 import type { AiRequest } from "./requestValidation";
 import type { ExpenseItem, ItineraryItem } from "../trip/model";
 
-export type AiReply = { content: string; itineraryItems: ItineraryItem[]; expenseItems: ExpenseItem[] };
+export type AiReply = { content: string; richContent?: unknown; itineraryItems: ItineraryItem[]; expenseItems: ExpenseItem[] };
 
 const itineraryTypes = ["景点", "餐饮", "活动", "交通", "住宿", "购物", "其他"] as const;
 type ItineraryType = (typeof itineraryTypes)[number];
 const expenseTypes = ["住宿", "餐饮", "交通", "门票", "活动", "其他"] as const;
 type ExpenseType = (typeof expenseTypes)[number];
 
-const SYSTEM_PROMPT = "你是途遇的中文旅行助手。回答简洁、实用、友好。可以规划行程、估算预算、推荐本地体验。不要编造实时票价或余票；遇到这类问题，明确建议用户前往官方平台确认。必须只返回合法 JSON，格式为 {\"content\":\"Markdown 格式的回复\",\"itineraryItems\":[{\"title\":\"条目名称\",\"type\":\"景点|餐饮|活动|交通|住宿|购物|其他\",\"day\":1,\"time\":\"12:00\",\"location\":\"地点\",\"note\":\"备注\"}],\"expenseItems\":[{\"title\":\"费用名称\",\"amount\":100,\"type\":\"住宿|餐饮|交通|门票|活动|其他\",\"occurrence\":\"estimated\",\"note\":\"估算说明\"}]}。路线规划、优化、推荐景点、餐厅、交通、住宿或购物时，必须为每一项建议生成 itineraryItems；购物建议的 type 必须为 \"购物\"。同时必须给出合理的 expenseItems 预算估算，occurrence 固定为 estimated。没有可导入条目时才返回空数组。当用户询问吃什么、餐厅、早餐、午餐、晚餐、咖啡或夜宵时，将每个餐食建议放入 itineraryItems，并且 type 必须为 \"餐饮\"。content 使用清晰 Markdown：用 ## 表示小标题、用 - 表示列表；所有时间段/行动标签、地点名称、交通方式、关键费用或注意事项必须用 **加粗**，例如 \"- **上午 09:00｜天山天池**：乘 **包车** 前往\"。不要使用 --- 分隔线。";
+const SYSTEM_PROMPT = "你是途遇的中文旅行助手。回答简洁、实用、友好。只返回原始合法 JSON，不要 Markdown fence 或 HTML。顶层格式为 {answer:string,richContent?:{places?:[{name,category?,area?,description?,recommendedDuration?,itineraryItem?}],restaurants?:[{name,cuisine?,area?,description?,recommendedDishes?,itineraryItem?}],routes?:[{from?,to?,mode?,duration?,distance?,cost?,description?}],costs?:{items:[{label,amount,note?}],total?,perPerson?},images?:[{url,alt?}]},itineraryItems?:[],expenseItems?:[]}。answer 必须是 Markdown 正文，负责解释和建议，不要重复卡片事实字段。所有 richContent 字段可省略；景点和餐厅仅 name 必填，路线至少 from 或 to。评分、评论数、价格、营业时间、实时交通与图片 URL 没有可靠上下文时必须省略，绝不猜测或生成图片 URL；recommendedDuration 可作为建议生成。places 最多 6、restaurants 最多 6、routes 最多 4。itineraryItems 的 type 只能是 景点|餐饮|活动|交通|住宿|购物|其他，expenseItems 保持既有格式。";
 
 function isItineraryType(value: unknown): value is ItineraryType {
   return typeof value === "string" && itineraryTypes.includes(value as ItineraryType);
@@ -68,9 +68,11 @@ function parseAiReply(content: string): AiReply {
   }
   if (payload && typeof payload === "object") {
     const parsed = payload as Record<string, unknown>;
-    if (typeof parsed.content === "string" && parsed.content.trim()) {
+    const answer = typeof parsed.answer === "string" && parsed.answer.trim() ? parsed.answer : typeof parsed.content === "string" && parsed.content.trim() ? parsed.content : "";
+    if (answer) {
       return {
-        content: parsed.content.trim().replace(/\\n/g, "\n"),
+        content: answer.trim().replace(/\\n/g, "\n"),
+        ...(parsed.richContent && typeof parsed.richContent === "object" ? { richContent: parsed.richContent } : {}),
         itineraryItems: parseItineraryItems(parsed.itineraryItems),
         expenseItems: parseExpenseItems(parsed.expenseItems),
       };
