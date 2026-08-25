@@ -4,7 +4,7 @@ import { compileTypeScript } from "./helpers/compile-typescript.mjs";
 
 const sources = ["features/ai/core/answerBudget.ts", "features/ai/core/client.ts", "features/ai/schemas/context.ts"];
 
-test("selects an answer budget from lightweight travel request signals", async () => {
+test("uses structured trip duration before intent and keyword signals", async () => {
   const compilation = await compileTypeScript(sources, "travel-answer-budget-");
   try {
     const { ANSWER_BUDGET, getAnswerBudget } = await compilation.importModule("core/answerBudget.js");
@@ -14,6 +14,10 @@ test("selects an answer budget from lightweight travel request signals", async (
     assert.equal(getAnswerBudget({ message: "成都3天怎么玩" }), ANSWER_BUDGET.shortTrip);
     assert.equal(getAnswerBudget({ message: "北疆10天自驾怎么玩" }), ANSWER_BUDGET.longTrip);
     assert.equal(getAnswerBudget({ message: "云南自由行攻略" }), ANSWER_BUDGET.guide);
+    assert.equal(getAnswerBudget({ message: "成都攻略", context: { trip: { days: 10 } } }), ANSWER_BUDGET.longTrip);
+    assert.equal(getAnswerBudget({ message: "成都怎么玩", context: { trip: { days: 3 } } }), ANSWER_BUDGET.shortTrip);
+    assert.equal(getAnswerBudget({ message: "帮我规划北疆", context: { trip: { days: 5 } } }), ANSWER_BUDGET.longTrip);
+    assert.doesNotThrow(() => getAnswerBudget({ message: "成都怎么玩", context: { city: "成都" } }));
   } finally { await compilation.cleanup(); }
 });
 
