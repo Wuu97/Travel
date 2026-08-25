@@ -1,0 +1,560 @@
+
+
+
+.expense-remove:hover,.expense-remove:focus-visible{color:#cb684c;outline:0}
+
+
+
+
+.trip-library{margin-top:22px;border:1px solid #e3ebe5;border-radius:var(--radius-md);background:var(--color-surface);padding:12px 14px}
+
+
+
+.trip-library-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;color:#325444;font-size:var(--font-size-md);font-weight:700}
+
+
+
+.trip-library-heading button{border:1px solid #e7a180;border-radius:var(--radius-sm);background:#fff8f4;color:var(--color-brand-hover);padding:6px 9px;font-size:var(--font-size-sm);font-weight:700;cursor:pointer}
+
+
+
+.trip-library-heading button:hover{background:var(--color-brand-hover);color:var(--color-surface)}
+
+
+
+.trip-library-list{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+
+
+
+.trip-library-item{display:flex;min-width:164px;border:1px solid #dde8e0;border-radius:5px;background:var(--color-surface);overflow:hidden}
+
+
+
+.trip-library-item:hover{border-color:#b9d1c0;background:#f7fbf7}
+
+
+
+.trip-library-item.selected{border-color:#76a386;background:#ecf5ee;box-shadow:inset 3px 0 #5f9870}
+
+
+
+.trip-library-open{display:grid;min-width:0;flex:1;border:0;background:transparent;padding:9px 6px 9px 10px;color:#466659;text-align:left;cursor:pointer}
+
+
+
+.trip-library-delete{align-self:flex-start;border:0;background:transparent;padding:6px 8px;color:#9aaba1;font-size:17px;line-height:1;cursor:pointer}
+
+
+
+.trip-library-delete:hover,.trip-library-delete:focus-visible{color:var(--color-brand-hover);outline:0}
+
+
+
+.trip-library-list b{font-size:var(--font-size-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+
+
+.trip-library-list small{margin-top:4px;color:#85968d;font-size:10px}
+
+
+
+.trip-library-list em{width:max-content;margin-top:5px;padding:3px 6px;border-radius:5px;font-size:10px;font-style:normal;font-weight:700}
+
+
+
+.itinerary-card[draggable="true"]{cursor:grab}
+
+
+
+.itinerary-card[draggable="true"]:active{cursor:grabbing}
+
+
+
+.plan-board aside button:has(+ button):hover{border-color:#8fb39b}
+
+
+
+@media(max-width:760px){.trip-library{margin-top:16px}
+
+.trip-library-item{min-width:145px}}
+
+
+
+
+.trip-workspace-panel{margin-top:22px;overflow:hidden;border:1px solid #e3ebe5!important;border-radius:var(--radius-md)!important;background:var(--color-surface)}
+
+
+
+.trip-workspace-panel>.trip-library{margin:0!important;border:0!important;border-bottom:1px solid var(--color-success-tint-strong)!important;border-radius:0!important}
+
+
+
+.trip-workspace-panel>.trip-head{margin-top:0!important;border:0!important;border-radius:0!important}
+
+
+
+.trip-workspace-panel>.plan-board,.trip-workspace-panel>.budget-board{border:0!important;border-radius:0!important}
+
+
+
+@media(max-width:760px){.trip-workspace-panel{margin-top:16px}
+
+.trip-workspace-panel>.trip-library{margin-top:0!important}}
+
+
+
+
+.create-trip-form{width:min(100%,360px)}
+
+
+
+.create-trip-dates{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+
+
+.create-trip-dates label{min-width:0}
+
+
+
+@media(max-width:480px){.create-trip-dates{grid-template-columns:1fr}}
+
+
+
+
+.create-trip-form .edit-plan-actions{gap:7px;margin-top:14px}
+
+
+
+.create-trip-form .edit-plan-actions button{padding:6px 10px;font-size:var(--font-size-xs);line-height:1.2}
+
+
+
+
+.auth-dialog-form input.input-error,.create-trip-form input.input-error{border-color:var(--color-danger);background:var(--color-danger-soft);box-shadow:0 0 0 3px var(--color-danger-focus)}
+
+
+
+.auth-dialog-form .field-error,.create-trip-form .field-error{display:block;margin-top:8px;padding-left:2px;color:var(--color-danger);font-size:var(--font-size-xs);font-weight:500;line-height:1.4}
+
+
+
+
+
+#workspace .trip-actions{position:relative;padding-bottom:36px}
+
+
+
+#workspace .trip-actions .trip-invite{position:absolute;right:0;bottom:-16px;border:0!important;background:var(--color-brand)!important;color:var(--color-surface)!important;padding:3px 10px!important;border-radius:5px!important;font-size:var(--font-size-xs)!important;font-weight:bold;white-space:nowrap}
+
+
+
+
+
+@media print{#workspace,#workspace *{visibility:visible!important}
+
+#workspace{position:absolute!important;top:0!important;left:0!important;width:100%!important;padding:0!important;background:var(--color-surface)!important}
+
+#workspace .trip-workbench{display:block!important;width:100%!important;min-height:0!important;border:0!important;border-radius:0!important;background:var(--color-surface)!important;overflow:visible!important}
+
+#workspace .trip-workbench-sidebar,#workspace .trip-actions,#workspace .share-note,#workspace .trip-day-tabs,#workspace .timeline-head button,#workspace .plan-menu,#workspace .add-local,#workspace .manual-entry,#workspace .edit-plan-backdrop,#workspace .trip-popover{display:none!important}
+
+#workspace .trip-workbench-main{padding:0!important}
+
+#workspace .trip-workspace-panel,#workspace .trip-workspace-panel>.trip-head{border:0!important;border-radius:0!important}
+
+#workspace .trip-workspace-panel>.trip-head{padding:0 0 10px!important;border-bottom:1px solid var(--color-border-soft)!important}
+
+#workspace .plan-board{display:block!important;height:auto!important;min-height:0!important;border:0!important}
+
+#workspace .timeline,#workspace .timeline-list{display:block!important;height:auto!important;min-height:0!important;overflow:visible!important}
+
+#workspace .timeline{padding:0!important}
+
+#workspace .timeline article{break-inside:avoid-page;page-break-inside:avoid}
+
+#workspace .inline-readable{border:0!important;background:transparent!important;color:inherit!important;padding:0!important;text-align:inherit!important}
+
+#workspace .inline-readable span{display:none!important}}
+
+
+
+
+
+.trip-print-export{display:none}
+
+
+
+@media print{#workspace .trip-workspace-panel{display:none!important}
+
+#workspace .trip-print-export{display:block!important;color:#1f3e35;font-family:var(--font-display)}
+
+#workspace .trip-print-export header{padding:0 0 12px;border-bottom:1px solid var(--color-border-soft)}
+
+#workspace .trip-print-export header p{display:inline-block;margin:0 0 7px;padding:3px 7px;border-radius:9px;background:#fff0da;color:#bf6a2f;font:600 10px sans-serif}
+
+#workspace .trip-print-export h1{margin:0;font-size:24px}
+
+#workspace .trip-print-export header span{display:block;margin-top:6px;color:var(--color-text-muted-strong);font:11px sans-serif}
+
+#workspace .trip-print-export section{margin-top:18px}
+
+#workspace .trip-print-export h2{margin:0 0 10px;font-size:17px;border-bottom:1px solid var(--color-border-soft);padding-bottom:6px}
+
+#workspace .trip-print-day{break-inside:avoid-page;margin:0 0 12px}
+
+#workspace .trip-print-day h3,#workspace .trip-print-budget h3{margin:0 0 7px;font-size:var(--font-size-md)}
+
+#workspace .trip-print-day h3 small{margin-left:9px;color:var(--color-text-muted-strong);font:10px sans-serif}
+
+#workspace .trip-print-day ol,#workspace .trip-print-budget ul{margin:0;padding:0;list-style:none}
+
+#workspace .trip-print-day li{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:7px 0;border-bottom:1px solid #edf0eb;break-inside:avoid-page}
+
+#workspace .trip-print-day time{color:#4f7566;font:600 11px sans-serif}
+
+#workspace .trip-print-day strong{font-size:var(--font-size-sm)}
+
+#workspace .trip-print-day li span,#workspace .trip-print-day li p{display:block;margin:3px 0 0;color:var(--color-text-muted-strong);font:10px sans-serif}
+
+#workspace .trip-print-day li .trip-print-facts{color:var(--color-brand)}
+
+#workspace .trip-print-budget{break-before:page;page-break-before:always}
+
+#workspace .trip-print-totals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+
+#workspace .trip-print-totals div{padding:9px;border:1px solid var(--color-border-soft)}
+
+#workspace .trip-print-totals span{display:block;color:var(--color-text-muted-strong);font:10px sans-serif}
+
+#workspace .trip-print-totals strong{display:block;margin-top:4px;font-size:var(--font-size-lg)}
+
+#workspace .trip-print-budget-lists{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+
+#workspace .trip-print-budget li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #edf0eb;color:#506b60;font:10px sans-serif}
+
+#workspace .trip-print-budget li strong{color:#1f3e35;font-size:var(--font-size-xs)}
+
+.trip-print-empty{margin:0;color:#83968d;font:10px sans-serif}}
+
+
+
+
+
+#workspace .trip-sidebar .trip-library-open{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto!important;gap:2px!important;padding:7px 8px 7px 10px!important}
+
+
+
+#workspace .trip-sidebar .trip-library-open b{grid-column:1!important;grid-row:1!important}
+
+
+
+#workspace .trip-sidebar .trip-library-open small{grid-column:1!important;grid-row:2!important;margin:0!important}
+
+
+
+
+
+@media print{
+	#workspace .trip-workbench-main .trip-workspace-panel{display:none!important}
+
+
+	#workspace .trip-workbench-main .trip-print-export{display:block!important}}
+
+
+
+
+
+@media print{
+	main > #workspace{display:block!important;position:static!important}
+
+
+	#workspace .trip-print-route-meta{display:flex;align-items:center;gap:6px;margin-top:3px}
+
+
+	#workspace .trip-print-route-meta .trip-print-type{display:inline-block!important;padding:2px 6px;border-radius:var(--radius-md);font:600 9px sans-serif}
+
+
+	#workspace .trip-print-route-meta .trip-print-location{display:inline!important;color:var(--color-text-muted-strong);font:10px sans-serif}}
+
+
+
+
+
+#workspace .share-note.is-error{margin:0 0 8px!important;padding:9px 11px!important;border:1px solid #e3a08b!important;border-radius:5px!important;background:#fff1ec!important;color:#9d3d22!important;font-size:var(--font-size-xs)!important;font-weight:700;box-shadow:0 2px 7px #9d3d2214}
+
+
+
+#workspace .timeline-head{justify-content:flex-end!important}
+
+
+
+#workspace .timeline-head>b{display:none!important}
+
+
+
+
+
+#workspace .trip-day-tabs,#workspace .timeline-head{border-bottom:0!important}
+
+
+
+
+
+/* In the library, the active day—not the entire trip—carries the selection color. */
+#workspace .trip-workbench-sidebar .trip-sidebar .trip-library-item.selected{background:transparent!important}
+
+
+
+#workspace .trip-workbench-sidebar .trip-sidebar .trip-library-days span{font-size:10px!important}
+
+
+
+
+
+/* An empty day uses the full timeline space; entry controls remain at the bottom. */
+#workspace .trip-workspace-panel .timeline-list:has(.empty-day){overflow:hidden!important}
+
+
+
+#workspace .trip-workspace-panel .timeline-list .empty-day{display:grid;flex:1 1 auto;place-items:center;width:100%;margin:0!important;padding:14px 16px;border:1px dashed #c7d8cc;border-radius:6px;background:#f8fbf7;color:#72877b;font-size:var(--font-size-sm);cursor:pointer}
+
+
+
+#workspace .trip-workspace-panel .timeline-list + div{flex:none!important;margin-top:auto!important;padding-top:12px!important}
+
+
+
+
+
+/* Let the timeline consume the complete board height, so its composer sits on the bottom edge. */
+#workspace .trip-workspace-panel .plan-board .timeline{display:flex!important;height:100%!important;min-height:0!important;flex-direction:column!important}
+
+
+
+#workspace .trip-workspace-panel .plan-board .timeline-list{flex:1 1 auto!important;min-height:0!important}
+
+
+
+
+
+/* The composer is a bottom bar of the board, not part of the scrolling timeline. */
+#workspace .trip-workspace-panel .plan-board{display:flex!important;height:570px!important;min-height:410px!important;flex-direction:column!important}
+
+
+
+#workspace .trip-workspace-panel .plan-board>.timeline{height:auto!important;flex:1 1 auto!important;min-height:0!important}
+
+
+
+#workspace .trip-workspace-panel .plan-board>.timeline + div{flex:none!important;margin-top:auto!important;padding:12px 16px 14px!important}
+
+
+
+
+
+#workspace .manual-entry .manual-add,#workspace .manual-entry .optimize-route{border:1px solid #d6e3da!important;border-radius:18px!important;background:#f5faf6!important;color:#3e7655!important;cursor:pointer}
+
+
+
+#workspace .manual-entry .manual-add:hover,#workspace .manual-entry .optimize-route:hover{border-color:#aac6b3!important;background:var(--color-success-tint)!important}
+
+
+
+
+
+/* Keep the empty-state space above and below the same 12px measurement. */
+#workspace .trip-workspace-panel .plan-board>.timeline>.timeline-list{padding-top:12px!important}
+
+
+
+
+
+/* Slightly reduce the overall itinerary workbench height. */
+#workspace .trip-workbench-main .trip-workspace-panel .plan-board{height:530px!important}
+
+
+
+
+
+/* The workbench border is the only frame; the right-side panel supplies just its divider. */
+#workspace .trip-workbench-main{padding:0!important}
+
+
+
+#workspace .trip-workspace-panel{border:0!important;border-radius:0!important}
+
+
+
+#workspace .trip-workspace-panel>.trip-head{border:0!important;border-bottom:1px solid #e1e7e0!important;border-radius:0!important;padding:13px 20px!important}
+
+
+
+#workspace .trip-workspace-panel>.plan-board{border:0!important;border-radius:0!important}
+
+
+
+
+
+/* Override the legacy header frame so it cannot double the workbench outline. */
+#workspace .trip-workbench-main .trip-workspace-panel>.trip-head{border-top:0!important;border-right:0!important;border-left:0!important;border-bottom:1px solid #e1e7e0!important;border-radius:0!important}
+
+
+
+
+
+.itinerary-drag-preview{display:flex!important;align-items:center;gap:7px;width:180px;min-height:0!important;padding:10px!important;border:1px solid #b9d1c0!important;border-radius:7px!important;background:var(--color-surface)!important;box-shadow:0 8px 18px #24483b2b!important;color:var(--color-text-heading)!important;font:12px var(--font-ui)!important;opacity:.9!important}
+
+
+
+.itinerary-drag-preview span{flex:none;border-radius:10px;background:var(--type-tint);color:var(--type-color);padding:3px 7px;font:600 10px var(--font-ui)}
+
+
+
+.itinerary-drag-preview strong{overflow:hidden;font:600 12px var(--font-ui);text-overflow:ellipsis;white-space:nowrap}
+
+
+
+
+
+.return-date-field{position:relative}
+
+
+
+.return-date-field input{cursor:pointer}
+
+
+
+.return-date-calendar{position:absolute;z-index:65;top:calc(100% + 6px);left:0;width:220px;padding:8px;border:1px solid #cad9ce;border-radius:7px;background:var(--color-surface);box-shadow:0 10px 22px #183a3230}
+
+
+
+.return-date-calendar>div:first-child{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+
+
+
+.return-date-calendar>div:first-child b{font-size:var(--font-size-sm)}
+
+
+
+.return-date-calendar>div:first-child button{width:24px;height:22px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--color-text-control);font-size:var(--font-size-title);cursor:pointer}
+
+
+
+.return-date-calendar>div:first-child button:hover{background:#edf5ef}
+
+
+
+.return-calendar-weekdays,.return-calendar-days{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;text-align:center}
+
+
+
+.return-calendar-weekdays{margin-bottom:2px;color:#8d9f95;font-size:9px}
+
+
+
+.return-calendar-days button{height:24px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--color-text-link);font-size:10px;cursor:pointer}
+
+
+
+.return-calendar-days button:hover:not(:disabled){background:#e7f2e9}
+
+
+
+.return-calendar-days button.selected{background:var(--color-border);color:var(--color-text-heading);font-weight:700}
+
+
+
+.return-calendar-days button.outside-month{color:#b4c0b7}
+
+
+
+.return-calendar-days button:disabled,.calendar-choice-grid button:disabled{color:#d5ddd7;cursor:not-allowed}
+
+
+
+
+.calendar-toolbar>div{display:flex;gap:2px}
+
+
+
+.calendar-toolbar>div button{width:auto!important;padding:0 4px;font-size:var(--font-size-sm)!important;font-weight:700}
+
+
+
+.calendar-choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+
+
+
+.calendar-choice-grid button{border:0;border-radius:var(--radius-sm);background:var(--color-surface-muted);padding:8px 4px;color:var(--color-text-link);font-size:var(--font-size-xs);cursor:pointer}
+
+
+
+.calendar-choice-grid button:hover{background:#e7f2e9}
+
+
+
+.calendar-choice-grid button.selected{background:var(--color-border);font-weight:700}
+
+
+
+
+.calendar-toolbar .calendar-today{width:auto!important;padding:0 5px;font-size:10px!important;font-weight:700}
+
+
+
+.calendar-toolbar .calendar-today:disabled{opacity:.45}
+
+
+
+
+.return-date-calendar>.calendar-toolbar{display:grid!important;grid-template-columns:24px minmax(0,1fr) 24px auto;gap:4px;align-items:center;justify-content:initial}
+
+
+
+.calendar-toolbar>div{justify-content:center}
+
+
+
+
+.return-calendar-days button.today:not(.selected){box-shadow:inset 0 0 0 1px #78a287;background:#f1f7f2;color:var(--color-text-heading);font-weight:700}
+
+
+
+
+.return-date-calendar>.calendar-toolbar{height:24px}
+
+
+
+.return-date-calendar>.calendar-toolbar>button,.return-date-calendar>.calendar-toolbar>div>button{display:inline-flex!important;align-items:center;justify-content:center;height:24px!important;line-height:1!important}
+
+
+
+.return-date-calendar>.calendar-toolbar>div{height:24px;align-items:center;justify-content:center}
+
+
+
+
+.return-date-calendar>.calendar-toolbar>button[aria-label]{transform:translateY(-1px)}
+
+
+
+
+.return-date-calendar>.calendar-toolbar>button[aria-label]{position:relative;transform:none;font-size:0!important}
+
+
+
+.return-date-calendar>.calendar-toolbar>button[aria-label]::before{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor}
+
+
+
+.return-date-calendar>.calendar-toolbar>button[aria-label="上个月"]::before{transform:rotate(135deg)}
+
+
+
+.return-date-calendar>.calendar-toolbar>button[aria-label="下个月"]::before{transform:rotate(-45deg)}
+
+
+
+
+.return-date-calendar>.calendar-toolbar>button[aria-label]::before{position:relative;top:-1px}
+
