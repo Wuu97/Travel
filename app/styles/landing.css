@@ -79,6 +79,10 @@
 
 .nav-links a{color:#456157;text-decoration:none;font-size:var(--font-size-base)}
 
+.nav-links a:hover{color:var(--color-brand)}
+
+.nav-links a:focus-visible{border-radius:var(--radius-sm);outline-offset:4px}
+
 
 
 .hero{height:490px;background:#dceae4;position:relative;overflow:hidden}

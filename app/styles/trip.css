@@ -7,6 +7,95 @@
 
 
 
+/* Sidebar navigation */
+#workspace .trip-sidebar{font-family:var(--font-ui)}
+
+#workspace .trip-sidebar .sidebar-header{grid-template-columns:28px minmax(0,1fr) auto!important;min-height:36px!important;padding:5px 7px 9px!important}
+
+#workspace .trip-sidebar .sidebar-header-title{font-size:var(--font-size-base)!important;font-weight:600!important;line-height:20px!important}
+
+#workspace .trip-sidebar .trip-sidebar-groups{display:grid!important;gap:12px!important;margin-top:8px!important}
+
+/* Status groups */
+#workspace .trip-sidebar .trip-sidebar-group-toggle{display:grid!important;grid-template-columns:18px minmax(0,1fr) auto 24px!important;column-gap:5px!important;align-items:center!important;min-height:30px!important;padding:4px 6px!important;color:var(--color-text-secondary)!important}
+
+#workspace .trip-sidebar .trip-sidebar-group-toggle>svg:not(.sidebar-chevron){width:14px!important;height:14px!important;stroke-width:1.4!important}
+
+#workspace .trip-sidebar .trip-sidebar-group-toggle b{min-width:0!important;font-size:var(--font-size-sm)!important;font-weight:600!important;line-height:16px!important}
+
+#workspace .trip-sidebar .trip-sidebar-group-toggle small{font-size:10px!important;font-weight:400!important;line-height:14px!important;color:var(--color-text-muted)!important}
+
+/* Trip rows reserve separate action and disclosure columns at all times. */
+#workspace .trip-sidebar .trip-library-list{margin-left:8px!important}
+
+#workspace .trip-sidebar .trip-library-item{position:relative!important;padding:0!important}
+
+#workspace .trip-sidebar .trip-library-trip-row{display:grid!important;grid-template-columns:minmax(0,1fr) 28px 28px!important;column-gap:0!important;align-items:center!important;min-width:0!important;padding:1px 0!important}
+
+#workspace .trip-sidebar .trip-library-open{display:grid!important;grid-column:1!important;grid-template-columns:16px minmax(0,1fr)!important;column-gap:6px!important;align-items:center!important;min-width:0!important;padding:5px 4px!important;color:var(--color-text-secondary)!important}
+
+#workspace .trip-sidebar .trip-library-open>svg{width:14px!important;height:14px!important;color:var(--color-text-muted)!important;stroke-width:1.35!important}
+
+#workspace .trip-sidebar .trip-library-open>span{display:grid!important;gap:1px!important;min-width:0!important}
+
+#workspace .trip-sidebar .trip-library-open b{overflow:hidden!important;font-size:var(--font-size-sm)!important;font-weight:600!important;line-height:16px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+
+#workspace .trip-sidebar .trip-library-open small{overflow:hidden!important;font-size:10px!important;font-weight:400!important;line-height:14px!important;color:var(--color-text-muted)!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+
+/* Actions */
+#workspace .trip-sidebar .trip-library-item .trip-library-delete{position:static!important;display:grid!important;grid-column:2!important;grid-row:1!important;place-items:center!important;width:28px!important;height:28px!important;margin:0!important;padding:0!important;background:transparent!important;color:var(--color-text-muted)!important;font-size:var(--font-size-md)!important;line-height:1!important;opacity:0!important;visibility:hidden!important;transform:none!important;transition:opacity .16s ease,color .16s ease,background-color .16s ease!important}
+
+#workspace .trip-sidebar .trip-library-tree-toggle{display:grid!important;grid-column:3!important;grid-row:1!important;place-items:center!important;width:28px!important;height:28px!important;margin:0!important;padding:0!important;color:var(--color-text-muted)!important;visibility:visible!important}
+
+#workspace .trip-sidebar .trip-library-item:hover .trip-library-delete,#workspace .trip-sidebar .trip-library-item:focus-within .trip-library-delete{opacity:1!important;visibility:visible!important}
+
+#workspace .trip-sidebar .trip-library-item .trip-library-delete:hover,#workspace .trip-sidebar .trip-library-item .trip-library-delete:focus-visible{background:var(--color-danger-soft)!important;color:var(--color-danger)!important;outline:0!important}
+
+/* Chevron */
+#workspace .trip-sidebar svg.sidebar-chevron{grid-column:4!important;justify-self:center!important;width:10px!important;height:10px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.2!important;transform:rotate(-90deg)!important;transform-box:fill-box!important;transform-origin:center!important;transition:transform .16s ease!important}
+
+#workspace .trip-sidebar .trip-library-tree-toggle svg.sidebar-chevron{grid-column:auto!important}
+
+#workspace .trip-sidebar .trip-sidebar-group-toggle.is-open svg.sidebar-chevron,#workspace .trip-sidebar .trip-library-tree-toggle.is-open svg.sidebar-chevron{transform:rotate(0deg)!important}
+
+/* Day tree */
+#workspace .trip-sidebar .trip-library-days{position:relative!important;display:grid!important;grid-column:1/4!important;gap:1px!important;margin:1px 0 4px 22px!important;max-height:168px!important;overflow-x:hidden!important;padding:0!important}
+
+#workspace .trip-sidebar .trip-library-days::before{display:none!important}
+
+#workspace .trip-sidebar .trip-library-days button{position:relative!important;display:grid!important;grid-template-columns:16px 58px minmax(0,1fr)!important;gap:4px!important;align-items:center!important;min-height:28px!important;padding:4px 6px!important;border-radius:var(--radius-sm)!important;background:transparent!important;color:var(--color-text-muted)!important}
+
+#workspace .trip-sidebar .trip-library-days button:not(:last-child)::after{position:absolute!important;z-index:0!important;top:14px!important;bottom:-14px!important;left:13px!important;width:1px!important;background:var(--color-border)!important;content:""!important}
+
+#workspace .trip-sidebar .trip-library-days .day-timeline-dot{position:relative!important;z-index:1!important;justify-self:center!important;width:6px!important;height:6px!important;border:1px solid var(--color-border-strong)!important;border-radius:var(--radius-pill)!important;background:var(--color-surface)!important;box-shadow:none!important}
+
+#workspace .trip-sidebar .trip-library-days b{grid-column:2!important;min-width:0!important;font-size:var(--font-size-xs)!important;font-weight:500!important;line-height:16px!important}
+
+#workspace .trip-sidebar .trip-library-days span{grid-column:3!important;min-width:0!important;overflow:hidden!important;font-size:10px!important;font-weight:400!important;line-height:16px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+
+/* Hover and selected states */
+#workspace .trip-sidebar .trip-sidebar-group-toggle:hover{background:var(--color-surface-soft)!important;color:var(--color-text-heading)!important}
+
+#workspace .trip-sidebar .trip-library-item:hover>.trip-library-trip-row{background:var(--color-surface-soft)!important;border-radius:var(--radius-sm)!important}
+
+#workspace .trip-sidebar .trip-library-item.selected>.trip-library-trip-row{background:var(--color-success-soft)!important;border-radius:var(--radius-sm)!important;box-shadow:inset 2px 0 var(--color-brand)!important}
+
+#workspace .trip-sidebar .trip-library-item.selected .trip-library-open{color:var(--color-text-heading)!important}
+
+#workspace .trip-sidebar .trip-library-days button:hover{background:var(--color-surface-soft)!important;color:var(--color-text-secondary)!important}
+
+#workspace .trip-sidebar .trip-library-days button.selected-day{background:var(--color-success-soft)!important;color:var(--color-text-heading)!important}
+
+#workspace .trip-sidebar .trip-library-days button.selected-day .day-timeline-dot{border-color:var(--color-success)!important;background:var(--color-success)!important;box-shadow:0 0 0 2px var(--color-success-soft)!important}
+
+@media(max-width:760px){#workspace .trip-sidebar .trip-library-item .trip-library-delete{opacity:1!important;visibility:visible!important}
+
+#workspace .trip-sidebar .trip-library-trip-row{grid-template-columns:minmax(0,1fr) 28px 28px!important}
+
+#workspace .trip-sidebar .trip-library-days{margin-left:22px!important}}
+
+
+
 
 .edit-plan-backdrop{overscroll-behavior:contain}
 
@@ -3264,3 +3353,40 @@
 
 
 .avatar-group-trigger em{display:grid;place-items:center;flex:0 0 26px!important;width:26px!important;height:26px!important;margin-left:4px!important;font-size:var(--font-size-title)!important;line-height:1}
+
+/* Sidebar navigation */
+#workspace .trip-sidebar .trip-sidebar-groups{display:grid!important;gap:12px!important;margin-top:8px!important}
+#workspace .trip-sidebar .trip-sidebar-group-toggle{display:grid!important;grid-template-columns:18px minmax(0,1fr) auto 24px!important;column-gap:5px!important;align-items:center!important;min-height:30px!important;padding:4px 6px!important;color:var(--color-text-secondary)!important}
+#workspace .trip-sidebar .trip-sidebar-group-toggle>svg:not(.sidebar-chevron){width:14px!important;height:14px!important;stroke-width:1.4!important}
+#workspace .trip-sidebar .trip-sidebar-group-toggle b{min-width:0!important;font-size:var(--font-size-sm)!important;font-weight:600!important;line-height:16px!important}
+#workspace .trip-sidebar .trip-sidebar-group-toggle small{font-size:10px!important;font-weight:400!important;line-height:14px!important;color:var(--color-text-muted)!important}
+#workspace .trip-sidebar .trip-library-list{margin-left:8px!important}
+#workspace .trip-sidebar .trip-library-item{position:relative!important;padding:0!important}
+#workspace .trip-sidebar .trip-library-trip-row{display:grid!important;grid-template-columns:minmax(0,1fr) 28px 28px!important;column-gap:0!important;align-items:center!important;min-width:0!important;padding:1px 0!important}
+#workspace .trip-sidebar .trip-library-open{display:grid!important;grid-column:1!important;grid-template-columns:16px minmax(0,1fr)!important;column-gap:6px!important;align-items:center!important;min-width:0!important;padding:5px 4px!important;color:var(--color-text-secondary)!important}
+#workspace .trip-sidebar .trip-library-open>svg{width:14px!important;height:14px!important;color:var(--color-text-muted)!important;stroke-width:1.35!important}
+#workspace .trip-sidebar .trip-library-open>span{display:grid!important;gap:1px!important;min-width:0!important}
+#workspace .trip-sidebar .trip-library-open b{overflow:hidden!important;font-size:var(--font-size-sm)!important;font-weight:600!important;line-height:16px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+#workspace .trip-sidebar .trip-library-open small{overflow:hidden!important;font-size:10px!important;font-weight:400!important;line-height:14px!important;color:var(--color-text-muted)!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+#workspace .trip-sidebar .trip-library-item .trip-library-delete{position:static!important;display:grid!important;grid-column:2!important;grid-row:1!important;place-items:center!important;width:28px!important;height:28px!important;margin:0!important;padding:0!important;background:transparent!important;color:var(--color-text-muted)!important;font-size:var(--font-size-md)!important;line-height:1!important;opacity:0!important;visibility:hidden!important;transform:none!important;transition:opacity .16s ease,color .16s ease,background-color .16s ease!important}
+#workspace .trip-sidebar .trip-library-tree-toggle{display:grid!important;grid-column:3!important;grid-row:1!important;place-items:center!important;width:28px!important;height:28px!important;margin:0!important;padding:0!important;color:var(--color-text-muted)!important;visibility:visible!important}
+#workspace .trip-sidebar .trip-library-item:hover .trip-library-delete,#workspace .trip-sidebar .trip-library-item:focus-within .trip-library-delete{opacity:1!important;visibility:visible!important}
+#workspace .trip-sidebar .trip-library-item .trip-library-delete:hover,#workspace .trip-sidebar .trip-library-item .trip-library-delete:focus-visible{background:var(--color-danger-soft)!important;color:var(--color-danger)!important;outline:0!important}
+#workspace .trip-sidebar svg.sidebar-chevron{grid-column:4!important;justify-self:center!important;width:10px!important;height:10px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.2!important;transform:rotate(-90deg)!important;transform-box:fill-box!important;transform-origin:center!important;transition:transform .16s ease!important}
+#workspace .trip-sidebar .trip-library-tree-toggle svg.sidebar-chevron{grid-column:auto!important}
+#workspace .trip-sidebar .trip-sidebar-group-toggle.is-open svg.sidebar-chevron,#workspace .trip-sidebar .trip-library-tree-toggle.is-open svg.sidebar-chevron{transform:rotate(0deg)!important}
+#workspace .trip-sidebar .trip-library-days{position:relative!important;display:grid!important;grid-column:1/4!important;gap:1px!important;margin:1px 0 4px 22px!important;max-height:168px!important;overflow-x:hidden!important;padding:0!important}
+#workspace .trip-sidebar .trip-library-days::before{display:none!important}
+#workspace .trip-sidebar .trip-library-days button{position:relative!important;display:grid!important;grid-template-columns:16px 58px minmax(0,1fr)!important;gap:4px!important;align-items:center!important;min-height:28px!important;padding:4px 6px!important;border-radius:var(--radius-sm)!important;background:transparent!important;color:var(--color-text-muted)!important}
+#workspace .trip-sidebar .trip-library-days button:not(:last-child)::after{position:absolute!important;z-index:0!important;top:14px!important;bottom:-14px!important;left:13px!important;width:1px!important;background:var(--color-border)!important;content:""!important}
+#workspace .trip-sidebar .trip-library-days .day-timeline-dot{position:relative!important;z-index:1!important;justify-self:center!important;width:6px!important;height:6px!important;border:1px solid var(--color-border-strong)!important;border-radius:var(--radius-pill)!important;background:var(--color-surface)!important;box-shadow:none!important}
+#workspace .trip-sidebar .trip-library-days b{grid-column:2!important;min-width:0!important;font-size:var(--font-size-xs)!important;font-weight:500!important;line-height:16px!important}
+#workspace .trip-sidebar .trip-library-days span{grid-column:3!important;min-width:0!important;overflow:hidden!important;font-size:10px!important;font-weight:400!important;line-height:16px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+#workspace .trip-sidebar .trip-sidebar-group-toggle:hover{background:var(--color-surface-soft)!important;color:var(--color-text-heading)!important}
+#workspace .trip-sidebar .trip-library-item:hover>.trip-library-trip-row{background:var(--color-surface-soft)!important;border-radius:var(--radius-sm)!important}
+#workspace .trip-sidebar .trip-library-item.selected>.trip-library-trip-row{background:var(--color-success-soft)!important;border-radius:var(--radius-sm)!important;box-shadow:inset 2px 0 var(--color-brand)!important}
+#workspace .trip-sidebar .trip-library-item.selected .trip-library-open{color:var(--color-text-heading)!important}
+#workspace .trip-sidebar .trip-library-days button:hover{background:var(--color-surface-soft)!important;color:var(--color-text-secondary)!important}
+#workspace .trip-sidebar .trip-library-days button.selected-day{background:var(--color-success-soft)!important;color:var(--color-text-heading)!important}
+#workspace .trip-sidebar .trip-library-days button.selected-day .day-timeline-dot{border-color:var(--color-success)!important;background:var(--color-success)!important;box-shadow:0 0 0 2px var(--color-success-soft)!important}
+@media(max-width:760px){#workspace .trip-sidebar .trip-library-item .trip-library-delete{opacity:1!important;visibility:visible!important}}

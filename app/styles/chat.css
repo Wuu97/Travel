@@ -378,3 +378,20 @@
 #ai .ai-history-sidebar .history-open{font-size:var(--font-size-sm)!important;line-height:18px!important}
 
 #ai .ai-history-sidebar .history-open small{font-size:10px!important;line-height:16px!important}
+
+
+
+/* History sidebar navigation */
+#ai .ai-history-sidebar .history-row{display:grid!important;grid-template-columns:minmax(0,1fr) 28px!important;min-width:0!important;border-radius:var(--radius-sm)!important}
+
+#ai .ai-history-sidebar .history-open{min-width:0!important;color:var(--color-text-secondary)!important}
+
+#ai .ai-history-sidebar .history-row.current{background:var(--color-success-soft)!important;box-shadow:inset 2px 0 var(--color-brand)!important}
+
+#ai .ai-history-sidebar .history-row:not(.current):hover{background:var(--color-surface-soft)!important}
+
+#ai .ai-history-sidebar .history-delete{display:grid!important;place-items:center!important;width:28px!important;height:34px!important;padding:0!important;color:var(--color-text-muted)!important}
+
+#ai .ai-history-sidebar .history-delete:hover,#ai .ai-history-sidebar .history-delete:focus-visible{background:var(--color-danger-soft)!important;color:var(--color-danger)!important;outline:0!important}
+
+@media(max-width:760px){#ai .ai-history-sidebar .history-delete{visibility:visible!important}}
