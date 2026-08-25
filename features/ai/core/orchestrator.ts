@@ -7,6 +7,10 @@ import type { TravelContext } from "../schemas/context";
 import type { AiReply } from "../schemas/response";
 import { executeDataRequests } from "../tools/executor";
 import { reasonOverToolResults } from "./toolResultReasoning";
+import { createAmapProviders } from "../providers/amap";
+import { enrichExecutedTravelImages } from "../image/enrichExecutedTravelImages";
+import { createCachedImageSearchProvider } from "../image/enrichPlaceImages";
+import { WikimediaImageSearchProvider } from "../image/providers/wikimedia/provider";
 
 export type AiRequest = {
   message: string;
@@ -25,8 +29,13 @@ export async function requestTravelAdvice({ context, history, message, travelCon
   ];
   const parsed = parseAiReply(await requestLlmCompletion(messages));
   const executed = await executeDataRequests(parsed.dataRequests ?? [], { travelContext });
-  const enriched = await enrichAiReply(mergeExecutedTravelData(parsed, executed), undefined, travelContext);
-  const reasonedAnswer = await reasonOverToolResults({ message, travelContext, firstAnswer: enriched.content, data: executed });
+  const imageSearchProvider = createCachedImageSearchProvider(new WikimediaImageSearchProvider());
+  const imageEnrichedData = await enrichExecutedTravelImages(executed, imageSearchProvider, travelContext);
+  let legacyEnriched = parsed;
+  try { legacyEnriched = await enrichAiReply(parsed, { ...createAmapProviders(), imageSearchProvider }, travelContext, imageEnrichedData.places); }
+  catch { /* Amap configuration is optional for legacy enrichment. */ }
+  const enriched = mergeExecutedTravelData(legacyEnriched, imageEnrichedData);
+  const reasonedAnswer = await reasonOverToolResults({ message, travelContext, firstAnswer: enriched.content, data: imageEnrichedData });
   const reply = { ...enriched, ...(reasonedAnswer ? { content: reasonedAnswer } : {}) };
   delete reply.dataRequests;
   return reply;

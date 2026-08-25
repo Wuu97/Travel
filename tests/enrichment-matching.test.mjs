@@ -8,11 +8,44 @@ import test from "node:test";
 
 const execFileAsync = promisify(execFile);
 const sources = [
-  "features/ai/image/types.ts", "features/ai/image/normalization.ts", "features/ai/image/enrichPlaceImages.ts", "features/ai/image/providers/types.ts", "features/ai/image/providers/wikimedia/mapper.ts", "features/ai/image/providers/wikimedia/provider.ts",
+  "features/ai/image/types.ts", "features/ai/image/normalization.ts", "features/ai/image/enrichPlaceImages.ts", "features/ai/image/enrichExecutedTravelImages.ts", "features/ai/image/providers/types.ts", "features/ai/image/providers/wikimedia/mapper.ts", "features/ai/image/providers/wikimedia/provider.ts",
   "features/ai/core/client.ts", "features/ai/core/parser.ts", "features/ai/core/toolResultReasoning.ts", "features/ai/enrichment/enrichReply.ts", "features/ai/enrichment/matching.ts", "features/ai/enrichment/places.ts", "features/ai/enrichment/restaurants.ts", "features/ai/enrichment/routes.ts", "features/ai/enrichment/richContent.ts",
   "features/ai/providers/amap/client.ts", "features/ai/providers/amap/index.ts", "features/ai/providers/amap/mapper.ts", "features/ai/providers/amap/places.ts", "features/ai/providers/amap/restaurants.ts", "features/ai/providers/amap/routes.ts", "features/ai/providers/amap/types.ts", "features/ai/providers/types.ts",
   "features/ai/tools/executor.ts", "features/ai/tools/places.ts", "features/ai/tools/restaurants.ts", "features/ai/tools/routes.ts", "features/ai/tools/types.ts", "features/ai/schemas/context.ts", "features/ai/schemas/dataRequests.ts", "features/ai/schemas/response.ts", "features/chat/model.ts", "features/chat/requestValidation.ts", "features/shared/validation.ts", "features/trip/model.ts",
 ];
+
+test("does not re-query Amap when verified tool places enter the image pipeline", async () => {
+  const output = await mkdtemp(join(tmpdir(), "travel-verified-images-"));
+  try {
+    await execFileAsync(join(process.cwd(), "node_modules/.bin/tsc"), ["--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--skipLibCheck", "--outDir", output, ...sources], { cwd: new URL("../", import.meta.url) });
+    const { executeDataRequests } = await import(new URL(`file://${join(output, "ai/tools/executor.js")}`).href);
+    const { enrichExecutedTravelImages } = await import(new URL(`file://${join(output, "ai/image/enrichExecutedTravelImages.js")}`).href);
+    const { enrichAiReply } = await import(new URL(`file://${join(output, "ai/enrichment/enrichReply.js")}`).href);
+    const { mergeExecutedTravelData } = await import(new URL(`file://${join(output, "ai/enrichment/richContent.js")}`).href);
+    let amapCalls = 0;
+    let wikimediaCalls = 0;
+    const providers = {
+      amapPlaceProvider: { async searchPlaces() { amapCalls += 1; return [{ id: "wuhou", name: "成都武侯祠博物馆", source: { provider: "amap" } }]; }, async getPlaceDetails() { return null; } },
+      amapRestaurantProvider: { async searchRestaurants() { return []; }, async getRestaurantDetails() { return null; } },
+      amapRouteProvider: { async getRoute() { return null; } },
+      imageSearchProvider: { async searchImages() { wikimediaCalls += 1; return [{ url: "https://upload.wikimedia.org/wuhou.jpg", source: "search", provider: "wikimedia" }]; } },
+    };
+    const data = await executeDataRequests([{ type: "place_lookup", query: "武侯祠" }], { providers, travelContext: { city: "成都" } });
+    assert.equal(amapCalls, 1);
+    const withImages = await enrichExecutedTravelImages(data, providers.imageSearchProvider, { city: "成都" });
+    const legacy = await enrichAiReply({ content: "回答", itineraryItems: [], expenseItems: [], richContent: { places: [{ name: "武侯祠" }] } }, providers, { city: "成都" }, withImages.places);
+    const reply = mergeExecutedTravelData(legacy, withImages);
+    assert.equal(amapCalls, 1);
+    assert.equal(wikimediaCalls, 1);
+    assert.equal(reply.richContent?.places?.[0]?.images?.[0]?.source, "search");
+
+    const searchData = await executeDataRequests([{ type: "place_search", query: "成都景点", limit: 1 }], { providers, travelContext: { city: "成都" } });
+    const callsAfterToolSearch = amapCalls;
+    const searchImages = await enrichExecutedTravelImages(searchData, providers.imageSearchProvider, { city: "成都" });
+    await enrichAiReply({ content: "回答", itineraryItems: [], expenseItems: [], richContent: { places: [{ name: "成都武侯祠博物馆" }] } }, providers, { city: "成都" }, searchImages.places);
+    assert.equal(amapCalls, callsAfterToolSearch);
+  } finally { await rm(output, { recursive: true, force: true }); }
+});
 
 test("uses Wikimedia only as a safe place-image fallback", async () => {
   const output = await mkdtemp(join(tmpdir(), "travel-image-search-"));

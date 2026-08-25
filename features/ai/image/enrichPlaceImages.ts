@@ -1,6 +1,23 @@
 import type { TravelContext } from "../schemas/context";
 import type { TravelPlace } from "../tools/types";
 import type { ImageSearchProvider } from "./providers/types";
+import type { TravelImage } from "./types";
+
+/** Shares one image-search request cache across all enrichment paths in a reply. */
+export function createCachedImageSearchProvider(provider: ImageSearchProvider): ImageSearchProvider {
+  const cache = new Map<string, Promise<TravelImage[]>>();
+  return {
+    searchImages(input) {
+      const key = `${input.query.trim().toLowerCase()}|${input.limit ?? 3}`;
+      let result = cache.get(key);
+      if (!result) {
+        result = provider.searchImages(input);
+        cache.set(key, result);
+      }
+      return result;
+    },
+  };
+}
 
 export function buildPlaceImageQuery(place: TravelPlace, context?: TravelContext): string {
   const name = place.name.trim();

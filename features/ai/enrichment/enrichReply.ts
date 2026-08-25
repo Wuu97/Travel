@@ -10,7 +10,7 @@ import { travelPlaceToRichPlace } from "./places";
 import { travelRestaurantToRichRestaurant } from "./restaurants";
 import { travelRouteToRichRoute } from "./routes";
 import { findBestTravelMatch, normalizeName } from "./matching";
-import { enrichPlaceImages } from "../image/enrichPlaceImages";
+import { createCachedImageSearchProvider, enrichPlaceImages } from "../image/enrichPlaceImages";
 import { WikimediaImageSearchProvider } from "../image/providers/wikimedia/provider";
 import type { ImageSearchProvider } from "../image/providers/types";
 
@@ -18,7 +18,7 @@ const PLACE_LIMIT = 5;
 const RESTAURANT_LIMIT = 5;
 const ROUTE_LIMIT = 3;
 
-type EnrichmentProviders = { amapPlaceProvider: PlaceProvider; amapRestaurantProvider: RestaurantProvider; amapRouteProvider: RouteProvider; imageSearchProvider?: ImageSearchProvider };
+export type EnrichmentProviders = { amapPlaceProvider: PlaceProvider; amapRestaurantProvider: RestaurantProvider; amapRouteProvider: RouteProvider; imageSearchProvider?: ImageSearchProvider };
 
 export { extractBaseEntityName, findBestTravelMatch, normalizeName } from "./matching";
 const routeModes: Record<string, TravelRouteMode> = { driving: "driving", "驾车": "driving", walking: "walking", "步行": "walking", transit: "transit", "公共交通": "transit", cycling: "cycling", "骑行": "cycling" };
@@ -38,25 +38,11 @@ function placeLookupCache(provider: PlaceProvider, travelContext?: TravelContext
   };
 }
 
-function imageSearchCache(provider: ImageSearchProvider | undefined): ImageSearchProvider | undefined {
-  if (!provider) return undefined;
-  const cache = new Map<string, Promise<import("../image/types").TravelImage[]>>();
-  return {
-    searchImages(input) {
-      const key = `${normalizeName(input.query)}|${input.limit ?? 3}`;
-      let result = cache.get(key);
-      if (!result) {
-        result = provider.searchImages(input);
-        cache.set(key, result);
-      }
-      return result;
-    },
-  };
-}
-
-async function enrichPlace(candidate: RichPlace, lookup: ReturnType<typeof placeLookupCache>, imageSearchProvider: ImageSearchProvider | undefined, travelContext?: TravelContext): Promise<RichPlace> {
+async function enrichPlace(candidate: RichPlace, lookup: ReturnType<typeof placeLookupCache>, imageSearchProvider: ImageSearchProvider | undefined, travelContext?: TravelContext, verifiedPlaces: TravelPlace[] = []): Promise<RichPlace> {
   try {
-    const matched = findBestTravelMatch(candidate.name, await lookup(candidate.name, candidate.area));
+    // Tool results cross this boundary as TravelPlace values, so reuse their safe
+    // verification rather than turning them back into an Amap lookup by name.
+    const matched = findBestTravelMatch(candidate.name, verifiedPlaces) ?? findBestTravelMatch(candidate.name, await lookup(candidate.name, candidate.area));
     if (!matched) return candidate;
     const withImages = imageSearchProvider ? await enrichPlaceImages(matched, imageSearchProvider, travelContext) : matched;
     return travelPlaceToRichPlace(withImages, { description: candidate.description, recommendedDuration: candidate.recommendedDuration, itineraryItem: candidate.itineraryItem }) ?? candidate;
@@ -93,17 +79,16 @@ async function enrichRoute(candidate: RichRoute, lookup: ReturnType<typeof place
 }
 
 function resolveProviders(): EnrichmentProviders | null {
-  try { return { ...createAmapProviders(), imageSearchProvider: new WikimediaImageSearchProvider() }; }
+  try { return { ...createAmapProviders(), imageSearchProvider: createCachedImageSearchProvider(new WikimediaImageSearchProvider()) }; }
   catch { return null; }
 }
 
-export async function enrichAiReply(reply: AiReply, providers: EnrichmentProviders | null = resolveProviders(), travelContext?: TravelContext): Promise<AiReply> {
+export async function enrichAiReply(reply: AiReply, providers: EnrichmentProviders | null = resolveProviders(), travelContext?: TravelContext, verifiedPlaces: TravelPlace[] = []): Promise<AiReply> {
   const original = normalizeRichContent(reply.richContent);
   if (!original || !providers) return reply;
   const lookup = placeLookupCache(providers.amapPlaceProvider, travelContext);
-  const imageSearchProvider = imageSearchCache(providers.imageSearchProvider);
   const [places, restaurants, routes] = await Promise.all([
-    original.places ? Promise.all(original.places.slice(0, PLACE_LIMIT).map((candidate) => enrichPlace(candidate, lookup, imageSearchProvider, travelContext))) : undefined,
+    original.places ? Promise.all(original.places.slice(0, PLACE_LIMIT).map((candidate) => enrichPlace(candidate, lookup, providers.imageSearchProvider, travelContext, verifiedPlaces))) : undefined,
     original.restaurants ? Promise.all(original.restaurants.slice(0, RESTAURANT_LIMIT).map((candidate) => enrichRestaurant(candidate, providers.amapRestaurantProvider, travelContext))) : undefined,
     original.routes ? Promise.all(original.routes.slice(0, ROUTE_LIMIT).map((candidate) => enrichRoute(candidate, lookup, providers.amapRouteProvider))) : undefined,
   ]);
