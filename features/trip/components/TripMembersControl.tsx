@@ -3,17 +3,19 @@ import type { TripDetails } from "../model";
 import type { TripMember } from "../members";
 import { productRoleLabel } from "../members";
 import { listTripMembers, removeTripMember, updateTripMemberRole } from "../api";
+import { useTripCapabilities } from "./TripCapabilities";
 
 type Props = { accessToken?: string | null; details: TripDetails; editingRole: string | null; isOpen: boolean; newMember?: string; onChange?: (patch: Partial<TripDetails>) => void; onNewMemberChange?: (value: string) => void; onToggle: () => void; panelRef: RefObject<HTMLDivElement | null>; roleRef: RefObject<HTMLDivElement | null>; setEditingRole: (member: string | null) => void; tripId?: string };
 
 /** Server membership is authoritative; legacy detail roles are display-only fallback for local trips. */
 export function TripMembersControl({ accessToken = null, details, editingRole, isOpen, onToggle, panelRef, roleRef, setEditingRole, tripId = "" }: Props) {
+  const { canManageMembers } = useTripCapabilities();
+  const canManage = canManageMembers && Boolean(accessToken);
   const [members, setMembers] = useState<TripMember[] | null>(null);
-  const [canManage, setCanManage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!isOpen || !accessToken) return;
-    void listTripMembers(tripId, accessToken).then((result) => { setMembers(result.members); setCanManage(result.canManage); setError(null); }).catch((reason) => setError(reason instanceof Error ? reason.message : "无法读取成员列表。"));
+    void listTripMembers(tripId, accessToken).then((result) => { setMembers(result.members); setError(null); }).catch((reason) => setError(reason instanceof Error ? reason.message : "无法读取成员列表。"));
   }, [accessToken, isOpen, tripId]);
   const displayed = members || details.companions.map((userId) => ({ userId, role: userId === "你" ? "owner" as const : details.memberRoles?.[userId] === "协作者" ? "collaborator" as const : "companion" as const, status: "active" as const }));
   const changeRole = async (member: TripMember, role: "collaborator" | "companion") => {

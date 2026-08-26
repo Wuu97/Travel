@@ -1,20 +1,22 @@
 import type { ReactNode } from "react";
+import { useTripCapabilities } from "./TripCapabilities";
 
 type Tab = "plan" | "budget";
 type Props = {
   activeTab: Tab;
-  onCopyInvite: () => void;
+  onCopyInvite: (role: "collaborator" | "companion") => void;
   onSelectTab: (tab: Tab) => void;
   exportButton: ReactNode;
 };
 
 export function TripWorkspaceControls({ activeTab, exportButton, onCopyInvite, onSelectTab }: Props) {
+  const { canManageMembers } = useTripCapabilities();
   return (
     <div className="trip-actions">
       <button className={activeTab === "plan" ? "selected" : ""} onClick={() => onSelectTab("plan")}>攻略</button>
       <button className={activeTab === "budget" ? "selected" : ""} onClick={() => onSelectTab("budget")}>账本</button>
       {exportButton}
-      <button className="share trip-invite" type="button" onClick={onCopyInvite}>＋ 邀请协作者</button>
+      {canManageMembers && <><button className="share trip-invite" type="button" onClick={() => onCopyInvite("collaborator")}>＋ 邀请协作者</button><button className="share trip-invite" type="button" onClick={() => onCopyInvite("companion")}>＋ 邀请同行人</button></>}
     </div>
   );
 }

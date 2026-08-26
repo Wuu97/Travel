@@ -8,10 +8,10 @@ type Options = { accessToken: string | null; onStatusChange: (patch: Partial<Tri
 /** Owns user-facing trip lifecycle operations that span local and shared storage. */
 export function useTripLifecycle({ accessToken, onClosePopover, onStatusChange, setShareStatus, setShared, tripId }: Options) {
   const { confirm } = useConfirmation();
-  const copyInviteLink = async () => {
+  const copyInviteLink = async (role: "collaborator" | "companion" = "collaborator") => {
     try {
       if (!accessToken) throw new Error("请先登录后再邀请协作者。");
-      const token = await createTripInvite(tripId, accessToken);
+      const token = await createTripInvite(tripId, accessToken, role);
       const inviteUrl = `${window.location.origin}${window.location.pathname}?trip=${encodeURIComponent(tripId)}&invite=${encodeURIComponent(token)}`;
       await copyText(inviteUrl);
       setShareStatus("copied");

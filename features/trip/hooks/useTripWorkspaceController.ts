@@ -354,6 +354,7 @@ export function useTripWorkspaceController({
     canEditTrip,
     canManageMembers,
     canDeleteTrip,
+    tripId: activeRealTripId || tripId,
     permissionStatus,
     budgetItems,
     coverInputRef,

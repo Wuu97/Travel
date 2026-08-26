@@ -15,6 +15,7 @@ import { ScrollArea } from "../../shared/components/ScrollArea";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import { TripSidebarIcon } from "./TripSidebarIcon";
 import { isCloudBackedTrip } from "../cloudStatus";
+import { useTripCapabilities } from "./TripCapabilities";
 
 const newTripId = () => createId("trip");
 const subscribeToHydration = () => () => {};
@@ -44,6 +45,7 @@ type Props = {
 };
 
 export function TripLibrary({ accessToken, activeDay, authReady, collapsed = false, currentDetails, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
+  const { canDeleteTrip } = useTripCapabilities();
   const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationState, getServerHydrationState);
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
   const [items, setItems] = useState<TripLibraryItem[]>([]);
@@ -231,6 +233,8 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   const deleteTrip = async (tripId: string) => {
     const trip = items.find((item) => item.id === tripId);
     if (!trip || deletingTripId) return;
+    const cloudBacked = isCloudBackedTrip(tripId, accessToken, cloudTripIds);
+    if (cloudBacked && (tripId !== activeTripId || !canDeleteTrip)) return;
     if (!await confirm({ title: "删除行程？", description: `“${trip.title}”及其全部行程数据将被永久删除，且无法恢复。` })) return;
     setDeleteError(null);
     setDeletingTripId(tripId);
@@ -292,10 +296,11 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
               const days = getTripDays(details.startDate, details.endDate);
               const isExpanded = expandedTrips[item.id] ?? isActive;
               const pendingPlans = isActive ? plans.filter((plan) => plan.day === 0) : [];
+              const canDeleteItem = !isCloudBackedTrip(item.id, accessToken, cloudTripIds) || (isActive && canDeleteTrip);
               return <div className={`trip-library-item ${isActive ? "selected" : ""}`} key={item.id}>
                 <div className="trip-library-trip-row">
                   <button className="trip-library-open" type="button" title={item.title} onClick={() => openTrip(item.id)}><TripSidebarIcon name="mountain" /><span><b>{item.title}</b><small>{item.startDate} - {item.endDate}</small></span></button>
-                  <button aria-label={`删除${item.title}`} className="trip-library-delete" disabled={deletingTripId !== null} title={deletingTripId === item.id ? "正在删除" : "删除行程"} type="button" onClick={() => void deleteTrip(item.id)}>{deletingTripId === item.id ? "…" : "×"}</button>
+                  {canDeleteItem && <button aria-label={`删除${item.title}`} className="trip-library-delete" disabled={deletingTripId !== null} title={deletingTripId === item.id ? "正在删除" : "删除行程"} type="button" onClick={() => void deleteTrip(item.id)}>{deletingTripId === item.id ? "…" : "×"}</button>}
                   <button className={`trip-library-tree-toggle${isExpanded ? " is-open" : ""}`} type="button" aria-expanded={isExpanded} aria-label={`${isExpanded ? "收起" : "展开"}${item.title}的天数`} onClick={() => setExpandedTrips((current) => ({ ...current, [item.id]: !isExpanded }))}><svg aria-hidden="true" className="sidebar-chevron" viewBox="0 0 12 12"><path d="m1 3 5 6 5-6" /></svg></button>
                 </div>
                 {isExpanded && <ScrollArea ariaLabel={`${item.title} 的天数`} className="trip-library-days">
