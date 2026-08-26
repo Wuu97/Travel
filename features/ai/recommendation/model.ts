@@ -1,8 +1,9 @@
 import type { TravelContext } from "../schemas/context";
+import type { FeedbackPreferenceSignal } from "../feedback";
 
 export type RecommendationContext = {
   preferences?: { pace?: string; interests?: string[]; dislikes?: string[]; transport?: string };
-  feedbackSignals?: { interests?: string[]; dislikes?: string[]; preferredTypes?: string[] };
+  feedbackSignals?: FeedbackPreferenceSignal;
   goals?: string[];
   constraints?: string[];
 };

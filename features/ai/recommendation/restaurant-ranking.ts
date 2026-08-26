@@ -10,8 +10,9 @@ export function rankRestaurants<T extends RecommendableTravelItem & { rating?: n
   const scored = items.map((item, index) => {
     const text = [item.name, item.category, ...(item.cuisine ?? [])].filter(Boolean).join(" "); let score = 0; const reasons: string[] = [];
     const explicitFood = (preferences?.interests ?? []).some((interest) => interest.trim().toLowerCase() === "food");
-    const prefersFood = explicitFood || (feedback?.interests ?? []).includes("food");
-    if (prefersFood && foodTerms.test(text)) { score += explicitFood ? 2 : 0.5; reasons.push(explicitFood ? "符合美食偏好" : "符合近期美食行为偏好"); }
+    const feedbackFood = feedback?.interests?.find((signal) => signal.value === "food");
+    const prefersFood = explicitFood || Boolean(feedbackFood);
+    if (prefersFood && foodTerms.test(text)) { score += explicitFood ? 2 : 0.5 * (feedbackFood?.confidence ?? 0); reasons.push(explicitFood ? "符合美食偏好" : "符合近期美食行为偏好"); }
     if (prefersFood && cuisineTerms.test(text)) { score += 1; reasons.push("具备特色菜系"); }
     if (prefersFood && typeof item.rating === "number" && Number.isFinite(item.rating)) { score += Math.min(item.rating, 5) / 10; reasons.push("参考已验证评分"); }
     return { item, index, score, reasons };

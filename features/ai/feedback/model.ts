@@ -1,5 +1,6 @@
 export type TravelFeedbackEvent = { id?: string; type: "add_to_trip" | "remove_from_trip" | "keep_recommendation" | "skip_recommendation"; itemType: "place" | "restaurant" | "route"; itemId?: string; category?: string; timestamp: string };
-export type FeedbackPreferenceSignal = { interests?: string[]; dislikes?: string[]; preferredTypes?: string[] };
+export type WeightedPreferenceSignal = { value: string; confidence: number };
+export type FeedbackPreferenceSignal = { interests?: WeightedPreferenceSignal[]; dislikes?: WeightedPreferenceSignal[]; preferredTypes?: string[] };
 
 export function normalizeFeedbackEvent(value: unknown): TravelFeedbackEvent | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;

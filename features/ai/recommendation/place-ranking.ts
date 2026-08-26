@@ -12,9 +12,9 @@ export function rankPlaces<T extends RecommendableTravelItem>({ items, memoryCon
   const scored = items.map((item, index) => {
     const text = [item.name, item.category].filter(Boolean).join(" "); let score = 0; const reasons: string[] = [];
     for (const interest of preferences?.interests ?? []) if (interestTerms[interest.trim().toLowerCase()]?.test(text)) { score += 2; reasons.push(`符合${interest === "nature" ? "自然风景" : interest === "photography" ? "摄影" : "历史文化"}偏好`); }
-    for (const interest of feedback?.interests ?? []) if (!(preferences?.interests ?? []).includes(interest) && interestTerms[interest]?.test(text)) { score += 0.5; reasons.push("符合近期行为偏好"); }
+    for (const interest of feedback?.interests ?? []) if (!(preferences?.interests ?? []).includes(interest.value) && interestTerms[interest.value]?.test(text)) { score += 0.5 * interest.confidence; reasons.push("符合近期行为偏好"); }
     if ((preferences?.dislikes ?? []).some((dislike) => dislike.trim().toLowerCase() === "shopping") && shopping.test(text)) { score -= 3; reasons.push("降低购物型景点优先级"); }
-    else if ((feedback?.dislikes ?? []).includes("shopping") && shopping.test(text)) { score -= 1; reasons.push("降低近期跳过的购物推荐优先级"); }
+    else if (!(preferences?.interests ?? []).includes("shopping") && feedback?.dislikes?.find((signal) => signal.value === "shopping") && shopping.test(text)) { score -= feedback.dislikes.find((signal) => signal.value === "shopping")!.confidence; reasons.push("降低近期跳过的购物推荐优先级"); }
     if (preferences?.pace === "relaxed" && relaxed.test(text)) { score += 1; reasons.push("适合慢节奏游览"); }
     if (preferences?.transport === "self_drive" && selfDrive.test(text)) { score += 1; reasons.push("适合自驾衔接"); }
     return { item, index, score, reasons };
