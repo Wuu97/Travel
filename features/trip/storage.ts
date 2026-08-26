@@ -115,6 +115,11 @@ export function mergeTripLibraryItems(localItems: TripLibraryItem[], cloudItems:
   ];
 }
 
+export function resolveInitialTripId(items: TripLibraryItem[], requestedTripId: string | null, fallbackTripId: string) {
+  if (requestedTripId && items.some((item) => item.id === requestedTripId)) return requestedTripId;
+  return items[0]?.id || fallbackTripId;
+}
+
 export function saveTripLibrary(items: TripLibraryItem[], userId?: LocalStorageScope) {
   localStorage.setItem(getTripLibraryStorageKey(userId), JSON.stringify(items));
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { defaultTripDetails } from "../data";
 import type { ItineraryItem, TripDetails, TripLibraryItem } from "../model";
-import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
+import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, removeTripStorage, resolveInitialTripId, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
 import { listAccessibleTrips } from "../api";
 import { createId } from "../../shared/utils/createId";
 import { getTripDays } from "../utils";
@@ -79,8 +79,15 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
       const applyItems = (libraryItems: TripLibraryItem[], isPersisted: boolean) => {
         if (cancelled) return;
         const loadedItems = libraryItems.length ? libraryItems : [defaultLibraryTrip];
-        const requestedId = new URLSearchParams(window.location.search).get("trip") || defaultLibraryTrip.id;
-        setActiveTripId(loadedItems.some((item) => item.id === requestedId) ? requestedId : null);
+        const requestedId = new URLSearchParams(window.location.search).get("trip");
+        const selectedTripId = resolveInitialTripId(libraryItems, requestedId, defaultLibraryTrip.id);
+        setActiveTripId(selectedTripId);
+        if (libraryItems.length && selectedTripId !== requestedId) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("trip", selectedTripId);
+          window.history.replaceState(null, "", url);
+          window.dispatchEvent(new Event("tuyu-tripchange"));
+        }
         setItems(loadedItems);
         setHasPersistedLibrary(isPersisted);
         setLibraryScope(storageScope);

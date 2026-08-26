@@ -170,6 +170,12 @@ test("scopes trip snapshots, libraries, and chat history by the active user", as
       { ...libraryFallback, id: "shared", title: "云端标题", status: "进行中" },
       { ...libraryFallback, id: "cloud", title: "云端旅行" },
     ]);
+    const cloudTrips = [{ ...libraryFallback, id: "cloud-a", title: "云端 A" }, { ...libraryFallback, id: "cloud-b", title: "云端 B" }];
+    assert.equal(tripStorage.resolveInitialTripId(cloudTrips, null, libraryFallback.id), "cloud-a");
+    assert.equal(tripStorage.resolveInitialTripId(cloudTrips, "cloud-b", libraryFallback.id), "cloud-b");
+    assert.equal(tripStorage.resolveInitialTripId(cloudTrips, "missing", libraryFallback.id), "cloud-a");
+    assert.equal(tripStorage.resolveInitialTripId([], null, libraryFallback.id), libraryFallback.id);
+    assert.equal(values.has(tripStorage.getTripLibraryStorageKey("new-user")), false);
     chatStorage.saveChats([{ id: "a", title: "A", messages: [], createdAt: 1, updatedAt: 1 }], "user-a");
     chatStorage.saveChats([{ id: "b", title: "B", messages: [], createdAt: 2, updatedAt: 2 }], "user-b");
     assert.equal(chatStorage.loadSavedChats("user-a")[0].id, "a");
