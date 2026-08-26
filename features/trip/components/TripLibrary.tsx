@@ -75,6 +75,18 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   }, []);
 
   useEffect(() => {
+    const addCreatedTrip = (event: Event) => {
+      const item = (event as CustomEvent<TripLibraryItem>).detail;
+      if (!item || typeof item.id !== "string") return;
+      setItems((current) => current.some((trip) => trip.id === item.id) ? current : [...current, item]);
+      setActiveTripId(item.id);
+      setHasPersistedLibrary(true);
+    };
+    window.addEventListener("tuyu-tripcreated", addCreatedTrip);
+    return () => window.removeEventListener("tuyu-tripcreated", addCreatedTrip);
+  }, []);
+
+  useEffect(() => {
     if (!hydrated) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {

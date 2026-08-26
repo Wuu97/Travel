@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { TripWorkspaceProps } from "../components/TripWorkspace";
 import { defaultTripDetails, getDefaultStoredTrip } from "../data";
-import type { ExpenseItem, ItineraryItem, LedgerItem } from "../model";
-import { hasStoredTripSnapshot, loadStoredTrip, loadTripDetails, loadTripLibrary } from "../storage";
+import type { ExpenseItem, ItineraryItem, LedgerItem, TripLibraryItem } from "../model";
+import { hasStoredTripSnapshot, loadStoredTrip, loadTripDetails, loadTripLibrary, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
+import { DEFAULT_TRIP_ID } from "../tripId";
+import { createId } from "../../shared/utils/createId";
 import { syncExpenseRelationTitle } from "../expenseRelations";
 import { destinationPinyin, getTripDestination } from "../utils";
 import { useExpenseEntry } from "./useExpenseEntry";
@@ -50,6 +52,9 @@ export function useTripWorkspaceController({
 }: Options) {
   const { initialDetails, initialTrip, tripId } = useTripBootstrap(loadPersistedState, storageScope);
   const hasTripInUrl = typeof window !== "undefined" && Boolean(new URLSearchParams(window.location.search).get("trip"));
+  const [activatedTripId, setActivatedTripId] = useState<string | null>(null);
+  const [activationError, setActivationError] = useState<string | null>(null);
+  const activeRealTripId = activatedTripId || (hasTripInUrl && tripId !== DEFAULT_TRIP_ID ? tripId : null);
   const [hydratedStorageScope, setHydratedStorageScope] = useState(storageScope);
   // The default workspace is only a presentation fallback. It must never become
   // a persisted guest trip simply because the library is empty.
@@ -60,6 +65,28 @@ export function useTripWorkspaceController({
   const [expenses, setExpenses] = useState<LedgerItem[]>(initialTrip.expenses);
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
+  const ensureRealTrip = useCallback(() => {
+    if (activeRealTripId) return true;
+    const id = createId("trip");
+    const item: TripLibraryItem = { id, title: tripDetails.title, startDate: tripDetails.startDate, endDate: tripDetails.endDate, status: tripDetails.status };
+    try {
+      // Write the entry last: a storage failure never leaves a selectable half-trip.
+      saveTrip({ expenses, budgetItems, plans }, id, storageScope);
+      saveTripDetails(tripDetails, id, storageScope);
+      saveTripLibrary([...loadTripLibrary(storageScope), item], storageScope);
+    } catch {
+      setActivationError("无法创建旅行，请检查浏览器存储后重试。当前输入已保留。");
+      return false;
+    }
+    setActivationError(null);
+    setActivatedTripId(id);
+    setHasPersistedTrip(true);
+    const url = new URL(window.location.href);
+    url.searchParams.set("trip", id);
+    window.history.replaceState(null, "", url);
+    window.dispatchEvent(new CustomEvent("tuyu-tripcreated", { detail: item }));
+    return true;
+  }, [activeRealTripId, budgetItems, expenses, plans, storageScope, tripDetails]);
   useEffect(() => {
     if (!loadPersistedState) return;
     let cancelled = false;
@@ -144,9 +171,9 @@ export function useTripWorkspaceController({
     authReady,
     budgetItems,
     details: tripDetails,
-    enabled: loadPersistedState && hasTripInUrl && hydratedStorageScope === storageScope,
+    enabled: loadPersistedState && Boolean(activeRealTripId) && hydratedStorageScope === storageScope,
     onRemoteTripLoaded: markRemoteTripLoaded,
-    persistLocal: hasPersistedTrip,
+    persistLocal: hasPersistedTrip || Boolean(activeRealTripId),
     expenses,
     plans,
     setBudgetItems,
@@ -154,7 +181,7 @@ export function useTripWorkspaceController({
     setExpenses,
     setPlans,
     storageScope,
-    tripId,
+    tripId: activeRealTripId || tripId,
   });
   const {
     addExpenseItems,
@@ -236,7 +263,7 @@ export function useTripWorkspaceController({
     onStatusChange: updateTripDetails,
     setShareStatus,
     setShared,
-    tripId,
+    tripId: activeRealTripId || tripId,
   });
   const { saveInlinePlan } = useInlinePlanEditor({
     announceSave,
@@ -272,10 +299,12 @@ export function useTripWorkspaceController({
     tripPopoverRef,
   });
   const copyActivePlan = (item: ItineraryItem) => {
+    if (!ensureRealTrip()) return;
     copyPlan(item);
     setOpenPlanMenuId(null);
   };
   const deleteActivePlan = (id: string) => {
+    if (!ensureRealTrip()) return;
     void deletePlan(id);
     setOpenPlanMenuId(null);
   };
@@ -331,21 +360,21 @@ export function useTripWorkspaceController({
     menuRef: planMenuRef,
     newMember,
     newPlan,
-    onAddPlan: addPlan,
+    onAddPlan: () => { if (ensureRealTrip()) addPlan(); },
     onAmountChange: setLedgerAmount,
     onDateChange: setLedgerDate,
-    onArchive: archiveTrip,
-    onCoverChange: chooseCoverImage,
+    onArchive: () => { if (ensureRealTrip()) void archiveTrip(); },
+    onCoverChange: (event) => { if (ensureRealTrip()) chooseCoverImage(event); },
     onCopy: copyActivePlan,
     onDelete: deleteActivePlan,
-    onDetailsChange: updateTripDetails,
+    onDetailsChange: (updates) => { if (ensureRealTrip()) updateTripDetails(updates); },
     onEdit: editActivePlan,
     onEditBudget: (id) => editExpense(id, "estimated"),
     onEditExpense: (id) => editExpense(id, "actual"),
     onInlineChange: setInlinePlanEdit,
     onInvite: copyInviteLink,
     onManualAdd: openManualPlan,
-    onMovePlan: movePlanToDay,
+    onMovePlan: (id, day) => { if (ensureRealTrip()) movePlanToDay(id, day); },
     onNameChange: setLedgerName,
     onNoteChange: setLedgerNote,
     onNewPlanChange: setNewPlan,
@@ -353,16 +382,16 @@ export function useTripWorkspaceController({
     onPayerChange: setLedgerPayer,
     onOptimize: optimizeActiveDay,
     onRelatedItineraryChange: setLedgerRelatedItineraryItemId,
-    onRemoveBudget: removeBudgetItem,
-    onRemoveExpense: removeExpense,
-    onSaveEdit: savePlan,
-    onSaveExpense: addExpense,
-    onSaveInline: saveInlinePlan,
-    onSaveManual: saveManualPlan,
+    onRemoveBudget: (id) => { if (ensureRealTrip()) removeBudgetItem(id); },
+    onRemoveExpense: (id) => { if (ensureRealTrip()) removeExpense(id); },
+    onSaveEdit: () => { if (ensureRealTrip()) savePlan(); },
+    onSaveExpense: () => { if (ensureRealTrip()) addExpense(); },
+    onSaveInline: () => { if (ensureRealTrip()) saveInlinePlan(); },
+    onSaveManual: () => { if (ensureRealTrip()) saveManualPlan(); },
     onSelectDay: setActiveDay,
     onSelectTab: setWorkspaceTab,
     onTitleChange: setInlineTripTitle,
-    onTitleSave: saveInlineTitle,
+    onTitleSave: () => { if (ensureRealTrip()) saveInlineTitle(); },
     onToggleExpense: toggleExpense,
     onToggleMenu: togglePlanMenu,
     onTypeChange: setLedgerType,
@@ -386,8 +415,8 @@ export function useTripWorkspaceController({
     workspaceTab,
   };
   const importContext = {
-    addExpenseItems,
-    addItineraryItems,
+    addExpenseItems: (items: ExpenseItem[], destination: "budget" | "ledger") => { if (ensureRealTrip()) addExpenseItems(items, destination); },
+    addItineraryItems: (items: ItineraryItem[]) => { if (ensureRealTrip()) addItineraryItems(items); },
     isExpenseAdded,
     isPlanAdded,
     selectedImports,
@@ -396,7 +425,7 @@ export function useTripWorkspaceController({
   };
 
   return {
-    syncError,
+    syncError: activationError || syncError,
     workspaceProps,
     importContext,
     travelContext: tripDestination ? {
