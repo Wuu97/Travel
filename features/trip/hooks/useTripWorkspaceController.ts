@@ -18,6 +18,7 @@ import { useTripImportSelection } from "./useTripImportSelection";
 import { useTripImports } from "./useTripImports";
 import { useTripLifecycle } from "./useTripLifecycle";
 import { useTripPersistence } from "./useTripPersistence";
+import { listTripMembers } from "../api";
 import { useTripPlanActions } from "./useTripPlanActions";
 import { useTripSummary } from "./useTripSummary";
 import { useTripWorkspaceView } from "./useTripWorkspaceView";
@@ -55,6 +56,7 @@ export function useTripWorkspaceController({
   const hasTripInUrl = typeof window !== "undefined" && Boolean(new URLSearchParams(window.location.search).get("trip"));
   const [activatedTripId, setActivatedTripId] = useState<string | null>(null);
   const [activationError, setActivationError] = useState<string | null>(null);
+  const [canEditTrip, setCanEditTrip] = useState(true);
   const activeRealTripId = activatedTripId || (hasTripInUrl && tripId !== DEFAULT_TRIP_ID ? tripId : null);
   const [hydratedStorageScope, setHydratedStorageScope] = useState(storageScope);
   // The default workspace is only a presentation fallback. It must never become
@@ -66,7 +68,12 @@ export function useTripWorkspaceController({
   const [expenses, setExpenses] = useState<LedgerItem[]>(initialTrip.expenses);
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
+  useEffect(() => {
+    if (!accessToken || !activeRealTripId) { queueMicrotask(() => setCanEditTrip(true)); return; }
+    void listTripMembers(activeRealTripId, accessToken).then((membership) => setCanEditTrip(membership.canEdit)).catch(() => setCanEditTrip(true));
+  }, [accessToken, activeRealTripId]);
   const ensureRealTrip = useCallback(() => {
+    if (!canEditTrip) return false;
     // Guest mode keeps its pre-existing local-default persistence behavior.
     // Only a ready authenticated session needs first-trip activation.
     if (!isAuthenticated) return true;
@@ -90,7 +97,7 @@ export function useTripWorkspaceController({
     window.history.replaceState(null, "", url);
     window.dispatchEvent(new CustomEvent("tuyu-tripcreated", { detail: item }));
     return true;
-  }, [activeRealTripId, budgetItems, expenses, isAuthenticated, plans, storageScope, tripDetails]);
+  }, [activeRealTripId, budgetItems, canEditTrip, expenses, isAuthenticated, plans, storageScope, tripDetails]);
   useEffect(() => {
     if (!loadPersistedState) return;
     let cancelled = false;

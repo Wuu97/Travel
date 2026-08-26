@@ -21,7 +21,9 @@ export async function GET(request: Request) {
     if (!trip) return Response.json({ error: "无权访问该旅行成员。" }, { status: 403 });
     const { data, error } = await context.client.from("trip_members").select("user_id, role").eq("trip_id", tripId);
     if (error) return Response.json({ error: error.message }, { status: 502 });
-    return Response.json({ canManage: trip.owner_id === context.userId, members: [{ userId: trip.owner_id, role: "owner", status: "active" }, ...(data || []).map((member) => ({ userId: member.user_id, role: membershipRoleToProductRole(member.role), status: "active" }))] });
+    const currentMember = trip.owner_id === context.userId ? "owner" : (data || []).find((member) => member.user_id === context.userId)?.role;
+    const canEdit = currentMember === "owner" || currentMember === "editor";
+    return Response.json({ canDelete: trip.owner_id === context.userId, canEdit, canManage: trip.owner_id === context.userId, members: [{ userId: trip.owner_id, role: "owner", status: "active" }, ...(data || []).map((member) => ({ userId: member.user_id, role: membershipRoleToProductRole(member.role), status: "active" }))] });
   }
   if (!tripId) {
     const { data, error } = await context.client.from("trips").select("id, payload");

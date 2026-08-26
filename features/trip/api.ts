@@ -44,11 +44,11 @@ export async function createTripInvite(tripId: string, accessToken: string, role
   return data.token;
 }
 
-export async function listTripMembers(tripId: string, accessToken: string): Promise<{ members: TripMember[]; canManage: boolean }> {
+export async function listTripMembers(tripId: string, accessToken: string): Promise<{ members: TripMember[]; canManage: boolean; canEdit: boolean; canDelete: boolean }> {
   const response = await fetch(`${tripUrl(tripId)}&action=members`, { headers: authHeaders(accessToken) });
-  const data = await response.json().catch(() => ({})) as { members?: unknown; canManage?: unknown; error?: unknown };
+  const data = await response.json().catch(() => ({})) as { members?: unknown; canManage?: unknown; canEdit?: unknown; canDelete?: unknown; error?: unknown };
   if (!response.ok || !Array.isArray(data.members)) throw new Error(typeof data.error === "string" ? data.error : "无法读取成员列表。");
-  return { canManage: data.canManage === true, members: data.members.filter((member): member is TripMember => Boolean(member && typeof member === "object" && typeof (member as TripMember).userId === "string" && ["owner", "collaborator", "companion"].includes((member as TripMember).role))) };
+  return { canDelete: data.canDelete === true, canEdit: data.canEdit === true, canManage: data.canManage === true, members: data.members.filter((member): member is TripMember => Boolean(member && typeof member === "object" && typeof (member as TripMember).userId === "string" && ["owner", "collaborator", "companion"].includes((member as TripMember).role))) };
 }
 
 export async function updateTripMemberRole(tripId: string, userId: string, role: "collaborator" | "companion", accessToken: string) {
