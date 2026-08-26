@@ -3,6 +3,7 @@ import type { GalleryImage } from "../../../chat/components/TravelImageGallery";
 import { TravelImageGallery } from "../../../chat/components/TravelImageGallery";
 import type { ItineraryItem } from "../../../trip/model";
 import { ItineraryActionButton } from "./ItineraryActionButton";
+import { FeedbackButton } from "./FeedbackButton";
 
 type Props = { card: RestaurantCard; images: GalleryImage[]; action?: ItineraryAction; actionIndex: number; isPlanAdded: (item: ItineraryItem) => boolean; onAddItineraries: (items: ItineraryItem[]) => void };
 
@@ -18,7 +19,7 @@ export function TravelRestaurantCard({ card, images, action, actionIndex, isPlan
         {card.openingHours ? <span>{card.openingHours}</span> : null}
         {card.address ? <span>{card.address}</span> : null}
       </div>
-      {action ? <ItineraryActionButton action={action} index={actionIndex} targetName={card.name} isPlanAdded={isPlanAdded} onAddItineraries={onAddItineraries} /> : null}
+      <div className="structured-card-actions">{action ? <ItineraryActionButton action={action} index={actionIndex} targetName={card.name} category={card.cuisine} isPlanAdded={isPlanAdded} onAddItineraries={onAddItineraries} /> : null}<FeedbackButton event={{ type: "skip_recommendation", itemType: "restaurant", itemId: card.id, category: card.cuisine }} >不感兴趣</FeedbackButton></div>
     </div>
   </article>;
 }

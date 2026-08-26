@@ -13,17 +13,19 @@ import { buildBudgetedAiContextWithMemoryLoader } from "../context-builder";
 import { estimateTokenCount, limitContextText, resolveContextBudget, trimHistoryByBudget } from "../context-budget";
 import type { TravelMemory } from "../../memory/model";
 import { getRelevantMemoryContext } from "../../memory/retrieval";
-import { createRecommendationContext, rankTravelItems } from "../recommendation";
+import { createRecommendationContext, rankPlaces, rankRestaurants } from "../recommendation";
+import { analyzeFeedbackSignals, type TravelFeedbackEvent } from "../feedback";
 
 export type AiRequest = {
   message: string;
   context?: string;
   travelContext?: TravelContext;
   loadMemories?: () => Promise<TravelMemory[]>;
+  feedbackEvents?: TravelFeedbackEvent[];
   history: Array<{ role: "user" | "assistant"; content: string }>;
 };
 
-export async function requestTravelAdvice({ context, history, loadMemories, message, travelContext }: AiRequest): Promise<AiReply> {
+export async function requestTravelAdvice({ context, feedbackEvents, history, loadMemories, message, travelContext }: AiRequest): Promise<AiReply> {
   const contextBudget = resolveContextBudget({ query: message, tripDays: travelContext?.trip?.days });
   let loadedMemories: TravelMemory[] = [];
   let memoryLoaded = false;
@@ -56,9 +58,9 @@ export async function requestTravelAdvice({ context, history, loadMemories, mess
   const executed = await executeDataRequests(parsed.dataRequests ?? [], { travelContext });
   const imageSearchProvider = createCachedImageSearchProvider(new WikimediaImageSearchProvider());
   const imageEnrichedData = await enrichExecutedTravelImages(executed, imageSearchProvider, travelContext);
-  const recommendationContext = createRecommendationContext(getRelevantMemoryContext({ memories: loadedMemories, query: message, context: travelContext }).memories, message);
-  const places = rankTravelItems({ items: imageEnrichedData.places, memoryContext: recommendationContext, travelContext });
-  const restaurants = rankTravelItems({ items: imageEnrichedData.restaurants, memoryContext: recommendationContext, travelContext });
+  const recommendationContext = { ...createRecommendationContext(getRelevantMemoryContext({ memories: loadedMemories, query: message, context: travelContext }).memories, message), feedbackSignals: analyzeFeedbackSignals(feedbackEvents ?? []) };
+  const places = rankPlaces({ items: imageEnrichedData.places, memoryContext: recommendationContext, travelContext });
+  const restaurants = rankRestaurants({ items: imageEnrichedData.restaurants, memoryContext: recommendationContext, travelContext });
   const rankedData = { ...imageEnrichedData, places: places.sortedItems, restaurants: restaurants.sortedItems };
   const enriched = mergeExecutedTravelData(parsed, rankedData);
   const reasonedAnswer = await reasonOverToolResults(

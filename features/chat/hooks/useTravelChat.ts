@@ -5,6 +5,7 @@ import { normalizeAssistantResponse, type ChatMessage, type SavedChat } from "..
 import { loadSavedChats, saveChats } from "../storage";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import type { TravelContext } from "../../ai/schemas/context";
+import { readFeedbackEvents } from "../../ai/feedback";
 
 type Options = { accessToken: string | null; authReady: boolean; enabled: boolean };
 
@@ -122,7 +123,8 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
     setChatMessages(messagesWithQuestion);
     setAiBusy(true);
     try {
-      const response = await fetch("/api/ai", { method: "POST", headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({ message: userMessage, history, ...(travelContextRef.current ? { travelContext: travelContextRef.current } : {}) }) });
+      const feedbackEvents = readFeedbackEvents();
+      const response = await fetch("/api/ai", { method: "POST", headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({ message: userMessage, history, ...(travelContextRef.current ? { travelContext: travelContextRef.current } : {}), ...(feedbackEvents.length ? { feedbackEvents } : {}) }) });
       const data = await response.json();
       const messages = [...messagesWithQuestion, normalizeAssistantResponse(data.reply ?? data, data.error || "暂时无法生成回复。")];
       setChatMessages(messages);

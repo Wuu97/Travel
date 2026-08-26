@@ -4,6 +4,7 @@ import { TravelImageGallery } from "../../../chat/components/TravelImageGallery"
 import type { ItineraryAction } from "../../../ai/schemas/travel-response";
 import type { ItineraryItem } from "../../../trip/model";
 import { ItineraryActionButton } from "./ItineraryActionButton";
+import { FeedbackButton } from "./FeedbackButton";
 
 type Props = { card: PlaceCard; images: GalleryImage[]; action?: ItineraryAction; actionIndex: number; isPlanAdded: (item: ItineraryItem) => boolean; onAddItineraries: (items: ItineraryItem[]) => void };
 
@@ -19,7 +20,7 @@ export function TravelPlaceCard({ card, images, action, actionIndex, isPlanAdded
         {card.openingHours ? <span>{card.openingHours}</span> : null}
         {card.cost ? <span>{card.cost}</span> : null}
       </div>
-      {action ? <ItineraryActionButton action={action} index={actionIndex} targetName={card.name} isPlanAdded={isPlanAdded} onAddItineraries={onAddItineraries} /> : null}
+      <div className="structured-card-actions">{action ? <ItineraryActionButton action={action} index={actionIndex} targetName={card.name} category={card.category} isPlanAdded={isPlanAdded} onAddItineraries={onAddItineraries} /> : null}<FeedbackButton event={{ type: "skip_recommendation", itemType: "place", itemId: card.id, category: card.category }} >不感兴趣</FeedbackButton></div>
     </div>
   </article>;
 }
