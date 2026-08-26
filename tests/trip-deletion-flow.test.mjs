@@ -59,17 +59,20 @@ test("cloud deletion uses discovery/remote state and preserves owner-only server
   assert.match(persistence, /new CustomEvent\("tuyu-tripremote", \{ detail: tripId \}\)/);
 });
 
-test("first authenticated mutation activates a real trip before existing persistence runs", async () => {
+test("first-trip activation is auth-only and keeps guest persistence local", async () => {
   const [controller, library] = await Promise.all([
     readFile(new URL("../features/trip/hooks/useTripWorkspaceController.ts", import.meta.url), "utf8"),
     readFile(new URL("../features/trip/components/TripLibrary.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(controller, /const id = createId\("trip"\)/);
+  assert.match(controller, /const isAuthenticated = authReady && Boolean\(accessToken\)/);
+  assert.match(controller, /if \(!isAuthenticated\) return true;/);
   assert.match(controller, /saveTrip\(\{ expenses, budgetItems, plans \}, id, storageScope\)/);
   assert.match(controller, /saveTripDetails\(tripDetails, id, storageScope\)/);
   assert.match(controller, /saveTripLibrary\(\[\.\.\.loadTripLibrary\(storageScope\), item\], storageScope\)/);
   assert.match(controller, /url\.searchParams\.set\("trip", id\)/);
-  assert.match(controller, /enabled: loadPersistedState && Boolean\(activeRealTripId\)/);
+  assert.match(controller, /enabled: loadPersistedState && \(!isAuthenticated \|\| Boolean\(activeRealTripId\)\)/);
+  assert.match(controller, /persistLocal: !isAuthenticated \|\| hasPersistedTrip \|\| Boolean\(activeRealTripId\)/);
   assert.match(controller, /onAddPlan: \(\) => \{ if \(ensureRealTrip\(\)\) addPlan\(\); \}/);
   assert.match(controller, /addItineraryItems: \(items: ItineraryItem\[\]\) => \{ if \(ensureRealTrip\(\)\) addItineraryItems\(items\); \}/);
   assert.match(controller, /tripId !== DEFAULT_TRIP_ID/);

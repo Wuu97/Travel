@@ -51,6 +51,7 @@ export function useTripWorkspaceController({
   storageScope,
 }: Options) {
   const { initialDetails, initialTrip, tripId } = useTripBootstrap(loadPersistedState, storageScope);
+  const isAuthenticated = authReady && Boolean(accessToken);
   const hasTripInUrl = typeof window !== "undefined" && Boolean(new URLSearchParams(window.location.search).get("trip"));
   const [activatedTripId, setActivatedTripId] = useState<string | null>(null);
   const [activationError, setActivationError] = useState<string | null>(null);
@@ -66,6 +67,9 @@ export function useTripWorkspaceController({
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
   const ensureRealTrip = useCallback(() => {
+    // Guest mode keeps its pre-existing local-default persistence behavior.
+    // Only a ready authenticated session needs first-trip activation.
+    if (!isAuthenticated) return true;
     if (activeRealTripId) return true;
     const id = createId("trip");
     const item: TripLibraryItem = { id, title: tripDetails.title, startDate: tripDetails.startDate, endDate: tripDetails.endDate, status: tripDetails.status };
@@ -86,7 +90,7 @@ export function useTripWorkspaceController({
     window.history.replaceState(null, "", url);
     window.dispatchEvent(new CustomEvent("tuyu-tripcreated", { detail: item }));
     return true;
-  }, [activeRealTripId, budgetItems, expenses, plans, storageScope, tripDetails]);
+  }, [activeRealTripId, budgetItems, expenses, isAuthenticated, plans, storageScope, tripDetails]);
   useEffect(() => {
     if (!loadPersistedState) return;
     let cancelled = false;
@@ -171,9 +175,9 @@ export function useTripWorkspaceController({
     authReady,
     budgetItems,
     details: tripDetails,
-    enabled: loadPersistedState && Boolean(activeRealTripId) && hydratedStorageScope === storageScope,
+    enabled: loadPersistedState && (!isAuthenticated || Boolean(activeRealTripId)) && hydratedStorageScope === storageScope,
     onRemoteTripLoaded: markRemoteTripLoaded,
-    persistLocal: hasPersistedTrip || Boolean(activeRealTripId),
+    persistLocal: !isAuthenticated || hasPersistedTrip || Boolean(activeRealTripId),
     expenses,
     plans,
     setBudgetItems,
