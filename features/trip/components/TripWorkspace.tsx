@@ -13,6 +13,7 @@ import { TripSummaryHeader } from "./TripSummaryHeader";
 import { TripWorkspaceHeader } from "./TripWorkspaceHeader";
 import { TripWorkspaceLayout } from "./TripWorkspaceLayout";
 import { TripLibrary } from "./TripLibrary";
+import { TripCapabilitiesContext } from "./TripCapabilities";
 
 export type TripWorkspaceProps = {
   accessToken: string | null; authReady: boolean; canEditTrip: boolean; permissionStatus: "loading" | "ready" | "error";
@@ -25,7 +26,7 @@ export type TripWorkspaceProps = {
 /** Presentational boundary for the entire trip workspace; orchestration stays in its feature hook. */
 export function TripWorkspace(props: TripWorkspaceProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  return <TripWorkspaceLayout collapsed={sidebarCollapsed} header={<TripWorkspaceHeader key={`${props.shared}-${props.shareStatus}`} shared={props.shared} shareStatus={props.shareStatus} />} sidebar={<TripLibrary accessToken={props.accessToken} activeDay={props.activeDay} authReady={props.authReady} collapsed={sidebarCollapsed} currentDetails={props.details} onCollapsedChange={setSidebarCollapsed} onMovePlan={props.onMovePlan} onSelectDay={props.onSelectDay} plans={props.plans} storageScope={props.storageScope} />}>
+  return <TripCapabilitiesContext.Provider value={{ canEditTrip: props.canEditTrip, canManageMembers: props.canEditTrip, canDeleteTrip: props.canEditTrip }}><TripWorkspaceLayout collapsed={sidebarCollapsed} header={<TripWorkspaceHeader key={`${props.shared}-${props.shareStatus}`} shared={props.shared} shareStatus={props.shareStatus} />} sidebar={<TripLibrary accessToken={props.accessToken} activeDay={props.activeDay} authReady={props.authReady} collapsed={sidebarCollapsed} currentDetails={props.details} onCollapsedChange={setSidebarCollapsed} onMovePlan={props.onMovePlan} onSelectDay={props.onSelectDay} plans={props.plans} storageScope={props.storageScope} />}>
     <div className="trip-workspace-panel">
       {!props.canEditTrip && <p className="sync-error" role="status">{props.permissionStatus === "error" ? "权限加载失败，当前以只读方式显示。" : "同行人 · 只读"}</p>}
       <TripSummaryHeader activeTab={props.workspaceTab} coverInputRef={props.coverInputRef} details={props.details} editingRole={props.editingRole} exportButton={<TripExportButton budgetItems={props.budgetItems} days={props.days} details={props.details} expenses={props.expenses} plans={props.plans} />} inlineTitleInputRef={props.inlineTitleInputRef} inlineTitle={props.inlineTitle} memberRoleRef={props.memberRoleRef} newMember={props.newMember} onCoverChange={props.onCoverChange} onDetailsChange={props.onDetailsChange} onInvite={props.onInvite} onSelectTab={props.onSelectTab} onTitleChange={props.onTitleChange} onTitleSave={props.onTitleSave} popover={props.popover} saveStatus={props.saveStatus} setEditingRole={props.setEditingRole} setNewMember={props.setNewMember} setPopover={props.setPopover} tripPopoverRef={props.tripPopoverRef} />
@@ -33,5 +34,5 @@ export function TripWorkspace(props: TripWorkspaceProps) {
     </div>
     <TripPrintExport budgetItems={props.budgetItems} days={props.days} details={props.details} expenses={props.expenses} plans={props.plans} />
     <TripPlanDialogs activeDay={props.activeDay} days={props.days} editingPlan={props.editingPlan} manualPlan={props.manualPlan} onSaveEdit={() => props.editingPlan && props.onSaveEdit(props.editingPlan)} onSaveManual={() => props.manualPlan && props.onSaveManual(props.manualPlan)} setEditingPlan={props.setEditingPlan} setManualPlan={props.setManualPlan} />
-  </TripWorkspaceLayout>;
+  </TripWorkspaceLayout></TripCapabilitiesContext.Provider>;
 }

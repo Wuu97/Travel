@@ -8,6 +8,8 @@ type Props = {
 };
 
 export function ItineraryEntryActions({ canEditTrip = true, idea, onAddByAi, onIdeaChange, onManualAdd, onOptimize }: Props) {
+  const capabilities = useTripCapabilities();
+  canEditTrip = canEditTrip && capabilities.canEditTrip;
   return (
     <div style={{ flex: "none", marginTop: "auto", paddingTop: 12 }}>
       <div className="add-local" style={{ marginTop: 0 }}>
@@ -21,3 +23,4 @@ export function ItineraryEntryActions({ canEditTrip = true, idea, onAddByAi, onI
     </div>
   );
 }
+import { useTripCapabilities } from "./TripCapabilities";
