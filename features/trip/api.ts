@@ -3,6 +3,10 @@ import type { TripMember } from "./members";
 
 type TripApiResponse = { trip: StoredTrip | null; version?: number };
 
+export class TripVersionConflictError extends Error {
+  constructor(message = "旅行已被其他成员更新。") { super(message); this.name = "TripVersionConflictError"; }
+}
+
 const tripUrl = (tripId: string) => `/api/trips?tripId=${encodeURIComponent(tripId)}`;
 const authHeaders = (accessToken: string) => ({ Authorization: `Bearer ${accessToken}` });
 
@@ -33,6 +37,7 @@ export async function saveSharedTrip(tripId: string, trip: StoredTrip, version: 
     signal,
   });
   const data = await response.json().catch(() => ({}));
+  if (response.status === 409) throw new TripVersionConflictError(typeof data.error === "string" ? data.error : undefined);
   if (!response.ok) throw new Error(data.error || "无法保存共享行程。");
   return data as { version: number };
 }

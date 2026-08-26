@@ -81,6 +81,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
         scrollRef={chat.chatScrollRef}
       /></TripCapabilitiesContext.Provider>
       {workspace.syncError && <p className="sync-error" role="status">{workspace.syncError}</p>}
+      {workspace.syncConflict && <div className="sync-error" role="alert"><p>旅行已被其他成员更新。</p><button type="button" disabled={workspace.syncConflict.resolving} onClick={workspace.syncConflict.useRemoteSnapshot}>使用最新版本</button><button type="button" disabled={workspace.syncConflict.resolving} onClick={() => void workspace.syncConflict?.retryLocalSnapshot()}>保留我的修改</button></div>}
       <SiteFooter />
       <AuthControl
         configured={auth.configured}
