@@ -3,7 +3,7 @@ import { createId } from "../../shared/utils/createId";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import type { ExpenseItem, ItineraryItem, LedgerItem } from "../model";
 import type { EditingExpense } from "./useTripWorkspaceView";
-import { createTripExpense, toBudgetItem, toLedgerItem } from "../expense";
+import { createTripExpense } from "../expense";
 
 type Options = { amount: string; date: string; payer: string; note: string; budgetItems: ExpenseItem[]; editingExpense: EditingExpense; expenses: LedgerItem[]; name: string; occurrence: "actual" | "estimated"; plans: ItineraryItem[]; relatedItineraryItemId: string; type: ExpenseItem["type"]; setAmount: (value: string) => void; setDate: (value: string) => void; setPayer: (value: string) => void; setNote: (value: string) => void; setBudgetItems: Dispatch<SetStateAction<ExpenseItem[]>>; setEditingExpense: (value: EditingExpense) => void; setExpenses: Dispatch<SetStateAction<LedgerItem[]>>; setName: (value: string) => void; setOccurrence: (value: "actual" | "estimated") => void; setRelatedItineraryItemId: (value: string) => void; setType: (value: ExpenseItem["type"]) => void; setVisible: (visible: boolean) => void };
 
@@ -16,10 +16,10 @@ export function useExpenseEntry({ amount, date, payer, note, budgetItems, editin
     const plan = plans.find((item) => item.id === relatedItineraryItemId);
     const related = plan ? { relatedItineraryItemId: plan.id, relatedItineraryTitle: plan.title } : {};
     if (occurrence === "estimated") {
-      const item = toBudgetItem(createTripExpense({ id: editingExpense?.occurrence === "estimated" ? editingExpense.id : createId("budget"), title: name.trim(), type, amount: numericAmount, occurrence: "estimated", ...(note.trim() ? { note: note.trim() } : {}), ...related }));
+      const item = createTripExpense({ id: editingExpense?.occurrence === "estimated" ? editingExpense.id : createId("budget"), title: name, type, amount: numericAmount, occurrence: "estimated", note, ...related });
       setBudgetItems((current) => editingExpense?.occurrence === "estimated" ? current.map((existing) => existing.id === item.id ? item : existing) : [item, ...current]);
     } else {
-      const item = toLedgerItem(createTripExpense({ id: editingExpense?.occurrence === "actual" ? editingExpense.id : createId("expense"), title: name.trim(), type, amount: numericAmount, occurrence: "actual", ...(date ? { date } : {}), ...(payer.trim() ? { payer: payer.trim() } : {}), ...(note.trim() ? { note: note.trim() } : {}), ...related }));
+      const item = createTripExpense({ id: editingExpense?.occurrence === "actual" ? editingExpense.id : createId("expense"), title: name, type, amount: numericAmount, occurrence: "actual", date, payer, note, ...related });
       setExpenses((current) => editingExpense?.occurrence === "actual" ? current.map((existing) => existing.id === item.id ? item : existing) : [item, ...current]);
     }
     setName("");

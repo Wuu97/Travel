@@ -88,8 +88,8 @@ export function useTripPersistence({
         const { trip, version: loadedVersion } = loaded.result;
         if (trip) {
           // Shared snapshots may predate the unified model; normalize at the boundary.
-          setExpenses(trip.expenses.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "actual")));
-          setBudgetItems(trip.budgetItems.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "estimated")));
+          setExpenses(trip.expenses.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "actual")).filter((item): item is LedgerItem => item !== null));
+          setBudgetItems(trip.budgetItems.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "estimated")).filter((item): item is ExpenseItem => item !== null));
           setPlans(sortItineraryItems(trip.plans));
           if (trip.details) setDetails(trip.details);
         }

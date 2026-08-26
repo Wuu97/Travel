@@ -16,6 +16,9 @@ test("normalizes legacy LedgerItem data while retaining actual expense metadata"
     const legacy = normalizeTripExpense({ id: "old-1", item: " 午餐 ", type: "餐饮", amount: 88, by: "林" }, "actual");
     assert.deepEqual(legacy, { id: "old-1", title: "午餐", type: "餐饮", amount: 88, occurrence: "actual", payer: "林" });
     assert.deepEqual(createTripExpense({ id: "new-1", title: "地铁", type: "交通", amount: 5, occurrence: "actual", date: "2026-08-26", payer: "你", note: "机场线" }), { id: "new-1", title: "地铁", type: "交通", amount: 5, occurrence: "actual", date: "2026-08-26", payer: "你", note: "机场线" });
+    assert.equal(normalizeTripExpense({ id: "bad", item: "", type: "餐饮", amount: 10 }, "actual"), null);
+    assert.throws(() => createTripExpense({ title: "  ", type: "餐饮", amount: 10, occurrence: "actual" }));
+    assert.throws(() => createTripExpense({ title: "午餐", type: "餐饮", amount: Number.NaN, occurrence: "actual" }));
   } finally { await compilation.cleanup(); }
 });
 
