@@ -32,3 +32,32 @@ test("budget and actual totals update from the shared expense model", async () =
     assert.deepEqual(getBudgetOverview([], []), { plannedTotal: 0, actualTotal: 0, remaining: 0 });
   } finally { await compilation.cleanup(); }
 });
+
+test("compares category budgets and actuals, including overspend and unbudgeted spending", async () => {
+  const compilation = await compileTypeScript(sources, "ledger-comparison-");
+  try {
+    const { getBudgetVsActual } = await compilation.importModule("trip/budgetRules.js");
+    const budget = [
+      { id: "food-budget", title: "餐饮", type: "餐饮", amount: 1500, occurrence: "estimated" },
+      { id: "stay-budget", title: "住宿", type: "住宿", amount: 2000, occurrence: "estimated" },
+    ];
+    const actual = [
+      { id: "food-actual", title: "晚餐", type: "餐饮", amount: 1200, occurrence: "actual" },
+      { id: "stay-actual", title: "酒店", type: "住宿", amount: 2200, occurrence: "actual" },
+      { id: "transport", title: "地铁", type: "交通", amount: 500, occurrence: "actual" },
+    ];
+    assert.deepEqual(getBudgetVsActual(budget, actual), {
+      plannedTotal: 3500, actualTotal: 3900, remaining: -400, usageRate: 3900 / 3500 * 100,
+      categories: [
+        { category: "住宿", budget: 2000, actual: 2200, difference: -200 },
+        { category: "餐饮", budget: 1500, actual: 1200, difference: 300 },
+        { category: "交通", budget: 0, actual: 500, difference: -500 },
+      ],
+    });
+    assert.deepEqual(getBudgetVsActual([], []), { plannedTotal: 0, actualTotal: 0, remaining: 0, usageRate: 0, categories: [] });
+    assert.deepEqual(getBudgetVsActual([], [{ id: "actual", title: "咖啡", type: "餐饮", amount: 30, occurrence: "actual" }]), {
+      plannedTotal: 0, actualTotal: 30, remaining: -30, usageRate: 0,
+      categories: [{ category: "餐饮", budget: 0, actual: 30, difference: -30 }],
+    });
+  } finally { await compilation.cleanup(); }
+});

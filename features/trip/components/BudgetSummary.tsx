@@ -1,12 +1,13 @@
 type Props = {
   plannedTotal: number;
-  total: number;
+  actualTotal: number;
+  remaining: number;
+  usageRate: number;
   onToggleExpense: () => void;
 };
 
-export function BudgetSummary({ plannedTotal, total, onToggleExpense }: Props) {
-  const remaining = plannedTotal - total;
-  const percent = plannedTotal ? Math.min((total / plannedTotal) * 100, 100) : 0;
+export function BudgetSummary({ plannedTotal, actualTotal, remaining, usageRate, onToggleExpense }: Props) {
+  const progress = Math.min(usageRate, 100);
   return (
     <div className="budget-summary">
       <div>
@@ -15,9 +16,9 @@ export function BudgetSummary({ plannedTotal, total, onToggleExpense }: Props) {
         <small>由预计费用自动汇总</small>
       </div>
       <div className="progress">
-        <p>已支出 <b>¥ {total}</b></p>
-        <i><b style={{ width: `${percent}%` }} /></i>
-        <small>{remaining >= 0 ? `还可使用 ¥ ${remaining}` : `已超预算 ¥ ${Math.abs(remaining)}`}</small>
+        <p>已支出 <b>¥ {actualTotal}</b></p>
+        <i><b style={{ width: `${progress}%` }} /></i>
+        <small>{remaining >= 0 ? `剩余 ¥ ${remaining}` : `已超支 ¥ ${Math.abs(remaining)}`} · 使用率 {usageRate.toFixed(1)}%</small>
       </div>
       <button onClick={onToggleExpense}>＋ 记一笔</button>
     </div>
