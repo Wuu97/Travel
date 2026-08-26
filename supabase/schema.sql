@@ -82,10 +82,25 @@ create policy "Trip participants can read trips" on public.trips for select usin
 create policy "Users can create owned trips" on public.trips for insert with check (owner_id = auth.uid());
 create policy "Editors can update trips" on public.trips for update using (public.is_trip_member(id, 'editor')) with check (public.is_trip_member(id, 'editor'));
 create policy "Owners can delete trips" on public.trips for delete using (owner_id = auth.uid());
+drop policy if exists "Participants can read memberships" on public.trip_members;
+drop policy if exists "Editors can manage memberships" on public.trip_members;
+drop policy if exists "Owners can insert memberships" on public.trip_members;
+drop policy if exists "Owners can update memberships" on public.trip_members;
+drop policy if exists "Owners can delete memberships" on public.trip_members;
 create policy "Participants can read memberships" on public.trip_members for select using (public.is_trip_member(trip_id));
-create policy "Editors can manage memberships" on public.trip_members for all using (public.is_trip_member(trip_id, 'editor')) with check (public.is_trip_member(trip_id, 'editor'));
-create policy "Editors can create invites" on public.trip_invites for insert with check (created_by = auth.uid() and public.is_trip_member(trip_id, 'editor'));
-create policy "Editors can read invites" on public.trip_invites for select using (public.is_trip_member(trip_id, 'editor'));
+create policy "Owners can insert memberships" on public.trip_members for insert with check (exists (select 1 from public.trips where id = trip_id and owner_id = auth.uid()));
+create policy "Owners can update memberships" on public.trip_members for update using (exists (select 1 from public.trips where id = trip_id and owner_id = auth.uid())) with check (exists (select 1 from public.trips where id = trip_id and owner_id = auth.uid()));
+create policy "Owners can delete memberships" on public.trip_members for delete using (exists (select 1 from public.trips where id = trip_id and owner_id = auth.uid()));
+drop policy if exists "Editors can create invites" on public.trip_invites;
+drop policy if exists "Editors can read invites" on public.trip_invites;
+drop policy if exists "Owners can create invites" on public.trip_invites;
+drop policy if exists "Owners can update invites" on public.trip_invites;
+drop policy if exists "Owners can delete invites" on public.trip_invites;
+drop policy if exists "Owners can read invites" on public.trip_invites;
+create policy "Owners can create invites" on public.trip_invites for insert with check (created_by = auth.uid() and exists (select 1 from public.trips where id = trip_id and owner_id = auth.uid()));
+create policy "Owners can update invites" on public.trip_invites for update using (exists (select 1 from public.trips where id = trip_id and owner_id = auth.uid())) with check (created_by = auth.uid() and exists (select 1 from public.trips where id = trip_id and owner_id = auth.uid()));
+create policy "Owners can delete invites" on public.trip_invites for delete using (exists (select 1 from public.trips where id = trip_id and owner_id = auth.uid()));
+create policy "Owners can read invites" on public.trip_invites for select using (exists (select 1 from public.trips where id = trip_id and owner_id = auth.uid()));
 
 create table if not exists public.travel_memories (
   id uuid primary key default gen_random_uuid(),
