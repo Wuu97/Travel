@@ -1,6 +1,7 @@
 import type { RichContent } from "../../chat/model";
 import type { ExpenseCategory, ItineraryItem } from "../../trip/model";
 import type { ItineraryAction, StructuredTravelResponse, TravelCoordinates, TravelExpenseSuggestion, TravelPlaceCard, TravelRestaurantCard, TravelRouteCard } from "../schemas/travel-response";
+import { stableExpenseSuggestionId } from "./expense-id";
 
 type ParsedStructuredTravelResponse = { response: StructuredTravelResponse; isStructured: boolean };
 type RecordValue = Record<string, unknown>;
@@ -67,7 +68,9 @@ function expenses(value: unknown): TravelExpenseSuggestion[] {
     const raw = record(item); const title = text(raw?.title); const amount = number(raw?.amount);
     const category = raw?.category ?? raw?.type;
     if (!title || amount === undefined || amount <= 0 || !categories.has(category as ExpenseCategory)) return [];
-    return [{ id: text(raw?.id, 120) || `structured-expense-${index}-${title}`, title, amount: Math.round(amount * 100) / 100, category: category as ExpenseCategory, occurrence: "estimated", relatedItineraryItemId: text(raw?.relatedItineraryItemId, 120), relatedItineraryTitle: text(raw?.relatedItineraryTitle, 300) }];
+    const relatedItineraryItemId = text(raw?.relatedItineraryItemId, 120);
+    const relatedItineraryTitle = text(raw?.relatedItineraryTitle, 300);
+    return [{ id: stableExpenseSuggestionId({ id: text(raw?.id, 120), title, category: category as ExpenseCategory, amount, relatedItineraryItemId, relatedItineraryTitle, index }), title, amount: Math.round(amount * 100) / 100, category: category as ExpenseCategory, occurrence: "estimated", relatedItineraryItemId, relatedItineraryTitle }];
   }), (item) => item.id, 12);
 }
 

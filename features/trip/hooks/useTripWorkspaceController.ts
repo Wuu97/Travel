@@ -4,6 +4,7 @@ import type { TripWorkspaceProps } from "../components/TripWorkspace";
 import { defaultTripDetails, getDefaultStoredTrip } from "../data";
 import type { ExpenseItem, ItineraryItem, LedgerItem } from "../model";
 import { clearTripStorage } from "../storage";
+import { syncExpenseRelationTitle } from "../expenseRelations";
 import { destinationPinyin, getTripDestination } from "../utils";
 import { useExpenseEntry } from "./useExpenseEntry";
 import { useInlinePlanEditor } from "./useInlinePlanEditor";
@@ -157,7 +158,9 @@ export function useTripWorkspaceController({
     manualPlan,
     newPlan,
     setActiveDay,
+    setBudgetItems,
     setEditingPlan,
+    setExpenses,
     setManualPlan,
     setNewPlan,
     setPendingPlanId: setPendingPlanScrollId,
@@ -222,6 +225,10 @@ export function useTripWorkspaceController({
   const { saveInlinePlan } = useInlinePlanEditor({
     announceSave,
     edit: inlinePlanEdit,
+    onPlanRenamed: (plan) => {
+      setBudgetItems((items) => syncExpenseRelationTitle(items, plan));
+      setExpenses((items) => syncExpenseRelationTitle(items, plan));
+    },
     setEdit: setInlinePlanEdit,
     setPlans,
   });
@@ -276,6 +283,7 @@ export function useTripWorkspaceController({
     }
     document.querySelector("#ai")?.scrollIntoView({ behavior: "smooth" });
   };
+  const viewPlanExpenses = () => setWorkspaceTab("budget");
   const togglePlanMenu = (id: string) =>
     setOpenPlanMenuId((current) => (current === id ? null : id));
   const toggleExpense = () => setLedgerVisible(!ledgerVisible);
@@ -341,6 +349,7 @@ export function useTripWorkspaceController({
     onToggleExpense: toggleExpense,
     onToggleMenu: togglePlanMenu,
     onTypeChange: setLedgerType,
+    onViewPlanExpenses: viewPlanExpenses,
     openMenuId: openPlanMenuId,
     plans,
     popover: tripPopover,

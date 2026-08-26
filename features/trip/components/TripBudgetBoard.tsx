@@ -14,8 +14,8 @@ export function TripBudgetBoard({ budgetItems, expenseAmount, expenseDate, expen
     <BudgetSummary onToggleExpense={onToggleExpense} plannedTotal={comparison.plannedTotal} actualTotal={comparison.actualTotal} remaining={comparison.remaining} usageRate={comparison.usageRate} />
     {showExpense && <ExpenseEntryForm amount={expenseAmount} date={expenseDate} name={expenseName} note={expenseNote} payer={expensePayer} occurrence={expenseOccurrence} plans={plans} relatedItineraryItemId={relatedItineraryItemId} type={expenseType} onAmountChange={onAmountChange} onDateChange={onDateChange} onNameChange={onNameChange} onNoteChange={onNoteChange} onOccurrenceChange={onOccurrenceChange} onPayerChange={onPayerChange} onRelatedItineraryChange={onRelatedItineraryChange} onTypeChange={onTypeChange} onSave={onSaveExpense} />}
     <div className="budget-grid" style={{ display: "grid", flex: 1, gap: 16, gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", minHeight: 0 }}>
-      <ActualExpenseList expenses={expenses} onEdit={onEditExpense} onRemove={onRemoveExpense} />
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}><PlannedExpenseList items={budgetItems} onEdit={onEditBudget} onRemove={onRemoveBudget} /><ExpenseDistribution categories={comparison.categories} actualTotal={comparison.actualTotal} /></div>
+      <ActualExpenseList expenses={expenses} onEdit={onEditExpense} onRemove={onRemoveExpense} plans={plans} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}><PlannedExpenseList items={budgetItems} onEdit={onEditBudget} onRemove={onRemoveBudget} plans={plans} /><ExpenseDistribution categories={comparison.categories} actualTotal={comparison.actualTotal} /></div>
     </div>
   </div>;
 }

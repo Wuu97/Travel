@@ -2,13 +2,14 @@ import type { Dispatch, SetStateAction } from "react";
 import { lookupPlaceCategory } from "../../places/api";
 import { createId } from "../../shared/utils/createId";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
-import type { ItineraryItem } from "../model";
+import type { ExpenseItem, ItineraryItem, LedgerItem } from "../model";
+import { clearExpenseRelation, syncExpenseRelationTitle } from "../expenseRelations";
 import { parsePlanInputs, sortItineraryItems } from "../utils";
 
-type Options = { activeDay: number; city?: string; editingPlan: ItineraryItem | null; manualPlan: ItineraryItem | null; newPlan: string; setActiveDay: (day: number) => void; setEditingPlan: Dispatch<SetStateAction<ItineraryItem | null>>; setManualPlan: Dispatch<SetStateAction<ItineraryItem | null>>; setNewPlan: (value: string) => void; setPendingPlanId: (id: string | null) => void; setPlans: Dispatch<SetStateAction<ItineraryItem[]>> };
+type Options = { activeDay: number; city?: string; editingPlan: ItineraryItem | null; manualPlan: ItineraryItem | null; newPlan: string; setActiveDay: (day: number) => void; setBudgetItems: Dispatch<SetStateAction<ExpenseItem[]>>; setEditingPlan: Dispatch<SetStateAction<ItineraryItem | null>>; setExpenses: Dispatch<SetStateAction<LedgerItem[]>>; setManualPlan: Dispatch<SetStateAction<ItineraryItem | null>>; setNewPlan: (value: string) => void; setPendingPlanId: (id: string | null) => void; setPlans: Dispatch<SetStateAction<ItineraryItem[]>> };
 
 /** Domain commands for itinerary creation, editing, copying, and deletion. */
-export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, newPlan, setActiveDay, setEditingPlan, setManualPlan, setNewPlan, setPendingPlanId, setPlans }: Options) {
+export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, newPlan, setActiveDay, setBudgetItems, setEditingPlan, setExpenses, setManualPlan, setNewPlan, setPendingPlanId, setPlans }: Options) {
   const { confirm } = useConfirmation();
   const addPlan = () => {
     if (!newPlan.trim()) return;
@@ -29,12 +30,17 @@ export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, n
   };
   const savePlan = () => {
     if (!editingPlan?.title.trim()) return;
-    setPlans((current) => sortItineraryItems(current.map((plan) => plan.id === editingPlan.id ? { ...editingPlan, title: editingPlan.title.trim() } : plan)));
+    const savedPlan = { ...editingPlan, title: editingPlan.title.trim() };
+    setPlans((current) => sortItineraryItems(current.map((plan) => plan.id === savedPlan.id ? savedPlan : plan)));
+    setBudgetItems((items) => syncExpenseRelationTitle(items, savedPlan));
+    setExpenses((items) => syncExpenseRelationTitle(items, savedPlan));
     setEditingPlan(null);
   };
   const deletePlan = async (id: string) => {
     if (!await confirm({ title: "删除行程？", description: "这条行程将被永久删除，且无法恢复。" })) return;
     setPlans((current) => current.filter((plan) => plan.id !== id));
+    setBudgetItems((items) => clearExpenseRelation(items, id));
+    setExpenses((items) => clearExpenseRelation(items, id));
   };
   const copyPlan = (plan: ItineraryItem) => {
     const id = createId("plan");

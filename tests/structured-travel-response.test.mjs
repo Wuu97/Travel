@@ -60,3 +60,18 @@ test("keeps legacy expenseItems responses readable while importing them as budge
     assert.deepEqual(reply.expenseItems, [{ id: "legacy", title: "交通", amount: 300, type: "交通", occurrence: "estimated" }]);
   } finally { await compilation.cleanup(); }
 });
+
+test("uses the same stable ID for equivalent structured and legacy expense suggestions", async () => {
+  const compilation = await compileTypeScript(aiTestSources, "travel-stable-expense-ids-");
+  try {
+    const { parseAiReply } = await compilation.importModule("ai/core/parser.js");
+    const structured = JSON.stringify({ answer: "预算", expenses: [{ title: "灵隐寺门票", amount: 75, category: "门票", relatedItineraryItemId: "lingyin", relatedItineraryTitle: "灵隐寺" }] });
+    const legacy = JSON.stringify({ answer: "预算", expenseItems: [{ title: "灵隐寺门票", amount: 75, type: "门票", relatedItineraryItemId: "lingyin", relatedItineraryTitle: "灵隐寺" }] });
+    const first = parseAiReply(structured);
+    const second = parseAiReply(structured);
+    const legacyReply = parseAiReply(legacy);
+    assert.equal(first.expenseItems[0].id, second.expenseItems[0].id);
+    assert.equal(first.expenseItems[0].id, legacyReply.expenseItems[0].id);
+    assert.equal(first.itineraryItems.length, 0);
+  } finally { await compilation.cleanup(); }
+});

@@ -6,6 +6,7 @@ const sources = [
   "features/shared/utils/createId.ts",
   "features/trip/model.ts",
   "features/trip/expense.ts",
+  "features/trip/expenseRelations.ts",
   "features/trip/budgetRules.ts",
   "features/trip/utils.ts",
   "features/trip/hooks/useTripImports.ts",
@@ -37,8 +38,34 @@ test("imports selected AI expenses as unique estimated budget records", async ()
     ];
     assert.deepEqual(prepareExpenseImports(selected, existing), [
       { id: "food", title: "餐饮", amount: 800, type: "餐饮", occurrence: "estimated" },
-      { id: "ticket", title: "灵隐寺门票", amount: 75, type: "门票", occurrence: "estimated", relatedItineraryItemId: "lingyin", relatedItineraryTitle: "灵隐寺" },
+      { id: "ticket", title: "灵隐寺门票", amount: 75, type: "门票", occurrence: "estimated" },
     ]);
+    assert.deepEqual(prepareExpenseImports([selected[1]], [], "estimated", [{ id: "lingyin", title: "灵隐寺", type: "景点", day: 2 }])[0], { id: "ticket", title: "灵隐寺门票", amount: 75, type: "门票", occurrence: "estimated", relatedItineraryItemId: "lingyin", relatedItineraryTitle: "灵隐寺" });
+  } finally { await compilation.cleanup(); }
+});
+
+test("recognizes a re-parsed stable AI expense as already imported", async () => {
+  const compilation = await compileTypeScript(sources, "ledger-reimport-");
+  try {
+    const { prepareExpenseImports } = await compilation.importModule("trip/hooks/useTripImports.js");
+    const suggestion = { id: "ai-expense-stable", title: "住宿", amount: 1600, type: "住宿", occurrence: "estimated" };
+    const imported = prepareExpenseImports([suggestion], []);
+    assert.deepEqual(prepareExpenseImports([suggestion], imported), []);
+  } finally { await compilation.cleanup(); }
+});
+
+test("keeps expense links stable on rename and safely unlinks them on itinerary deletion", async () => {
+  const compilation = await compileTypeScript(sources, "ledger-relations-");
+  try {
+    const { clearExpenseRelation, getItineraryExpenseSummary, resolveExpenseRelation, syncExpenseRelationTitle } = await compilation.importModule("trip/expenseRelations.js");
+    const plan = { id: "lingyin", title: "灵隐寺", type: "景点", day: 2 };
+    const budget = [{ id: "ticket-budget", title: "门票", amount: 80, type: "门票", occurrence: "estimated", relatedItineraryItemId: "lingyin", relatedItineraryTitle: "旧名称" }];
+    const actual = [{ id: "ticket-actual", title: "门票", amount: 75, type: "门票", occurrence: "actual", relatedItineraryItemId: "lingyin", relatedItineraryTitle: "旧名称" }];
+    assert.deepEqual(getItineraryExpenseSummary("lingyin", budget, actual), { estimated: 80, actual: 75 });
+    assert.equal(syncExpenseRelationTitle(budget, { ...plan, title: "灵隐飞来峰" })[0].relatedItineraryTitle, "灵隐飞来峰");
+    assert.deepEqual(clearExpenseRelation(actual, "lingyin"), [{ id: "ticket-actual", title: "门票", amount: 75, type: "门票", occurrence: "actual" }]);
+    assert.deepEqual(resolveExpenseRelation(budget[0], []), { id: "ticket-budget", title: "门票", amount: 80, type: "门票", occurrence: "estimated" });
+    assert.equal(resolveExpenseRelation(budget[0], [plan]).relatedItineraryTitle, "灵隐寺");
   } finally { await compilation.cleanup(); }
 });
 

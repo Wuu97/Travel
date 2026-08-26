@@ -2,6 +2,7 @@ import { isItineraryType, type ExpenseItem, type ItineraryItem } from "../../tri
 import type { AiReply } from "../schemas/response";
 import { parseDataRequests } from "../schemas/dataRequests";
 import { parseStructuredTravelResponse, structuredTravelResponseToRichContent } from "../parser/travel-response-parser";
+import { stableExpenseSuggestionId } from "../parser/expense-id";
 
 const expenseTypes = ["住宿", "餐饮", "交通", "门票", "活动", "其他"] as const;
 type ExpenseType = (typeof expenseTypes)[number];
@@ -36,7 +37,7 @@ function parseExpenseItems(value: unknown): ExpenseItem[] {
     const type = raw.category ?? raw.type;
     if (typeof raw.title !== "string" || !raw.title.trim() || typeof raw.amount !== "number" || !Number.isFinite(raw.amount) || raw.amount <= 0 || !isExpenseType(type)) return [];
     return [{
-      id: typeof raw.id === "string" && raw.id.trim() ? raw.id.trim() : `ai-expense-${Date.now()}-${index}`,
+      id: stableExpenseSuggestionId({ id: typeof raw.id === "string" ? raw.id : undefined, title: raw.title, category: type, amount: raw.amount, relatedItineraryItemId: typeof raw.relatedItineraryItemId === "string" ? raw.relatedItineraryItemId : undefined, relatedItineraryTitle: typeof raw.relatedItineraryTitle === "string" ? raw.relatedItineraryTitle : undefined, index }),
       title: raw.title.trim(), amount: Math.round(raw.amount * 100) / 100, type,
       occurrence: "estimated",
       ...(typeof raw.note === "string" && raw.note.trim() ? { note: raw.note.trim() } : {}),
