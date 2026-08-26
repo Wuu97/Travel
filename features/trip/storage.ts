@@ -105,6 +105,16 @@ export function loadTripLibrary(userId?: LocalStorageScope): TripLibraryItem[] {
   return [];
 }
 
+/** Keeps local-only trips while allowing authoritative cloud metadata to win by id. */
+export function mergeTripLibraryItems(localItems: TripLibraryItem[], cloudItems: TripLibraryItem[]) {
+  const cloudById = new Map(cloudItems.map((item) => [item.id, item]));
+  const localIds = new Set(localItems.map((item) => item.id));
+  return [
+    ...localItems.map((item) => cloudById.get(item.id) || item),
+    ...cloudItems.filter((item) => !localIds.has(item.id)).sort((first, second) => first.id.localeCompare(second.id)),
+  ];
+}
+
 export function saveTripLibrary(items: TripLibraryItem[], userId?: LocalStorageScope) {
   localStorage.setItem(getTripLibraryStorageKey(userId), JSON.stringify(items));
 }

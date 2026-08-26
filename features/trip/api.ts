@@ -1,4 +1,4 @@
-import type { StoredTrip } from "./model";
+import type { StoredTrip, TripLibraryItem } from "./model";
 
 type TripApiResponse = { trip: StoredTrip | null; version?: number };
 
@@ -13,6 +13,15 @@ export async function loadSharedTrip(tripId: string, accessToken: string): Promi
     throw new Error(`无法读取共享行程：${detail}`);
   }
   return data;
+}
+
+export async function listAccessibleTrips(accessToken: string): Promise<TripLibraryItem[]> {
+  const response = await fetch("/api/trips", { headers: authHeaders(accessToken) });
+  const data = await response.json().catch(() => ({})) as { trips?: unknown; error?: unknown };
+  if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "无法读取云端旅行列表。");
+  return Array.isArray(data.trips)
+    ? data.trips.filter((trip): trip is TripLibraryItem => Boolean(trip && typeof trip === "object" && typeof (trip as TripLibraryItem).id === "string" && typeof (trip as TripLibraryItem).title === "string" && typeof (trip as TripLibraryItem).startDate === "string" && typeof (trip as TripLibraryItem).endDate === "string" && ["筹备中", "进行中", "已结束"].includes((trip as TripLibraryItem).status || "")))
+    : [];
 }
 
 export async function saveSharedTrip(tripId: string, trip: StoredTrip, version: number | undefined, accessToken: string) {

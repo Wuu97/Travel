@@ -162,6 +162,14 @@ test("scopes trip snapshots, libraries, and chat history by the active user", as
     tripStorage.saveTripLibrary([{ ...libraryFallback, title: "B" }], "user-b");
     assert.equal(tripStorage.loadTripLibrary("user-a")[0].title, "A");
     assert.equal(tripStorage.loadTripLibrary("user-b")[0].title, "B");
+    assert.deepEqual(tripStorage.mergeTripLibraryItems(
+      [{ ...libraryFallback, id: "local", title: "本地" }, { ...libraryFallback, id: "shared", title: "旧标题" }],
+      [{ ...libraryFallback, id: "shared", title: "云端标题", status: "进行中" }, { ...libraryFallback, id: "cloud", title: "云端旅行" }],
+    ), [
+      { ...libraryFallback, id: "local", title: "本地" },
+      { ...libraryFallback, id: "shared", title: "云端标题", status: "进行中" },
+      { ...libraryFallback, id: "cloud", title: "云端旅行" },
+    ]);
     chatStorage.saveChats([{ id: "a", title: "A", messages: [], createdAt: 1, updatedAt: 1 }], "user-a");
     chatStorage.saveChats([{ id: "b", title: "B", messages: [], createdAt: 2, updatedAt: 2 }], "user-b");
     assert.equal(chatStorage.loadSavedChats("user-a")[0].id, "a");

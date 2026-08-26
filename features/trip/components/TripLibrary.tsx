@@ -3,7 +3,8 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { defaultTripDetails } from "../data";
 import type { ItineraryItem, TripDetails, TripLibraryItem } from "../model";
-import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
+import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
+import { listAccessibleTrips } from "../api";
 import { createId } from "../../shared/utils/createId";
 import { getTripDays } from "../utils";
 import { CustomDateRangePicker } from "./CustomDateRangePicker";
@@ -37,6 +38,8 @@ const defaultTripDraft = (): TripDraft => ({
 });
 
 type Props = {
+  accessToken: string | null;
+  authReady: boolean;
   activeDay: number;
   collapsed?: boolean;
   currentDetails: TripDetails;
@@ -47,7 +50,7 @@ type Props = {
   storageScope: string;
 };
 
-export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
+export function TripLibrary({ accessToken, activeDay, authReady, collapsed = false, currentDetails, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
   const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationState, getServerHydrationState);
   const [activeTripId, setActiveTripId] = useState<string | null>(defaultLibraryTrip.id);
   const [items, setItems] = useState<TripLibraryItem[]>([defaultLibraryTrip]);
@@ -69,19 +72,35 @@ export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCo
 
   useEffect(() => {
     if (!hydrated) return;
+    let cancelled = false;
     const timer = window.setTimeout(() => {
       const storedItems = loadTripLibrary(storageScope);
       const persisted = hasStoredTripLibrary(storageScope);
-      const loadedItems = (storedItems.length ? storedItems : [defaultLibraryTrip]).map((item) => ({ ...item, status: loadTripDetails(defaultTripDetails, item.id, storageScope).status }));
-      const requestedId = new URLSearchParams(window.location.search).get("trip");
-      setActiveTripId(loadedItems.some((item) => item.id === requestedId) ? requestedId : loadedItems[0]?.id || null);
-      setItems(loadedItems);
-      setHasPersistedLibrary(persisted);
-      setLibraryScope(storageScope);
-      setLibraryLoaded(true);
+      const applyItems = (libraryItems: TripLibraryItem[], isPersisted: boolean) => {
+        if (cancelled) return;
+        const loadedItems = libraryItems.length ? libraryItems : [defaultLibraryTrip];
+        const requestedId = new URLSearchParams(window.location.search).get("trip") || defaultLibraryTrip.id;
+        setActiveTripId(loadedItems.some((item) => item.id === requestedId) ? requestedId : null);
+        setItems(loadedItems);
+        setHasPersistedLibrary(isPersisted);
+        setLibraryScope(storageScope);
+        setLibraryLoaded(true);
+      };
+      if (!authReady || !accessToken) {
+        applyItems(storedItems, persisted);
+        return;
+      }
+      void listAccessibleTrips(accessToken)
+        .then((cloudItems) => {
+          if (cancelled) return;
+          const mergedItems = mergeTripLibraryItems(storedItems, cloudItems);
+          if (cloudItems.length) saveTripLibrary(mergedItems, storageScope);
+          applyItems(mergedItems, persisted || cloudItems.length > 0);
+        })
+        .catch(() => applyItems(storedItems, persisted));
     }, 0);
-    return () => window.clearTimeout(timer);
-  }, [hydrated, storageScope]);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [accessToken, authReady, hydrated, storageScope]);
 
   useEffect(() => {
     if (!hydrated || !libraryLoaded || !hasPersistedLibrary || libraryScope !== storageScope || !activeTripId) return;

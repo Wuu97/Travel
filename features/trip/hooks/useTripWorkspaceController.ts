@@ -312,7 +312,9 @@ export function useTripWorkspaceController({
     setOpenPlanMenuId((current) => (current === id ? null : id));
   const toggleExpense = () => setLedgerVisible(!ledgerVisible);
   const workspaceProps: TripWorkspaceProps = {
+    accessToken,
     activeDay,
+    authReady,
     budgetItems,
     coverInputRef,
     days: tripDays,

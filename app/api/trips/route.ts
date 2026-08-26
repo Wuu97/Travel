@@ -1,6 +1,7 @@
 import { requireSupabaseUser } from "../../../features/auth/supabase";
 import { isStoredTrip } from "../../../features/trip/snapshotValidation";
 import { getTripId } from "../../../features/trip/tripId";
+import type { TripLibraryItem } from "../../../features/trip/model";
 
 const isVersion = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value) && value >= 1;
 
@@ -12,7 +13,20 @@ export async function GET(request: Request) {
   const context = await requireSupabaseUser(request, "请先登录后访问共享行程。");
   if ("error" in context) return context.error;
   const tripId = getTripId(request);
-  if (!tripId) return invalidTripId();
+  if (!tripId) {
+    const { data, error } = await context.client.from("trips").select("id, payload");
+    if (error) return Response.json({ error: error.message }, { status: 502 });
+    const trips = (data || []).flatMap((row): TripLibraryItem[] => {
+      const payload = row.payload;
+      const details = isStoredTrip(payload) ? (payload as { details?: unknown }).details : undefined;
+      if (!details || typeof details !== "object") return [];
+      const { title, startDate, endDate, status } = details as Record<string, unknown>;
+      return typeof title === "string" && typeof startDate === "string" && typeof endDate === "string" && (status === "筹备中" || status === "进行中" || status === "已结束")
+        ? [{ id: row.id, title, startDate, endDate, status }]
+        : [];
+    }).sort((first, second) => first.id.localeCompare(second.id));
+    return Response.json({ trips });
+  }
   const { data, error } = await context.client.from("trips").select("payload, version, updated_at").eq("id", tripId).maybeSingle();
   if (error) return Response.json({ error: error.message }, { status: 502 });
   if (!data) return Response.json({ trip: null });
