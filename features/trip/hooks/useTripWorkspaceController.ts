@@ -57,6 +57,7 @@ export function useTripWorkspaceController({
   const [activatedTripId, setActivatedTripId] = useState<string | null>(null);
   const [activationError, setActivationError] = useState<string | null>(null);
   const [canEditTrip, setCanEditTrip] = useState(true);
+  const [permissionStatus, setPermissionStatus] = useState<"loading" | "ready" | "error">("ready");
   const activeRealTripId = activatedTripId || (hasTripInUrl && tripId !== DEFAULT_TRIP_ID ? tripId : null);
   const [hydratedStorageScope, setHydratedStorageScope] = useState(storageScope);
   // The default workspace is only a presentation fallback. It must never become
@@ -69,8 +70,9 @@ export function useTripWorkspaceController({
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
   useEffect(() => {
-    if (!accessToken || !activeRealTripId) { queueMicrotask(() => setCanEditTrip(true)); return; }
-    void listTripMembers(activeRealTripId, accessToken).then((membership) => setCanEditTrip(membership.canEdit)).catch(() => setCanEditTrip(true));
+    if (!accessToken || !activeRealTripId) { queueMicrotask(() => { setCanEditTrip(true); setPermissionStatus("ready"); }); return; }
+    queueMicrotask(() => { setCanEditTrip(false); setPermissionStatus("loading"); });
+    void listTripMembers(activeRealTripId, accessToken).then((membership) => { setCanEditTrip(membership.canEdit); setPermissionStatus("ready"); }).catch(() => { setCanEditTrip(false); setPermissionStatus("error"); });
   }, [accessToken, activeRealTripId]);
   const ensureRealTrip = useCallback(() => {
     if (!canEditTrip) return false;
@@ -347,6 +349,8 @@ export function useTripWorkspaceController({
     accessToken,
     activeDay,
     authReady,
+    canEditTrip,
+    permissionStatus,
     budgetItems,
     coverInputRef,
     days: tripDays,
