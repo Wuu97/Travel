@@ -14,14 +14,15 @@ export function createTripImportRenderer({ isExpenseAdded, isPlanAdded, onAddExp
   };
 }
 
-function TripImportContent({ isExpenseAdded, isPlanAdded, message, onAddExpenses, onAddItineraries, onToggle, onToggleMany, selected }: Props & { message: ChatMessage }) {
+function TripImportContent({ isExpenseAdded, isPlanAdded, message, onAddExpenses, onAddImportBatch, onAddItineraries, onToggle, onToggleMany, selected }: Props & { message: ChatMessage }) {
   const { canEditTrip } = useTripCapabilities();
   const addItineraries = (items: ItineraryItem[]) => { if (canEditTrip) onAddItineraries(items); };
   const addExpenses = (items: ExpenseItem[], destination: "budget" | "ledger") => { if (canEditTrip) onAddExpenses(items, destination); };
+  const addImportBatch = (plans: ItineraryItem[], budget: ExpenseItem[]) => { if (canEditTrip) onAddImportBatch(plans, budget); };
   const toggle = (id: string) => { if (canEditTrip) onToggle(id); };
   const toggleMany = (ids: string[]) => { if (canEditTrip) onToggleMany(ids); };
   return <>{message.structuredTravelResponse
       ? <StructuredTravelResponse response={message.structuredTravelResponse} content={message.richContent} isPlanAdded={isPlanAdded} onAddItineraries={addItineraries} />
       : <AiRichContent content={message.richContent} isPlanAdded={isPlanAdded} onAddItineraries={addItineraries} />}
-      <ChatImportPanel isExpenseAdded={isExpenseAdded} isPlanAdded={isPlanAdded} message={message} onAddExpenses={addExpenses} onAddItineraries={addItineraries} onToggle={toggle} onToggleMany={toggleMany} selected={selected} /></>;
+      <ChatImportPanel isExpenseAdded={isExpenseAdded} isPlanAdded={isPlanAdded} message={message} onAddExpenses={addExpenses} onAddImportBatch={addImportBatch} onAddItineraries={addItineraries} onToggle={toggle} onToggleMany={toggleMany} selected={selected} /></>;
 }
