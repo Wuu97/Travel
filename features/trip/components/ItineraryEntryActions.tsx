@@ -1,3 +1,5 @@
+import { useTripCapabilities } from "./TripCapabilities";
+
 type Props = {
   canEditTrip?: boolean;
   idea: string;
@@ -23,4 +25,3 @@ export function ItineraryEntryActions({ canEditTrip = true, idea, onAddByAi, onI
     </div>
   );
 }
-import { useTripCapabilities } from "./TripCapabilities";

@@ -1,9 +1,10 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { itineraryTypes } from "../data";
 import type { ItineraryItem } from "../model";
 import { typeColors } from "../utils";
 import { TimePicker } from "./TimePicker";
 import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
+import { useTripCapabilities } from "./TripCapabilities";
 
 function inferLocation(title: string) {
   const trimmedTitle = title.trim();
@@ -22,9 +23,11 @@ type Props = {
 };
 
 export function ManualPlanDialog({ activeDay, days, onClose, onSave, plan, setPlan }: Props) {
+  const { canEditTrip } = useTripCapabilities();
   const [titleError, setTitleError] = useState(false);
   useModalBehavior(Boolean(plan), onClose);
-  if (!plan) return null;
+  useEffect(() => { if (plan && !canEditTrip) onClose(); }, [canEditTrip, onClose, plan]);
+  if (!plan || !canEditTrip) return null;
   const update = (patch: Partial<ItineraryItem>) => setPlan({ ...plan, ...patch });
   const updateTitle = (title: string) => setPlan((currentPlan) => currentPlan && {
     ...currentPlan,
@@ -34,7 +37,7 @@ export function ManualPlanDialog({ activeDay, days, onClose, onSave, plan, setPl
   return (
     <div className="edit-plan-backdrop">
       <button className="edit-plan-dismiss" type="button" aria-label="关闭手动添加" onClick={onClose} />
-      <form className="edit-plan manual-plan" onSubmit={(event) => { event.preventDefault(); if (!plan.title.trim()) { setTitleError(true); return; } onSave(); }}>
+      <form className="edit-plan manual-plan" onSubmit={(event) => { event.preventDefault(); if (!canEditTrip) return; if (!plan.title.trim()) { setTitleError(true); return; } onSave(); }}>
         <div><b>手动添加行程</b><button type="button" aria-label="关闭手动添加" onClick={onClose}>×</button></div>
         <label>日期<select value={plan.day || activeDay} onChange={(event) => update({ day: Number(event.target.value) })}>{days.map((item) => <option key={item.day} value={item.day}>DAY {item.day} · {item.date}</option>)}</select></label>
         <div className="field-label"><span>时间</span><TimePicker onChange={(time) => update({ time })} value={plan.time || ""} /></div>

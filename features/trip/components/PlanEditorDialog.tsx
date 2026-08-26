@@ -1,8 +1,9 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useEffect, type Dispatch, type SetStateAction } from "react";
 import { itineraryTypes } from "../data";
 import type { ItineraryItem } from "../model";
 import { TimePicker } from "./TimePicker";
 import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
+import { useTripCapabilities } from "./TripCapabilities";
 
 type Props = {
   plan: ItineraryItem | null;
@@ -12,13 +13,15 @@ type Props = {
 };
 
 export function PlanEditorDialog({ onClose, onSave, plan, setPlan }: Props) {
+  const { canEditTrip } = useTripCapabilities();
   useModalBehavior(Boolean(plan), onClose);
-  if (!plan) return null;
+  useEffect(() => { if (plan && !canEditTrip) onClose(); }, [canEditTrip, onClose, plan]);
+  if (!plan || !canEditTrip) return null;
   const update = (patch: Partial<ItineraryItem>) => setPlan({ ...plan, ...patch });
   return (
     <div className="edit-plan-backdrop">
       <button className="edit-plan-dismiss" type="button" aria-label="关闭编辑" onClick={onClose} />
-      <form className="edit-plan" onSubmit={(event) => { event.preventDefault(); onSave(); }}>
+      <form className="edit-plan" onSubmit={(event) => { event.preventDefault(); if (canEditTrip) onSave(); }}>
         <div><b>编辑行程</b><button type="button" aria-label="关闭编辑" onClick={onClose}>×</button></div>
         <label>行程名称<input value={plan.title} onChange={(event) => update({ title: event.target.value })} /></label>
         <div className="field-label"><span>时间</span><TimePicker onChange={(time) => update({ time })} value={plan.time || ""} /></div>
