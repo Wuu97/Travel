@@ -32,5 +32,12 @@ export function useTripImports({ budgetItems, expenses, onImported = () => {}, p
     }
     setExpenses((current) => [...current, ...prepareExpenseImports(items, current, "actual", plans)]);
   };
-  return { addExpenseItems, addItineraryItems, isExpenseAdded, isPlanAdded };
+  const addImportBatch = (itineraryItems: ItineraryItem[], budgetItemsToAdd: ExpenseItem[]) => {
+    const addedPlans = itineraryItems.filter((item) => !isPlanAdded(item));
+    const addedBudget = prepareExpenseImports(budgetItemsToAdd, budgetItems, "estimated", plans);
+    if (addedPlans.length) setPlans((current) => sortItineraryItems([...current, ...addedPlans.map((item) => ({ ...item, creator: item.creator || "AI" }))]));
+    if (addedBudget.length) setBudgetItems((current) => [...current, ...addedBudget]);
+    recordBatch(addedPlans.map((item) => item.id), addedBudget.map((item) => item.id));
+  };
+  return { addExpenseItems, addImportBatch, addItineraryItems, isExpenseAdded, isPlanAdded };
 }

@@ -207,6 +207,7 @@ export function useTripWorkspaceController({
   });
   const {
     addExpenseItems,
+    addImportBatch,
     addItineraryItems,
     isExpenseAdded,
     isPlanAdded,
@@ -445,6 +446,7 @@ export function useTripWorkspaceController({
   };
   const importContext = {
     addExpenseItems: (items: ExpenseItem[], destination: "budget" | "ledger") => { if (ensureRealTrip()) addExpenseItems(items, destination); },
+    addImportBatch: (itineraryItems: ItineraryItem[], budgetItems: ExpenseItem[]) => { if (ensureRealTrip()) addImportBatch(itineraryItems, budgetItems); },
     addItineraryItems: (items: ItineraryItem[]) => { if (ensureRealTrip()) addItineraryItems(items); },
     isExpenseAdded,
     isPlanAdded,

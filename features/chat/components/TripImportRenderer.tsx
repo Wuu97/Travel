@@ -5,12 +5,12 @@ import { StructuredTravelResponse } from "../../travel/components/ai/StructuredT
 import { AiRichContent } from "./AiRichContent";
 import { useTripCapabilities } from "../../trip/components/TripCapabilities";
 
-type Props = { isExpenseAdded: (item: ExpenseItem, destination: "budget" | "ledger") => boolean; isPlanAdded: (item: ItineraryItem) => boolean; onAddExpenses: (items: ExpenseItem[], destination: "budget" | "ledger") => void; onAddItineraries: (items: ItineraryItem[]) => void; onToggle: (id: string) => void; onToggleMany: (ids: string[]) => void; selected: Record<string, boolean> };
+type Props = { isExpenseAdded: (item: ExpenseItem, destination: "budget" | "ledger") => boolean; isPlanAdded: (item: ItineraryItem) => boolean; onAddExpenses: (items: ExpenseItem[], destination: "budget" | "ledger") => void; onAddImportBatch: (plans: ItineraryItem[], budget: ExpenseItem[]) => void; onAddItineraries: (items: ItineraryItem[]) => void; onToggle: (id: string) => void; onToggleMany: (ids: string[]) => void; selected: Record<string, boolean> };
 
 /** Adapts trip-domain import actions to the chat message-list renderer contract. */
-export function createTripImportRenderer({ isExpenseAdded, isPlanAdded, onAddExpenses, onAddItineraries, onToggle, onToggleMany, selected }: Props) {
+export function createTripImportRenderer({ isExpenseAdded, isPlanAdded, onAddExpenses, onAddImportBatch, onAddItineraries, onToggle, onToggleMany, selected }: Props) {
   return function renderTripImports(message: ChatMessage) {
-    return <TripImportContent isExpenseAdded={isExpenseAdded} isPlanAdded={isPlanAdded} message={message} onAddExpenses={onAddExpenses} onAddItineraries={onAddItineraries} onToggle={onToggle} onToggleMany={onToggleMany} selected={selected} />;
+    return <TripImportContent isExpenseAdded={isExpenseAdded} isPlanAdded={isPlanAdded} message={message} onAddExpenses={onAddExpenses} onAddImportBatch={onAddImportBatch} onAddItineraries={onAddItineraries} onToggle={onToggle} onToggleMany={onToggleMany} selected={selected} />;
   };
 }
 

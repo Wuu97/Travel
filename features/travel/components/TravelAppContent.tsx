@@ -38,6 +38,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
     isExpenseAdded: workspace.importContext.isExpenseAdded,
     isPlanAdded: workspace.importContext.isPlanAdded,
     onAddExpenses: workspace.importContext.addExpenseItems,
+    onAddImportBatch: workspace.importContext.addImportBatch,
     onAddItineraries: workspace.importContext.addItineraryItems,
     onToggle: workspace.importContext.toggleImport,
     onToggleMany: workspace.importContext.toggleImports,
