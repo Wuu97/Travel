@@ -1,48 +1,31 @@
-import type { RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import type { TripDetails } from "../model";
+import type { TripMember } from "../members";
+import { productRoleLabel } from "../members";
+import { listTripMembers, removeTripMember, updateTripMemberRole } from "../api";
 
-type Props = {
-  details: TripDetails;
-  editingRole: string | null;
-  isOpen: boolean;
-  newMember: string;
-  onChange: (patch: Partial<TripDetails>) => void;
-  onNewMemberChange: (value: string) => void;
-  onToggle: () => void;
-  setEditingRole: (member: string | null) => void;
-  panelRef: RefObject<HTMLDivElement | null>;
-  roleRef: RefObject<HTMLDivElement | null>;
-};
+type Props = { accessToken?: string | null; details: TripDetails; editingRole: string | null; isOpen: boolean; newMember?: string; onChange?: (patch: Partial<TripDetails>) => void; onNewMemberChange?: (value: string) => void; onToggle: () => void; panelRef: RefObject<HTMLDivElement | null>; roleRef: RefObject<HTMLDivElement | null>; setEditingRole: (member: string | null) => void; tripId?: string };
 
-export function TripMembersControl({ details, editingRole, isOpen, newMember, onChange, onNewMemberChange, onToggle, panelRef, roleRef, setEditingRole }: Props) {
-  const addMember = () => {
-    const name = newMember.trim();
-    if (name && !details.companions.includes(name)) onChange({ companions: [...details.companions, name], memberRoles: { ...details.memberRoles, [name]: "同行人" } });
-    onNewMemberChange("");
+/** Server membership is authoritative; legacy detail roles are display-only fallback for local trips. */
+export function TripMembersControl({ accessToken = null, details, editingRole, isOpen, onToggle, panelRef, roleRef, setEditingRole, tripId = "" }: Props) {
+  const [members, setMembers] = useState<TripMember[] | null>(null);
+  const [canManage, setCanManage] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isOpen || !accessToken) return;
+    void listTripMembers(tripId, accessToken).then((result) => { setMembers(result.members); setCanManage(result.canManage); setError(null); }).catch((reason) => setError(reason instanceof Error ? reason.message : "无法读取成员列表。"));
+  }, [accessToken, isOpen, tripId]);
+  const displayed = members || details.companions.map((userId) => ({ userId, role: userId === "你" ? "owner" as const : details.memberRoles?.[userId] === "协作者" ? "collaborator" as const : "companion" as const, status: "active" as const }));
+  const changeRole = async (member: TripMember, role: "collaborator" | "companion") => {
+    if (!accessToken || !canManage) return;
+    try { await updateTripMemberRole(tripId, member.userId, role, accessToken); setMembers((current) => current?.map((item) => item.userId === member.userId ? { ...item, role } : item) || null); setEditingRole(null); } catch (reason) { setError(reason instanceof Error ? reason.message : "无法更新成员角色。"); }
   };
-  const members = [...details.companions].sort((left, right) => {
-    const rank = (member: string) => member === "你" ? 0 : details.memberRoles?.[member] === "协作者" ? 1 : 2;
-    return rank(left) - rank(right);
-  });
-  return (
-    <div className="avatars member-control" ref={isOpen ? panelRef : null}>
-      <button className="avatar-group-trigger" type="button" aria-label="管理同行人" aria-expanded={isOpen} onClick={onToggle}>
-        {details.companions.slice(0, 6).map((member) => <i key={member}>{member.slice(0, 1)}</i>)}
-        <span className="member-overflow-count" style={{ alignItems: "center", background: "#fff", border: "1px solid #cddbd2", borderRadius: "50%", color: "#557065", display: "inline-flex", flex: "0 0 23px", fontSize: "12px", fontWeight: 600, height: "23px", justifyContent: "center", lineHeight: 1, marginLeft: "3px", width: "23px" }}>{details.companions.length > 6 ? `+${details.companions.length - 6}` : "+"}</span>
-      </button>
-      {isOpen && <div className="trip-popover member-popover">
-        <b>成员管理</b>
-        {members.map((member) => <div className="member-row" key={member}>
-          <span>{member}</span>
-          {member === "你" ? <small>所有者</small> : <div className="member-role-control" ref={editingRole === member ? roleRef : null}>
-            <button className="member-role-label" type="button" title="点击修改身份" aria-expanded={editingRole === member} onClick={() => setEditingRole(member)}>{details.memberRoles?.[member] || "同行人"}<span aria-hidden="true">⌄</span></button>
-            {editingRole === member && <div className="member-role-menu" role="menu">{(["协作者", "同行人"] as const).map((role) => <button key={role} type="button" role="menuitem" className={(details.memberRoles?.[member] || "同行人") === role ? "selected" : ""} onClick={() => { onChange({ memberRoles: { ...details.memberRoles, [member]: role } }); setEditingRole(null); }}>{role}</button>)}</div>}
-          </div>}
-          {member !== "你" && <button type="button" aria-label={`移除${member}`} onClick={() => { const memberRoles = { ...details.memberRoles }; delete memberRoles[member]; onChange({ companions: details.companions.filter((name) => name !== member), memberRoles }); }}>×</button>}
-        </div>)}
-        <p className="member-role-note">同行人可查看行程，不可编辑。</p>
-        <form onSubmit={(event) => { event.preventDefault(); addMember(); }}><input value={newMember} onChange={(event) => onNewMemberChange(event.target.value)} placeholder="输入同行人姓名" /><button type="submit">添加同行人</button></form>
-      </div>}
-    </div>
-  );
+  const remove = async (member: TripMember) => {
+    if (!accessToken || !canManage) return;
+    try { await removeTripMember(tripId, member.userId, accessToken); setMembers((current) => current?.filter((item) => item.userId !== member.userId) || null); } catch (reason) { setError(reason instanceof Error ? reason.message : "无法移除成员。"); }
+  };
+  return <div className="avatars member-control" ref={isOpen ? panelRef : null}>
+    <button className="avatar-group-trigger" type="button" aria-label="查看成员" aria-expanded={isOpen} onClick={onToggle}>{displayed.slice(0, 6).map((member) => <i key={member.userId}>{member.userId.slice(0, 1)}</i>)}</button>
+    {isOpen && <div className="trip-popover member-popover"><b>成员管理</b>{error && <p className="member-role-note" role="status">{error}</p>}{displayed.map((member) => <div className="member-row" key={member.userId}><span title={member.userId}>{member.userId}</span>{member.role === "owner" ? <small>所有者</small> : canManage ? <div className="member-role-control" ref={editingRole === member.userId ? roleRef : null}><button className="member-role-label" type="button" aria-expanded={editingRole === member.userId} onClick={() => setEditingRole(member.userId)}>{productRoleLabel(member.role)}<span aria-hidden="true">⌄</span></button>{editingRole === member.userId && <div className="member-role-menu" role="menu">{(["collaborator", "companion"] as const).map((role) => <button key={role} type="button" role="menuitem" className={member.role === role ? "selected" : ""} onClick={() => void changeRole(member, role)}>{productRoleLabel(role)}</button>)}</div>}</div> : <small>{productRoleLabel(member.role)}</small>}{canManage && member.role !== "owner" && <button type="button" aria-label={`移除${member.userId}`} onClick={() => void remove(member)}>×</button>}</div>)}<p className="member-role-note">协作者可编辑；同行人仅可查看。成员权限以服务器为准。</p></div>}
+  </div>;
 }

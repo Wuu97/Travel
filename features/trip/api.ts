@@ -1,4 +1,5 @@
 import type { StoredTrip, TripLibraryItem } from "./model";
+import type { TripMember } from "./members";
 
 type TripApiResponse = { trip: StoredTrip | null; version?: number };
 
@@ -36,11 +37,30 @@ export async function saveSharedTrip(tripId: string, trip: StoredTrip, version: 
   return data as { version: number };
 }
 
-export async function createTripInvite(tripId: string, accessToken: string) {
-  const response = await fetch(tripUrl(tripId), { method: "POST", headers: { ...authHeaders(accessToken), "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-invite" }) });
+export async function createTripInvite(tripId: string, accessToken: string, role: "collaborator" | "companion" = "collaborator") {
+  const response = await fetch(tripUrl(tripId), { method: "POST", headers: { ...authHeaders(accessToken), "Content-Type": "application/json" }, body: JSON.stringify({ action: "create-invite", role }) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || typeof data.token !== "string") throw new Error(data.error || "无法创建邀请链接。");
   return data.token;
+}
+
+export async function listTripMembers(tripId: string, accessToken: string): Promise<{ members: TripMember[]; canManage: boolean }> {
+  const response = await fetch(`${tripUrl(tripId)}&action=members`, { headers: authHeaders(accessToken) });
+  const data = await response.json().catch(() => ({})) as { members?: unknown; canManage?: unknown; error?: unknown };
+  if (!response.ok || !Array.isArray(data.members)) throw new Error(typeof data.error === "string" ? data.error : "无法读取成员列表。");
+  return { canManage: data.canManage === true, members: data.members.filter((member): member is TripMember => Boolean(member && typeof member === "object" && typeof (member as TripMember).userId === "string" && ["owner", "collaborator", "companion"].includes((member as TripMember).role))) };
+}
+
+export async function updateTripMemberRole(tripId: string, userId: string, role: "collaborator" | "companion", accessToken: string) {
+  const response = await fetch(tripUrl(tripId), { method: "POST", headers: { ...authHeaders(accessToken), "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-member", userId, role }) });
+  const data = await response.json().catch(() => ({})) as { error?: unknown };
+  if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "无法更新成员角色。");
+}
+
+export async function removeTripMember(tripId: string, userId: string, accessToken: string) {
+  const response = await fetch(tripUrl(tripId), { method: "POST", headers: { ...authHeaders(accessToken), "Content-Type": "application/json" }, body: JSON.stringify({ action: "remove-member", userId }) });
+  const data = await response.json().catch(() => ({})) as { error?: unknown };
+  if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "无法移除成员。");
 }
 
 export async function acceptTripInvite(token: string, accessToken: string) {
