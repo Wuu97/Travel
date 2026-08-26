@@ -25,7 +25,17 @@ test("trip storage deletion is scoped to the active user", async () => {
   }
 });
 
-test("cloud deletion is transactional from the client and preserves owner-only server auth", async () => {
+test("cloud-delete eligibility distinguishes cloud, authenticated local-only, and guest trips", async () => {
+  const compilation = await compileTypeScript(["features/trip/cloudStatus.ts"], "trip-cloud-status-");
+  try {
+    const { isCloudBackedTrip } = await compilation.importModule("cloudStatus.js");
+    assert.equal(isCloudBackedTrip("cloud-trip", "token", new Set(["cloud-trip"])), true);
+    assert.equal(isCloudBackedTrip("local-trip", "token", new Set(["cloud-trip"])), false);
+    assert.equal(isCloudBackedTrip("cloud-trip", null, new Set(["cloud-trip"])), false);
+  } finally { await compilation.cleanup(); }
+});
+
+test("cloud deletion uses discovery/remote state and preserves owner-only server auth", async () => {
   const [library, api, route, controller, lifecycle] = await Promise.all([
     readFile(new URL("../features/trip/components/TripLibrary.tsx", import.meta.url), "utf8"),
     readFile(new URL("../features/trip/api.ts", import.meta.url), "utf8"),
@@ -33,7 +43,9 @@ test("cloud deletion is transactional from the client and preserves owner-only s
     readFile(new URL("../features/trip/hooks/useTripWorkspaceController.ts", import.meta.url), "utf8"),
     readFile(new URL("../features/trip/hooks/useTripLifecycle.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(library, /if \(accessToken\) await deleteSharedTrip\(tripId, accessToken\)/);
+  assert.match(library, /setCloudTripIds\(new Set\(cloudItems\.map\(\(item\) => item\.id\)\)\)/);
+  assert.match(library, /if \(accessToken && isCloudBackedTrip\(tripId, accessToken, cloudTripIds\)\) await deleteSharedTrip\(tripId, accessToken\)/);
+  assert.match(library, /tuyu-tripremote/);
   assert.match(library, /catch \(error\)[\s\S]*setDeleteError[\s\S]*return;/);
   assert.match(library, /removeTripStorage\(tripId, storageScope\);[\s\S]*saveTripLibrary\(nextItems, storageScope\)/);
   assert.match(library, /disabled=\{deletingTripId !== null\}/);
@@ -43,4 +55,6 @@ test("cloud deletion is transactional from the client and preserves owner-only s
   assert.match(route, /只有行程所有者可以删除整个共享行程/);
   assert.doesNotMatch(lifecycle, /deleteSharedTrip|const deleteTrip/);
   assert.match(controller, /hasTripInUrl/);
+  const persistence = await readFile(new URL("../features/trip/hooks/useTripPersistence.ts", import.meta.url), "utf8");
+  assert.match(persistence, /new CustomEvent\("tuyu-tripremote", \{ detail: tripId \}\)/);
 });

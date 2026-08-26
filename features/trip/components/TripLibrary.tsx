@@ -14,6 +14,7 @@ import { SidebarHeader } from "../../shared/components/SidebarHeader";
 import { ScrollArea } from "../../shared/components/ScrollArea";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import { TripSidebarIcon } from "./TripSidebarIcon";
+import { isCloudBackedTrip } from "../cloudStatus";
 
 const newTripId = () => createId("trip");
 const subscribeToHydration = () => () => {};
@@ -46,6 +47,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationState, getServerHydrationState);
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
   const [items, setItems] = useState<TripLibraryItem[]>([]);
+  const [cloudTripIds, setCloudTripIds] = useState<Set<string>>(() => new Set());
   const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -61,6 +63,16 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     "已结束": true,
   });
   const [expandedTrips, setExpandedTrips] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const markRemoteTrip = (event: Event) => {
+      const tripId = (event as CustomEvent<string>).detail;
+      if (typeof tripId !== "string") return;
+      setCloudTripIds((current) => new Set(current).add(tripId));
+    };
+    window.addEventListener("tuyu-tripremote", markRemoteTrip);
+    return () => window.removeEventListener("tuyu-tripremote", markRemoteTrip);
+  }, []);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -90,17 +102,22 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
         setLibraryLoaded(true);
       };
       if (!authReady || !accessToken) {
+        setCloudTripIds(new Set());
         applyItems(storedItems, persisted);
         return;
       }
       void listAccessibleTrips(accessToken)
         .then((cloudItems) => {
           if (cancelled) return;
+          setCloudTripIds(new Set(cloudItems.map((item) => item.id)));
           const mergedItems = mergeTripLibraryItems(storedItems, cloudItems);
           if (cloudItems.length) saveTripLibrary(mergedItems, storageScope);
           applyItems(mergedItems, persisted || cloudItems.length > 0);
         })
-        .catch(() => applyItems(storedItems, persisted));
+        .catch(() => {
+          setCloudTripIds(new Set());
+          applyItems(storedItems, persisted);
+        });
     }, 0);
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [accessToken, authReady, hydrated, storageScope]);
@@ -207,9 +224,9 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     setDeletingTripId(tripId);
     window.dispatchEvent(new CustomEvent("tuyu-tripdelete", { detail: tripId }));
     try {
-      // Authenticated trips are cloud-authoritative: never report local deletion
-      // until the existing authenticated DELETE endpoint has succeeded.
-      if (accessToken) await deleteSharedTrip(tripId, accessToken);
+      // Only trips discovered in cloud (or successfully read from a remote
+      // snapshot) require the authoritative DELETE before local cleanup.
+      if (accessToken && isCloudBackedTrip(tripId, accessToken, cloudTripIds)) await deleteSharedTrip(tripId, accessToken);
     } catch (error) {
       window.dispatchEvent(new CustomEvent("tuyu-tripdeletecancel", { detail: tripId }));
       setDeleteError(error instanceof Error ? error.message : "删除云端行程失败，请重试。");
@@ -220,6 +237,11 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     removeTripStorage(tripId, storageScope);
     saveTripLibrary(nextItems, storageScope);
     setItems(nextItems);
+    setCloudTripIds((current) => {
+      const next = new Set(current);
+      next.delete(tripId);
+      return next;
+    });
     if (tripId === activeTripId) {
       if (nextItems[0]) openTrip(nextItems[0].id);
       else {

@@ -124,6 +124,7 @@ export function useTripPersistence({
           setPlans(sortItineraryItems(trip.plans));
           if (trip.details) setDetails(trip.details);
           onRemoteTripLoaded();
+          window.dispatchEvent(new CustomEvent("tuyu-tripremote", { detail: tripId }));
         }
         lastSavedRef.current = trip ? JSON.stringify(trip) : "";
         setVersion(loadedVersion);
