@@ -1,11 +1,11 @@
-import type { ItineraryItem, LedgerItem, StoredTrip, TripDetails } from "./model";
+import type { ItineraryItem, StoredTrip, TripDetails, TripExpense } from "./model";
 
 export const itineraryTypes = ["交通", "餐饮", "景点", "住宿", "购物", "活动", "其他"] as const;
 
-const defaultExpenses: LedgerItem[] = [
-  { id: "expense-stay", item: "民宿 · 西湖边", type: "住宿", amount: 628, by: "林" },
-  { id: "expense-lunch", item: "知味观午餐", type: "餐饮", amount: 168, by: "你", relatedItineraryItemId: "plan-lunch", relatedItineraryTitle: "知味观 · 午餐" },
-  { id: "expense-train", item: "杭州东 → 上海虹桥", type: "交通", amount: 292, by: "安" },
+const defaultExpenses: TripExpense[] = [
+  { id: "expense-stay", title: "民宿 · 西湖边", type: "住宿", amount: 628, occurrence: "actual", payer: "林" },
+  { id: "expense-lunch", title: "知味观午餐", type: "餐饮", amount: 168, occurrence: "actual", payer: "你", relatedItineraryItemId: "plan-lunch", relatedItineraryTitle: "知味观 · 午餐" },
+  { id: "expense-train", title: "杭州东 → 上海虹桥", type: "交通", amount: 292, occurrence: "actual", payer: "安" },
 ];
 
 const defaultPlans: ItineraryItem[] = [

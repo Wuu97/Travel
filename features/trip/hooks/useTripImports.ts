@@ -1,6 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { ExpenseItem, ItineraryItem, LedgerItem } from "../model";
-import { toLedgerItem } from "../expense";
 import { sortItineraryItems } from "../utils";
 
 type Options = { budgetItems: ExpenseItem[]; expenses: LedgerItem[]; plans: ItineraryItem[]; setBudgetItems: Dispatch<SetStateAction<ExpenseItem[]>>; setExpenses: Dispatch<SetStateAction<LedgerItem[]>>; setPlans: Dispatch<SetStateAction<ItineraryItem[]>> };
@@ -10,14 +9,14 @@ export function useTripImports({ budgetItems, expenses, plans, setBudgetItems, s
   const isPlanAdded = (item: ItineraryItem) => plans.some((plan) => plan.id === item.id || plan.title.trim() === item.title.trim());
   const isExpenseAdded = (item: ExpenseItem, destination: "budget" | "ledger") => destination === "budget"
     ? budgetItems.some((existing) => existing.id === item.id || (existing.title === item.title && existing.amount === item.amount))
-    : expenses.some((existing) => existing.id === item.id || (existing.item === item.title && existing.amount === item.amount));
+    : expenses.some((existing) => existing.id === item.id || (existing.title === item.title && existing.amount === item.amount));
   const addItineraryItems = (items: ItineraryItem[]) => setPlans((current) => sortItineraryItems([...current, ...items.filter((item) => !current.some((plan) => plan.id === item.id || plan.title.trim() === item.title.trim())).map((item) => ({ ...item, creator: item.creator || "AI" }))]));
   const addExpenseItems = (items: ExpenseItem[], destination: "budget" | "ledger") => {
     if (destination === "budget") {
       setBudgetItems((current) => [...current, ...items.filter((item) => !current.some((existing) => existing.id === item.id || (existing.title === item.title && existing.amount === item.amount)))]);
       return;
     }
-    setExpenses((current) => [...current, ...items.filter((item) => !current.some((existing) => existing.id === item.id || (existing.item === item.title && existing.amount === item.amount))).map((item) => toLedgerItem(item))]);
+    setExpenses((current) => [...current, ...items.filter((item) => !current.some((existing) => existing.id === item.id || (existing.title === item.title && existing.amount === item.amount))).map((item) => ({ ...item, occurrence: "actual" as const }))]);
   };
   return { addExpenseItems, addItineraryItems, isExpenseAdded, isPlanAdded };
 }

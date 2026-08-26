@@ -34,24 +34,18 @@ export type TripExpense = {
   occurrence: ExpenseOccurrence;
   relatedItineraryItemId?: string;
   relatedItineraryTitle?: string;
+  date?: string;
+  payer?: string;
   note?: string;
 };
 
 export type ExpenseItem = TripExpense;
-
-export type LedgerItem = {
-  id: string;
-  item: string;
-  type: ExpenseCategory;
-  amount: number;
-  by: string;
-  relatedItineraryItemId?: string;
-  relatedItineraryTitle?: string;
-};
+/** @deprecated Kept as an alias so callers of the old ledger name remain source-compatible. */
+export type LedgerItem = TripExpense;
 
 export type StoredTrip = {
-  expenses: LedgerItem[];
-  budgetItems: ExpenseItem[];
+  expenses: TripExpense[];
+  budgetItems: TripExpense[];
   plans: ItineraryItem[];
   /** Present for shared trips; omitted by older local snapshots. */
   details?: TripDetails;

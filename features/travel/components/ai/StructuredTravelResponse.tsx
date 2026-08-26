@@ -19,9 +19,9 @@ function placeCards(response: StructuredResponse, content?: RichContent): Array<
   const structured = response.places ?? [];
   const cards = structured.map((card) => {
     const source = provider.find((item) => item.name.toLowerCase() === card.name.toLowerCase());
-    return { card: { ...card, category: source?.category ?? card.category, address: source?.area ?? card.address, rating: source?.rating === undefined ? card.rating : Number(source.rating), openingHours: source?.openingHours ?? card.openingHours, cost: source?.price ?? card.cost }, images: providerImages(source?.images) };
+    return { card: { ...card, category: source?.category ?? card.category, address: source?.area ?? card.address, rating: source?.rating === undefined ? card.rating : Number(source.rating), openingHours: source?.openingHours ?? card.openingHours, cost: source?.price ?? card.cost, recommendationReasons: source?.recommendationReasons ?? card.recommendationReasons }, images: providerImages(source?.images) };
   });
-  for (const source of provider) if (!cards.some(({ card }) => card.name.toLowerCase() === source.name.toLowerCase())) cards.push({ card: { name: source.name, category: source.category, address: source.area, rating: source.rating === undefined ? undefined : Number(source.rating), openingHours: source.openingHours, cost: source.price, description: source.description }, images: providerImages(source.images) });
+  for (const source of provider) if (!cards.some(({ card }) => card.name.toLowerCase() === source.name.toLowerCase())) cards.push({ card: { name: source.name, category: source.category, address: source.area, rating: source.rating === undefined ? undefined : Number(source.rating), openingHours: source.openingHours, cost: source.price, description: source.description, recommendationReasons: source.recommendationReasons }, images: providerImages(source.images) });
   return cards;
 }
 
@@ -30,9 +30,9 @@ function restaurantCards(response: StructuredResponse, content?: RichContent): A
   const structured = response.restaurants ?? [];
   const cards = structured.map((card) => {
     const source = provider.find((item) => item.name.toLowerCase() === card.name.toLowerCase());
-    return { card: { ...card, cuisine: source?.cuisine ?? card.cuisine, address: source?.area ?? card.address, rating: source?.rating === undefined ? card.rating : Number(source.rating), averageCost: source?.averagePrice ? Number(String(source.averagePrice).replace(/\D/g, "")) : card.averageCost, openingHours: source?.openingHours ?? card.openingHours }, images: providerImages(source?.images) };
+    return { card: { ...card, cuisine: source?.cuisine ?? card.cuisine, address: source?.area ?? card.address, rating: source?.rating === undefined ? card.rating : Number(source.rating), averageCost: source?.averagePrice ? Number(String(source.averagePrice).replace(/\D/g, "")) : card.averageCost, openingHours: source?.openingHours ?? card.openingHours, recommendationReasons: source?.recommendationReasons ?? card.recommendationReasons }, images: providerImages(source?.images) };
   });
-  for (const source of provider) if (!cards.some(({ card }) => card.name.toLowerCase() === source.name.toLowerCase())) cards.push({ card: { name: source.name, cuisine: source.cuisine, address: source.area, rating: source.rating === undefined ? undefined : Number(source.rating), priceRange: source.averagePrice, averageCost: undefined, openingHours: source.openingHours }, images: providerImages(source.images) });
+  for (const source of provider) if (!cards.some(({ card }) => card.name.toLowerCase() === source.name.toLowerCase())) cards.push({ card: { name: source.name, cuisine: source.cuisine, address: source.area, rating: source.rating === undefined ? undefined : Number(source.rating), priceRange: source.averagePrice, averageCost: undefined, openingHours: source.openingHours, recommendationReasons: source.recommendationReasons }, images: providerImages(source.images) });
   return cards;
 }
 

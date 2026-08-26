@@ -1,4 +1,6 @@
 import type { RecommendationInput, RecommendationScore, RankedTravelItems, RecommendableTravelItem } from "./model";
+import { diversifyRecommendations } from "./diversity";
+import { buildRecommendationReasons } from "./explanation";
 
 const interestTerms: Record<string, RegExp> = { nature: /(?:自然|湖|山|公园|森林|湿地|峡谷|江|河|海)/i, photography: /(?:摄影|拍照|观景|日出|日落|湖|山|古镇)/i, culture: /(?:历史|文化|博物馆|古迹|寺|祠|古镇)/i };
 const shopping = /(?:购物|商场|商业街|奥特莱斯)/i;
@@ -20,6 +22,7 @@ export function rankPlaces<T extends RecommendableTravelItem>({ items, memoryCon
     return { item, index, score, reasons };
   });
   scored.sort((left, right) => right.score - left.score || left.index - right.index);
-  const scores: RecommendationScore[] = scored.map(({ item, index, score, reasons }) => ({ itemId: item.id || `${item.name}-${index}`, score, reasons }));
-  return { sortedItems: scored.map(({ item }) => item), scores };
+  const diversified = scored.some(({ score }) => score !== 0) ? diversifyRecommendations(scored, (item) => item.category?.trim().toLowerCase()) : scored;
+  const scores: RecommendationScore[] = diversified.map(({ item, index, score, reasons }) => ({ itemId: item.id || `${item.name}-${index}`, score, reasons: buildRecommendationReasons(reasons) }));
+  return { sortedItems: diversified.map(({ item }) => item), scores };
 }

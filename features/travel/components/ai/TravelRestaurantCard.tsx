@@ -19,6 +19,7 @@ export function TravelRestaurantCard({ card, images, action, actionIndex, isPlan
         {card.openingHours ? <span>{card.openingHours}</span> : null}
         {card.address ? <span>{card.address}</span> : null}
       </div>
+      {card.recommendationReasons?.length ? <div className="recommendation-reasons"><b>推荐理由</b>{card.recommendationReasons.map((reason) => <span key={reason}>• {reason}</span>)}</div> : null}
       <div className="structured-card-actions">{action ? <ItineraryActionButton action={action} index={actionIndex} targetName={card.name} category={card.cuisine} isPlanAdded={isPlanAdded} onAddItineraries={onAddItineraries} /> : null}<FeedbackButton event={{ type: "skip_recommendation", itemType: "restaurant", itemId: card.id, category: card.cuisine }} >不感兴趣</FeedbackButton></div>
     </div>
   </article>;

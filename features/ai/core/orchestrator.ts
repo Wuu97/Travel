@@ -62,7 +62,9 @@ export async function requestTravelAdvice({ context, feedbackEvents, history, lo
   const places = rankPlaces({ items: imageEnrichedData.places, memoryContext: recommendationContext, travelContext });
   const restaurants = rankRestaurants({ items: imageEnrichedData.restaurants, memoryContext: recommendationContext, travelContext });
   const rankedData = { ...imageEnrichedData, places: places.sortedItems, restaurants: restaurants.sortedItems };
-  const enriched = mergeExecutedTravelData(parsed, rankedData);
+  const placeMetaById = Object.fromEntries(places.scores.flatMap((score) => score.reasons.length ? [[score.itemId, { recommendationReasons: score.reasons }]] : []));
+  const restaurantMetaById = Object.fromEntries(restaurants.scores.flatMap((score) => score.reasons.length ? [[score.itemId, { recommendationReasons: score.reasons }]] : []));
+  const enriched = mergeExecutedTravelData(parsed, { ...rankedData, placeMetaById, restaurantMetaById });
   const reasonedAnswer = await reasonOverToolResults(
     { message, travelContext, firstAnswer: enriched.content, data: rankedData, toolResultBudget: contextBudget.maxToolResultTokens, recommendationMeta: [...places.scores, ...restaurants.scores] },
     (reasoningMessages) => requestLlmCompletion(reasoningMessages, { maxTokens: contextBudget.maxOutputTokens }),

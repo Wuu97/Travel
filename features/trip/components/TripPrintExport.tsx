@@ -36,7 +36,7 @@ export function TripPrintExport({ budgetItems, days, details, expenses, plans }:
     <section className="trip-print-budget">
       <h2>预算</h2>
       <div className="trip-print-totals"><div><span>总预算</span><strong>{money(plannedTotal)}</strong></div><div><span>已支出</span><strong>{money(actualTotal)}</strong></div><div><span>{remaining >= 0 ? "剩余可用" : "超出预算"}</span><strong>{money(Math.abs(remaining))}</strong></div></div>
-      <div className="trip-print-budget-lists"><div><h3>预计费用</h3>{budgetItems.length ? <ul>{budgetItems.map((item) => <li key={item.id}><span>{item.title} · {item.type}</span><strong>{money(item.amount)}</strong></li>)}</ul> : <p className="trip-print-empty">暂无预计费用</p>}</div><div><h3>实际消费</h3>{expenses.length ? <ul>{expenses.map((item) => <li key={item.id}><span>{item.item} · {item.type} · {item.by} 支付</span><strong>{money(item.amount)}</strong></li>)}</ul> : <p className="trip-print-empty">暂无实际消费</p>}</div></div>
+      <div className="trip-print-budget-lists"><div><h3>预计费用</h3>{budgetItems.length ? <ul>{budgetItems.map((item) => <li key={item.id}><span>{item.title} · {item.type}</span><strong>{money(item.amount)}</strong></li>)}</ul> : <p className="trip-print-empty">暂无预计费用</p>}</div><div><h3>实际消费</h3>{expenses.length ? <ul>{expenses.map((item) => <li key={item.id}><span>{item.title} · {item.type}{item.payer ? ` · ${item.payer} 支付` : ""}</span><strong>{money(item.amount)}</strong></li>)}</ul> : <p className="trip-print-empty">暂无实际消费</p>}</div></div>
     </section>
   </article>;
 }

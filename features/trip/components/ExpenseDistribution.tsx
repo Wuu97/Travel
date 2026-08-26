@@ -14,7 +14,6 @@ export function ExpenseDistribution({ expenses, total }: { expenses: LedgerItem[
           {categories.length ? categories.map(([type, amount]) => <p key={type}>■ {type} ¥ {amount} <em>{total ? `${Math.round((amount / total) * 100)}%` : "0%"}</em></p>) : <p>尚无实际支出</p>}
         </div>
       </div>
-      <button type="button">查看共同结算 →</button>
     </div>
   );
 }

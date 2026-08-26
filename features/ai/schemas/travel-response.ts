@@ -11,6 +11,7 @@ export type TravelPlaceCard = {
   cost?: string;
   images?: string[];
   coordinates?: TravelCoordinates;
+  recommendationReasons?: string[];
 };
 
 export type TravelRestaurantCard = {
@@ -24,6 +25,7 @@ export type TravelRestaurantCard = {
   address?: string;
   images?: string[];
   coordinates?: TravelCoordinates;
+  recommendationReasons?: string[];
 };
 
 export type TravelRouteCard = {

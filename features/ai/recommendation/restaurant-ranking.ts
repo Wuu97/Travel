@@ -1,4 +1,6 @@
 import type { RecommendationInput, RecommendationScore, RankedTravelItems, RecommendableTravelItem } from "./model";
+import { diversifyRecommendations } from "./diversity";
+import { buildRecommendationReasons } from "./explanation";
 
 const foodTerms = /(?:美食|餐厅|餐饮|菜|小吃|火锅|川菜|海鲜|特色菜|老字号)/i;
 const cuisineTerms = /(?:火锅|川菜|海鲜|小吃|特色菜|老字号)/i;
@@ -18,6 +20,7 @@ export function rankRestaurants<T extends RecommendableTravelItem & { rating?: n
     return { item, index, score, reasons };
   });
   scored.sort((left, right) => right.score - left.score || left.index - right.index);
-  const scores: RecommendationScore[] = scored.map(({ item, index, score, reasons }) => ({ itemId: item.id || `${item.name}-${index}`, score, reasons }));
-  return { sortedItems: scored.map(({ item }) => item), scores };
+  const diversified = scored.some(({ score }) => score !== 0) ? diversifyRecommendations(scored, (item) => item.cuisine?.map((value) => value.trim().toLowerCase()).find(Boolean) ?? item.category?.trim().toLowerCase()) : scored;
+  const scores: RecommendationScore[] = diversified.map(({ item, index, score, reasons }) => ({ itemId: item.id || `${item.name}-${index}`, score, reasons: buildRecommendationReasons(reasons) }));
+  return { sortedItems: diversified.map(({ item }) => item), scores };
 }

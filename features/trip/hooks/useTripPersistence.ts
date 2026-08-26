@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import { acceptTripInvite, loadSharedTrip, saveSharedTrip } from "../api";
 import type { ExpenseItem, ItineraryItem, LedgerItem, TripDetails } from "../model";
 import { saveTrip, saveTripDetails } from "../storage";
+import { normalizeTripExpense } from "../expense";
 import { sortItineraryItems } from "../utils";
 
 type TripState = {
@@ -86,8 +87,9 @@ export function useTripPersistence({
         if (loaded.redirected) return;
         const { trip, version: loadedVersion } = loaded.result;
         if (trip) {
-          setExpenses(trip.expenses);
-          setBudgetItems(trip.budgetItems);
+          // Shared snapshots may predate the unified model; normalize at the boundary.
+          setExpenses(trip.expenses.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "actual")));
+          setBudgetItems(trip.budgetItems.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "estimated")));
           setPlans(sortItineraryItems(trip.plans));
           if (trip.details) setDetails(trip.details);
         }

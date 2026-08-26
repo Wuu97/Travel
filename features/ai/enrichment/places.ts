@@ -6,6 +6,7 @@ export type PlaceRecommendationMeta = {
   description?: string;
   recommendedDuration?: string;
   itineraryItem?: ItineraryItem;
+  recommendationReasons?: string[];
 };
 
 const text = (value: string | undefined) => value?.trim() || undefined;
@@ -25,6 +26,7 @@ export function travelPlaceToRichPlace(place: TravelPlace, meta: PlaceRecommenda
     ...(place.images?.length ? { images: place.images, imageUrl: place.images[0].url } : {}),
     ...(text(meta.description) ? { description: text(meta.description) } : {}),
     ...(text(meta.recommendedDuration) ? { recommendedDuration: text(meta.recommendedDuration) } : {}),
+    ...(meta.recommendationReasons?.length ? { recommendationReasons: meta.recommendationReasons } : {}),
     ...(meta.itineraryItem ? { itineraryItem: meta.itineraryItem } : {}),
   };
 }

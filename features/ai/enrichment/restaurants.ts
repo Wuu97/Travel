@@ -5,6 +5,7 @@ import type { TravelRestaurant } from "../tools/types";
 export type RestaurantRecommendationMeta = {
   description?: string;
   itineraryItem?: ItineraryItem;
+  recommendationReasons?: string[];
 };
 
 const text = (value: string | undefined) => value?.trim() || undefined;
@@ -29,6 +30,7 @@ export function travelRestaurantToRichRestaurant(restaurant: TravelRestaurant, m
     ...(restaurant.recommendedDishes?.length ? { recommendedDishes: restaurant.recommendedDishes } : {}),
     ...(restaurant.images?.length ? { images: restaurant.images, imageUrl: restaurant.images[0].url } : {}),
     ...(text(meta.description) ? { description: text(meta.description) } : {}),
+    ...(meta.recommendationReasons?.length ? { recommendationReasons: meta.recommendationReasons } : {}),
     ...(meta.itineraryItem ? { itineraryItem: meta.itineraryItem } : {}),
   };
 }

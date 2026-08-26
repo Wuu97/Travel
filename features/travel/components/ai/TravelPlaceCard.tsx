@@ -20,6 +20,7 @@ export function TravelPlaceCard({ card, images, action, actionIndex, isPlanAdded
         {card.openingHours ? <span>{card.openingHours}</span> : null}
         {card.cost ? <span>{card.cost}</span> : null}
       </div>
+      {card.recommendationReasons?.length ? <div className="recommendation-reasons"><b>推荐理由</b>{card.recommendationReasons.map((reason) => <span key={reason}>• {reason}</span>)}</div> : null}
       <div className="structured-card-actions">{action ? <ItineraryActionButton action={action} index={actionIndex} targetName={card.name} category={card.category} isPlanAdded={isPlanAdded} onAddItineraries={onAddItineraries} /> : null}<FeedbackButton event={{ type: "skip_recommendation", itemType: "place", itemId: card.id, category: card.category }} >不感兴趣</FeedbackButton></div>
     </div>
   </article>;

@@ -21,6 +21,9 @@ export function useTripWorkspaceView() {
   const [showExpense, setShowExpense] = useState(false);
   const [expenseName, setExpenseName] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseDate, setExpenseDate] = useState("");
+  const [expensePayer, setExpensePayer] = useState("");
+  const [expenseNote, setExpenseNote] = useState("");
   const [expenseType, setExpenseType] = useState<ExpenseItem["type"]>("其他");
   const [expenseOccurrence, setExpenseOccurrence] = useState<"actual" | "estimated">("actual");
   const [relatedItineraryItemId, setRelatedItineraryItemId] = useState("");
@@ -37,9 +40,9 @@ export function useTripWorkspaceView() {
   const [pendingPlanScrollId, setPendingPlanScrollId] = useState<string | null>(null);
 
   const ledger = {
-    amount: expenseAmount, editing: editingExpense, name: expenseName, occurrence: expenseOccurrence,
+    amount: expenseAmount, date: expenseDate, editing: editingExpense, name: expenseName, note: expenseNote, occurrence: expenseOccurrence, payer: expensePayer,
     relatedItineraryItemId, type: expenseType, visible: showExpense,
-    setAmount: setExpenseAmount, setEditing: setEditingExpense, setName: setExpenseName,
+    setAmount: setExpenseAmount, setDate: setExpenseDate, setEditing: setEditingExpense, setName: setExpenseName, setNote: setExpenseNote, setPayer: setExpensePayer,
     setOccurrence: setExpenseOccurrence, setRelatedItineraryItemId, setType: setExpenseType, setVisible: setShowExpense,
   };
   const plan = {
@@ -70,10 +73,10 @@ export function useTripWorkspaceView() {
 
   return {
     ledger, plan, sharing,
-    activeDay, editingExpense, editingMemberRole, editingPlan, expenseAmount, expenseName, expenseType, expenseOccurrence, relatedItineraryItemId,
+    activeDay, editingExpense, editingMemberRole, editingPlan, expenseAmount, expenseDate, expenseName, expenseNote, expensePayer, expenseType, expenseOccurrence, relatedItineraryItemId,
     inlinePlanEdit, inlineTripTitle, manualPlan, newMember, newPlan,
     openPlanMenuId, pendingPlanScrollId, setActiveDay,
-    setEditingExpense, setEditingMemberRole, setEditingPlan, setExpenseAmount, setExpenseName, setExpenseType, setExpenseOccurrence, setRelatedItineraryItemId,
+    setEditingExpense, setEditingMemberRole, setEditingPlan, setExpenseAmount, setExpenseDate, setExpenseName, setExpenseNote, setExpensePayer, setExpenseType, setExpenseOccurrence, setRelatedItineraryItemId,
     setInlinePlanEdit, setInlineTripTitle, setManualPlan, setNewMember,
     setNewPlan, setOpenPlanMenuId, setPendingPlanScrollId,
     setShareStatus, setShared, setShowExpense, setTripPopover, setWorkspaceTab,
