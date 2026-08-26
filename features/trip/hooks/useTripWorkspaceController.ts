@@ -1,9 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { TripWorkspaceProps } from "../components/TripWorkspace";
 import { defaultTripDetails, getDefaultStoredTrip } from "../data";
 import type { ExpenseItem, ItineraryItem, LedgerItem } from "../model";
-import { clearTripStorage } from "../storage";
+import { clearTripStorage, loadStoredTrip, loadTripDetails } from "../storage";
 import { syncExpenseRelationTitle } from "../expenseRelations";
 import { destinationPinyin, getTripDestination } from "../utils";
 import { useExpenseEntry } from "./useExpenseEntry";
@@ -29,6 +29,7 @@ type Options = {
   loadPersistedState: boolean;
   newChat: (prompt?: string) => void;
   setQuestion: Dispatch<SetStateAction<string>>;
+  storageScope: string;
 };
 
 function isConversationAboutDestination(messages: ChatMessage[], destination: string) {
@@ -45,12 +46,28 @@ export function useTripWorkspaceController({
   loadPersistedState,
   newChat,
   setQuestion,
+  storageScope,
 }: Options) {
-  const { initialDetails, initialTrip, tripId } = useTripBootstrap(loadPersistedState);
+  const { initialDetails, initialTrip, tripId } = useTripBootstrap(loadPersistedState, storageScope);
+  const [hydratedStorageScope, setHydratedStorageScope] = useState(storageScope);
   const [tripDetails, setTripDetails] = useState(initialDetails);
   const [expenses, setExpenses] = useState<LedgerItem[]>(initialTrip.expenses);
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
+  useEffect(() => {
+    if (!loadPersistedState) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      const trip = loadStoredTrip(getDefaultStoredTrip(), tripId, storageScope);
+      setExpenses(trip.expenses);
+      setBudgetItems(trip.budgetItems);
+      setPlans(trip.plans);
+      setTripDetails(loadTripDetails(defaultTripDetails, tripId, storageScope));
+      setHydratedStorageScope(storageScope);
+    });
+    return () => { cancelled = true; };
+  }, [loadPersistedState, storageScope, tripId]);
   const tripDestination = getTripDestination(tripDetails.title);
   const planMenuRef = useRef<HTMLDivElement>(null);
   const timelineListRef = useRef<HTMLDivElement>(null);
@@ -120,13 +137,14 @@ export function useTripWorkspaceController({
     authReady,
     budgetItems,
     details: tripDetails,
-    enabled: loadPersistedState,
+    enabled: loadPersistedState && hydratedStorageScope === storageScope,
     expenses,
     plans,
     setBudgetItems,
     setDetails: setTripDetails,
     setExpenses,
     setPlans,
+    storageScope,
     tripId,
   });
   const {
@@ -209,7 +227,7 @@ export function useTripWorkspaceController({
     onClosePopover: () => setTripPopover(null),
     onReset: () => {
       const fallback = getDefaultStoredTrip();
-      clearTripStorage();
+      clearTripStorage(tripId, storageScope);
       setExpenses(fallback.expenses);
       setBudgetItems(fallback.budgetItems);
       setPlans(fallback.plans);
@@ -363,6 +381,7 @@ export function useTripWorkspaceController({
     shared,
     shareStatus,
     showExpense: ledgerVisible,
+    storageScope,
     timelineRef: timelineListRef,
     tripPopoverRef,
     workspaceTab,

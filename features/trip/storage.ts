@@ -6,14 +6,25 @@ const TRIP_STORAGE_KEY = "tuyu-local-trip";
 const TRIP_DETAILS_STORAGE_KEY = "tuyu-trip-details";
 const TRIP_LIBRARY_STORAGE_KEY = "tuyu-trip-library";
 
-const tripStorageKey = (tripId: string) => `${TRIP_STORAGE_KEY}:${tripId}`;
-const tripDetailsStorageKey = (tripId: string) => `${TRIP_DETAILS_STORAGE_KEY}:${tripId}`;
+export type LocalStorageScope = string | null | undefined;
 
-export function loadStoredTrip(fallback: StoredTrip, tripId?: string): StoredTrip {
+/** Keeps browser-only data isolated until it is explicitly associated with a signed-in user. */
+export function getLocalStorageScope(userId?: LocalStorageScope) {
+  return typeof userId === "string" && userId.trim() ? userId.trim() : "guest";
+}
+
+export const getTripSnapshotStorageKey = (tripId: string, userId?: LocalStorageScope) =>
+  `${TRIP_STORAGE_KEY}:${getLocalStorageScope(userId)}:${tripId}`;
+export const getTripDetailsStorageKey = (tripId: string, userId?: LocalStorageScope) =>
+  `${TRIP_DETAILS_STORAGE_KEY}:${getLocalStorageScope(userId)}:${tripId}`;
+export const getTripLibraryStorageKey = (userId?: LocalStorageScope) =>
+  `${TRIP_LIBRARY_STORAGE_KEY}:${getLocalStorageScope(userId)}`;
+
+export function loadStoredTrip(fallback: StoredTrip, tripId?: string, userId?: LocalStorageScope): StoredTrip {
   if (typeof window === "undefined") return fallback;
   try {
-    const key = tripId ? tripStorageKey(tripId) : TRIP_STORAGE_KEY;
-    const storedValue = localStorage.getItem(key) || (!tripId ? localStorage.getItem(TRIP_STORAGE_KEY) : null) || "{}";
+    const key = tripId ? getTripSnapshotStorageKey(tripId, userId) : `${TRIP_STORAGE_KEY}:${getLocalStorageScope(userId)}`;
+    const storedValue = localStorage.getItem(key) || "{}";
     const data = JSON.parse(storedValue) as Partial<StoredTrip>;
     return {
       expenses: Array.isArray(data.expenses) ? data.expenses.map((item) => normalizeTripExpense(item as Record<string, unknown>, "actual")).filter((item): item is StoredTrip["expenses"][number] => item !== null) : fallback.expenses,
@@ -27,11 +38,11 @@ export function loadStoredTrip(fallback: StoredTrip, tripId?: string): StoredTri
   }
 }
 
-export function loadTripDetails(fallback: TripDetails, tripId?: string): TripDetails {
+export function loadTripDetails(fallback: TripDetails, tripId?: string, userId?: LocalStorageScope): TripDetails {
   if (typeof window === "undefined") return fallback;
   try {
-    const key = tripId ? tripDetailsStorageKey(tripId) : TRIP_DETAILS_STORAGE_KEY;
-    const storedValue = localStorage.getItem(key) || (!tripId ? localStorage.getItem(TRIP_DETAILS_STORAGE_KEY) : null) || "{}";
+    const key = tripId ? getTripDetailsStorageKey(tripId, userId) : `${TRIP_DETAILS_STORAGE_KEY}:${getLocalStorageScope(userId)}`;
+    const storedValue = localStorage.getItem(key) || "{}";
     const value = JSON.parse(storedValue) as Partial<TripDetails>;
     const companions = Array.isArray(value.companions) && value.companions.every((name) => typeof name === "string") ? value.companions.filter(Boolean) : fallback.companions;
     const memberRoles = value.memberRoles && typeof value.memberRoles === "object"
@@ -56,18 +67,18 @@ export function loadTripDetails(fallback: TripDetails, tripId?: string): TripDet
   }
 }
 
-export function saveTrip(trip: StoredTrip, tripId?: string) {
-  localStorage.setItem(tripId ? tripStorageKey(tripId) : TRIP_STORAGE_KEY, JSON.stringify(trip));
+export function saveTrip(trip: StoredTrip, tripId?: string, userId?: LocalStorageScope) {
+  localStorage.setItem(tripId ? getTripSnapshotStorageKey(tripId, userId) : `${TRIP_STORAGE_KEY}:${getLocalStorageScope(userId)}`, JSON.stringify(trip));
 }
 
-export function saveTripDetails(details: TripDetails, tripId?: string) {
-  localStorage.setItem(tripId ? tripDetailsStorageKey(tripId) : TRIP_DETAILS_STORAGE_KEY, JSON.stringify(details));
+export function saveTripDetails(details: TripDetails, tripId?: string, userId?: LocalStorageScope) {
+  localStorage.setItem(tripId ? getTripDetailsStorageKey(tripId, userId) : `${TRIP_DETAILS_STORAGE_KEY}:${getLocalStorageScope(userId)}`, JSON.stringify(details));
 }
 
-export function loadTripLibrary(fallback: TripLibraryItem): TripLibraryItem[] {
+export function loadTripLibrary(fallback: TripLibraryItem, userId?: LocalStorageScope): TripLibraryItem[] {
   if (typeof window === "undefined") return [fallback];
   try {
-    const storedValue = localStorage.getItem(TRIP_LIBRARY_STORAGE_KEY);
+    const storedValue = localStorage.getItem(getTripLibraryStorageKey(userId));
     if (storedValue !== null) {
       const items = JSON.parse(storedValue) as TripLibraryItem[];
       if (Array.isArray(items) && items.every((item) => item && typeof item.id === "string" && typeof item.title === "string")) return items;
@@ -75,20 +86,24 @@ export function loadTripLibrary(fallback: TripLibraryItem): TripLibraryItem[] {
   } catch {
     // The default entry preserves the existing single-trip data after a malformed snapshot.
   }
-  localStorage.setItem(TRIP_LIBRARY_STORAGE_KEY, JSON.stringify([fallback]));
+  localStorage.setItem(getTripLibraryStorageKey(userId), JSON.stringify([fallback]));
   return [fallback];
 }
 
-export function saveTripLibrary(items: TripLibraryItem[]) {
-  localStorage.setItem(TRIP_LIBRARY_STORAGE_KEY, JSON.stringify(items));
+export function saveTripLibrary(items: TripLibraryItem[], userId?: LocalStorageScope) {
+  localStorage.setItem(getTripLibraryStorageKey(userId), JSON.stringify(items));
 }
 
-export function removeTripStorage(tripId: string) {
-  localStorage.removeItem(tripStorageKey(tripId));
-  localStorage.removeItem(tripDetailsStorageKey(tripId));
+export function removeTripStorage(tripId: string, userId?: LocalStorageScope) {
+  localStorage.removeItem(getTripSnapshotStorageKey(tripId, userId));
+  localStorage.removeItem(getTripDetailsStorageKey(tripId, userId));
 }
 
-export function clearTripStorage() {
-  localStorage.removeItem(TRIP_STORAGE_KEY);
-  localStorage.removeItem(TRIP_DETAILS_STORAGE_KEY);
+export function clearTripStorage(tripId?: string, userId?: LocalStorageScope) {
+  if (tripId) {
+    removeTripStorage(tripId, userId);
+    return;
+  }
+  localStorage.removeItem(`${TRIP_STORAGE_KEY}:${getLocalStorageScope(userId)}`);
+  localStorage.removeItem(`${TRIP_DETAILS_STORAGE_KEY}:${getLocalStorageScope(userId)}`);
 }

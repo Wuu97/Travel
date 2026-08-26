@@ -2,10 +2,14 @@ import { normalizeChatMessage, type ChatMessage, type SavedChat } from "./model"
 
 const CHAT_HISTORY_KEY = "tuyu-ai-history";
 
-export function loadSavedChats(): SavedChat[] {
+export function getChatStorageKey(userId?: string | null) {
+  return `${CHAT_HISTORY_KEY}:${typeof userId === "string" && userId.trim() ? userId.trim() : "guest"}`;
+}
+
+export function loadSavedChats(userId?: string | null): SavedChat[] {
   if (typeof window === "undefined") return [];
   try {
-    return (JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || "[]") as Array<Partial<SavedChat>>)
+    return (JSON.parse(localStorage.getItem(getChatStorageKey(userId)) || "[]") as Array<Partial<SavedChat>>)
       .filter((chat): chat is Partial<SavedChat> & Pick<SavedChat, "id" | "title" | "messages"> =>
         Boolean(chat.id && chat.title && Array.isArray(chat.messages)),
       )
@@ -22,10 +26,10 @@ export function loadSavedChats(): SavedChat[] {
   }
 }
 
-export function saveChats(chats: SavedChat[]) {
+export function saveChats(chats: SavedChat[], userId?: string | null) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chats));
+    localStorage.setItem(getChatStorageKey(userId), JSON.stringify(chats));
   } catch {
     // Keep the in-memory conversation available when browser storage is full or unavailable.
   }

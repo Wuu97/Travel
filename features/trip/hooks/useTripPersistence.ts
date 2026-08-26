@@ -23,6 +23,7 @@ type Options = TripState & TripSetters & {
   accessToken: string | null;
   authReady: boolean;
   enabled: boolean;
+  storageScope: string;
   tripId: string;
 };
 
@@ -39,6 +40,7 @@ export function useTripPersistence({
   setDetails,
   setExpenses,
   setPlans,
+  storageScope,
   tripId,
 }: Options) {
   const [syncedAccessToken, setSyncedAccessToken] = useState<string | null>(null);
@@ -48,12 +50,12 @@ export function useTripPersistence({
 
   useEffect(() => {
     if (!enabled) return;
-    saveTrip({ expenses, budgetItems, plans }, tripId);
-  }, [budgetItems, enabled, expenses, plans, tripId]);
+    saveTrip({ expenses, budgetItems, plans }, tripId, storageScope);
+  }, [budgetItems, enabled, expenses, plans, storageScope, tripId]);
 
   useEffect(() => {
-    if (enabled) saveTripDetails(details, tripId);
-  }, [details, enabled, tripId]);
+    if (enabled) saveTripDetails(details, tripId, storageScope);
+  }, [details, enabled, storageScope, tripId]);
 
   useEffect(() => {
     if (!syncError) return;
@@ -64,6 +66,9 @@ export function useTripPersistence({
   useEffect(() => {
     if (!enabled || !authReady || !accessToken) return;
     let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setSyncedAccessToken(null);
+    });
 
     const loadCurrentTrip = async () => {
       const invite = new URLSearchParams(window.location.search).get("invite");
@@ -105,10 +110,10 @@ export function useTripPersistence({
     return () => {
       cancelled = true;
     };
-  }, [accessToken, authReady, enabled, setBudgetItems, setDetails, setExpenses, setPlans, tripId]);
+  }, [accessToken, authReady, enabled, setBudgetItems, setDetails, setExpenses, setPlans, storageScope, tripId]);
 
   useEffect(() => {
-    if (!accessToken || syncedAccessToken !== accessToken) return;
+    if (!enabled || !accessToken || syncedAccessToken !== accessToken) return;
     const snapshot = { expenses, budgetItems, plans, details };
     const fingerprint = JSON.stringify(snapshot);
     if (fingerprint === lastSavedRef.current) return;
@@ -118,7 +123,7 @@ export function useTripPersistence({
         .catch((error) => setSyncError(error instanceof Error ? error.message : "保存失败，请稍后重试。"));
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [accessToken, budgetItems, details, expenses, plans, syncedAccessToken, tripId, version]);
+  }, [accessToken, budgetItems, details, enabled, expenses, plans, storageScope, syncedAccessToken, tripId, version]);
 
   return { disableRemoteSync: () => setSyncedAccessToken(null), syncError };
 }

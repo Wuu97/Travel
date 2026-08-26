@@ -128,3 +128,46 @@ test("compares category budgets and actuals, including overspend and unbudgeted 
     });
   } finally { await compilation.cleanup(); }
 });
+
+test("scopes trip snapshots, libraries, and chat history by the active user", async () => {
+  const compilation = await compileTypeScript([...sources, "features/trip/storage.ts", "features/chat/model.ts", "features/chat/storage.ts"], "storage-scope-");
+  const previousWindow = globalThis.window;
+  const previousStorage = globalThis.localStorage;
+  const values = new Map();
+  globalThis.window = {};
+  globalThis.localStorage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+    removeItem: (key) => values.delete(key),
+  };
+  try {
+    const tripStorage = await compilation.importModule("trip/storage.js");
+    const chatStorage = await compilation.importModule("chat/storage.js");
+    const fallback = { expenses: [], budgetItems: [], plans: [] };
+    const libraryFallback = { id: "trip", title: "默认", startDate: "2026-01-01", endDate: "2026-01-02", status: "筹备中" };
+
+    assert.equal(tripStorage.getLocalStorageScope(), "guest");
+    assert.notEqual(tripStorage.getTripSnapshotStorageKey("trip", "user-a"), tripStorage.getTripSnapshotStorageKey("trip", "user-b"));
+    assert.notEqual(chatStorage.getChatStorageKey("user-a"), chatStorage.getChatStorageKey("user-b"));
+    values.set("tuyu-local-trip:trip", JSON.stringify({ plans: [{ id: "legacy", title: "旧数据", type: "景点", day: 1 }] }));
+    tripStorage.saveTrip({ ...fallback, plans: [{ id: "a", title: "A", type: "景点", day: 1 }] }, "trip", "user-a");
+    tripStorage.saveTrip({ ...fallback, plans: [{ id: "b", title: "B", type: "景点", day: 0 }] }, "trip", "user-b");
+    assert.equal(tripStorage.loadStoredTrip(fallback, "trip", "user-a").plans[0].id, "a");
+    assert.equal(tripStorage.loadStoredTrip(fallback, "trip", "user-b").plans[0].id, "b");
+    assert.deepEqual(tripStorage.loadStoredTrip(fallback, "trip", "guest"), fallback);
+
+    tripStorage.saveTripLibrary([{ ...libraryFallback, title: "A" }], "user-a");
+    tripStorage.saveTripLibrary([{ ...libraryFallback, title: "B" }], "user-b");
+    assert.equal(tripStorage.loadTripLibrary(libraryFallback, "user-a")[0].title, "A");
+    assert.equal(tripStorage.loadTripLibrary(libraryFallback, "user-b")[0].title, "B");
+    chatStorage.saveChats([{ id: "a", title: "A", messages: [], createdAt: 1, updatedAt: 1 }], "user-a");
+    chatStorage.saveChats([{ id: "b", title: "B", messages: [], createdAt: 2, updatedAt: 2 }], "user-b");
+    assert.equal(chatStorage.loadSavedChats("user-a")[0].id, "a");
+    assert.equal(chatStorage.loadSavedChats("user-b")[0].id, "b");
+    assert.deepEqual(chatStorage.loadSavedChats("guest"), []);
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.localStorage = previousStorage;
+    await compilation.cleanup();
+  }
+});

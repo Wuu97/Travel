@@ -7,7 +7,7 @@ import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import type { TravelContext } from "../../ai/schemas/context";
 import { readFeedbackEvents } from "../../ai/feedback";
 
-type Options = { accessToken: string | null; authReady: boolean; enabled: boolean };
+type Options = { accessToken: string | null; authReady: boolean; enabled: boolean; storageScope: string };
 
 function createChatId() {
   return `chat-${crypto.randomUUID()}`;
@@ -23,7 +23,7 @@ function mergeChats(localChats: SavedChat[], cloudChats: SavedChat[]) {
 }
 
 /** Owns chat history, AI requests, and export without leaking persistence details to UI. */
-export function useTravelChat({ accessToken, authReady, enabled }: Options) {
+export function useTravelChat({ accessToken, authReady, enabled, storageScope }: Options) {
   const { confirm } = useConfirmation();
   const [question, setQuestion] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
@@ -31,30 +31,30 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
   // copy during that remount so a refresh never flashes an empty history while
   // the authenticated cloud request is still in flight.
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() =>
-    enabled && typeof window !== "undefined" ? loadSavedChats()[0]?.messages || [] : [],
+    enabled && typeof window !== "undefined" ? loadSavedChats(storageScope)[0]?.messages || [] : [],
   );
   const [savedChats, setSavedChats] = useState<SavedChat[]>(() =>
-    enabled && typeof window !== "undefined" ? loadSavedChats() : [],
+    enabled && typeof window !== "undefined" ? loadSavedChats(storageScope) : [],
   );
   // Keep the first server and browser render identical; a unique ID is created
   // only after hydration or when the user starts a new conversation.
   const [activeChatId, setActiveChatId] = useState(() =>
-    enabled && typeof window !== "undefined" ? loadSavedChats()[0]?.id || "current" : "current",
+    enabled && typeof window !== "undefined" ? loadSavedChats(storageScope)[0]?.id || "current" : "current",
   );
   const [historyOpen, setHistoryOpen] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const historyPanelRef = useRef<HTMLDivElement>(null);
   const savedChatsRef = useRef<SavedChat[]>(
-    enabled && typeof window !== "undefined" ? loadSavedChats() : [],
+    enabled && typeof window !== "undefined" ? loadSavedChats(storageScope) : [],
   );
   const travelContextRef = useRef<TravelContext | undefined>(undefined);
   const setTravelContext = useCallback((travelContext: TravelContext | undefined) => { travelContextRef.current = travelContext; }, []);
 
-  const replaceSavedChats = (next: SavedChat[]) => {
+  const replaceSavedChats = useCallback((next: SavedChat[]) => {
     savedChatsRef.current = next;
     setSavedChats(next);
-    saveChats(next);
-  };
+    saveChats(next, storageScope);
+  }, [storageScope]);
 
   useChatScroll(chatScrollRef, chatMessages, aiBusy);
   useEffect(() => {
@@ -63,10 +63,10 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
     if (!accessToken) {
       queueMicrotask(() => {
         if (cancelled) return;
-        const localChats = loadSavedChats();
+        const localChats = loadSavedChats(storageScope);
         replaceSavedChats(localChats);
-        setChatMessages((current) => current.length ? current : localChats[0]?.messages || []);
-        setActiveChatId((current) => current === "current" ? localChats[0]?.id || createChatId() : current);
+        setChatMessages(localChats[0]?.messages || []);
+        setActiveChatId(localChats[0]?.id || createChatId());
       });
       return () => { cancelled = true; };
     }
@@ -80,11 +80,11 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
         if (cancelled) return;
         // A previous background upload may not have completed before refresh.
         // Merge rather than treating an empty cloud response as an empty history.
-        const chats = mergeChats(loadSavedChats(), cloudChats);
+        const chats = mergeChats(loadSavedChats(storageScope), cloudChats);
         if (cancelled) return;
         replaceSavedChats(chats);
-        setChatMessages((current) => current.length ? current : chats[0]?.messages || []);
-        setActiveChatId((current) => current === "current" ? chats[0]?.id || createChatId() : current);
+        setChatMessages(chats[0]?.messages || []);
+        setActiveChatId(chats[0]?.id || createChatId());
 
         const cloudById = new Map(cloudChats.map((chat) => [chat.id, chat]));
         await Promise.all(chats
@@ -94,13 +94,13 @@ export function useTravelChat({ accessToken, authReady, enabled }: Options) {
       .catch(() => {
         // Network or database failures must never erase the browser copy.
         if (!cancelled) {
-          const localChats = loadSavedChats();
+          const localChats = loadSavedChats(storageScope);
           replaceSavedChats(localChats);
-          setChatMessages((current) => current.length ? current : localChats[0]?.messages || []);
+          setChatMessages(localChats[0]?.messages || []);
         }
       });
     return () => { cancelled = true; };
-  }, [accessToken, authReady, enabled]);
+  }, [accessToken, authReady, enabled, replaceSavedChats, storageScope]);
   useEffect(() => {
     if (process.env.NODE_ENV !== "development" || !chatMessages.length) return;
     const latest = chatMessages.at(-1)!;

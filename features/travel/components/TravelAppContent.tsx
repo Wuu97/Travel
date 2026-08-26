@@ -17,9 +17,10 @@ import { useEffect } from "react";
 
 export function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean }) {
   const auth = useSupabaseAuth();
+  const storageScope = auth.user?.id || "guest";
   const { active, from, notice, search, setActive, setFrom, setNotice, setTo, to } = useTravelSearch();
   const jumpTo = useAnchorNavigation();
-  const chat = useTravelChat({ accessToken: auth.accessToken, authReady: auth.ready, enabled: loadPersistedState });
+  const chat = useTravelChat({ accessToken: auth.accessToken, authReady: auth.ready, enabled: loadPersistedState, storageScope });
   useChatHistoryOverlay(chat.historyOpen, chat.historyPanelRef, chat.setHistoryOpen);
   const workspace = useTripWorkspaceController({
     accessToken: auth.accessToken,
@@ -28,6 +29,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
     loadPersistedState,
     newChat: chat.newChat,
     setQuestion: chat.setQuestion,
+    storageScope,
   });
   const { setTravelContext } = chat;
   useEffect(() => setTravelContext(workspace.travelContext), [setTravelContext, workspace.travelContext]);

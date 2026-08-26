@@ -44,13 +44,15 @@ type Props = {
   onCollapsedChange?: (collapsed: boolean) => void;
   onMovePlan: (id: string, day: number) => void;
   onSelectDay: (day: number) => void;
+  storageScope: string;
 };
 
-export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCollapsedChange, onMovePlan, onSelectDay, plans }: Props) {
+export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
   const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationState, getServerHydrationState);
   const [activeTripId, setActiveTripId] = useState<string | null>(defaultLibraryTrip.id);
   const [items, setItems] = useState<TripLibraryItem[]>([defaultLibraryTrip]);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
+  const [libraryScope, setLibraryScope] = useState(storageScope);
   const [createOpen, setCreateOpen] = useState(false);
   const [draft, setDraft] = useState<TripDraft>(defaultTripDraft);
   const [createErrors, setCreateErrors] = useState<Partial<Record<keyof TripDraft, string>>>({});
@@ -67,28 +69,29 @@ export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCo
   useEffect(() => {
     if (!hydrated) return;
     const timer = window.setTimeout(() => {
-      const loadedItems = loadTripLibrary(defaultLibraryTrip).map((item) => ({ ...item, status: loadTripDetails(defaultTripDetails, item.id).status }));
+      const loadedItems = loadTripLibrary(defaultLibraryTrip, storageScope).map((item) => ({ ...item, status: loadTripDetails(defaultTripDetails, item.id, storageScope).status }));
       const requestedId = new URLSearchParams(window.location.search).get("trip");
       setActiveTripId(loadedItems.some((item) => item.id === requestedId) ? requestedId : loadedItems[0]?.id || null);
       setItems(loadedItems);
-      saveTripLibrary(loadedItems);
+      saveTripLibrary(loadedItems, storageScope);
+      setLibraryScope(storageScope);
       setLibraryLoaded(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [hydrated]);
+  }, [hydrated, storageScope]);
 
   useEffect(() => {
-    if (!hydrated || !libraryLoaded || !activeTripId) return;
+    if (!hydrated || !libraryLoaded || libraryScope !== storageScope || !activeTripId) return;
     const timer = window.setTimeout(() => setItems((current) => {
       const currentItem = { id: activeTripId, title: currentDetails.title, startDate: currentDetails.startDate, endDate: currentDetails.endDate, status: currentDetails.status };
       const next = current.some((item) => item.id === activeTripId)
         ? current.map((item) => item.id === activeTripId ? { ...item, ...currentItem } : item)
         : [...current, currentItem];
-      if (next.length !== current.length || next.some((item, index) => item !== current[index])) saveTripLibrary(next);
+      if (next.length !== current.length || next.some((item, index) => item !== current[index])) saveTripLibrary(next, storageScope);
       return next;
     }), 0);
     return () => window.clearTimeout(timer);
-  }, [activeTripId, currentDetails.endDate, currentDetails.startDate, currentDetails.status, currentDetails.title, hydrated, libraryLoaded]);
+  }, [activeTripId, currentDetails.endDate, currentDetails.startDate, currentDetails.status, currentDetails.title, hydrated, libraryLoaded, libraryScope, storageScope]);
 
   const openTrip = (tripId: string, day = 1) => {
     if (tripId === activeTripId) {
@@ -119,9 +122,9 @@ export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCo
     const uniqueCompanions = [...new Set(companions)];
     const details: TripDetails = { ...defaultTripDetails, title: destination, startDate: draft.startDate, endDate: draft.endDate, status: "筹备中", companions: uniqueCompanions, memberRoles: Object.fromEntries(uniqueCompanions.filter((name) => name !== "你").map((name) => [name, "同行人"])) };
     const nextItems = [...items, { id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }];
-    saveTrip({ expenses: [], budgetItems: [], plans: [] }, id);
-    saveTripDetails(details, id);
-    saveTripLibrary(nextItems);
+    saveTrip({ expenses: [], budgetItems: [], plans: [] }, id, storageScope);
+    saveTripDetails(details, id, storageScope);
+    saveTripLibrary(nextItems, storageScope);
     setItems(nextItems);
     setCreateOpen(false);
     setDraft(defaultTripDraft());
@@ -175,8 +178,8 @@ export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCo
     if (!trip) return;
     if (!await confirm({ title: "删除行程？", description: `“${trip.title}”及其全部行程数据将被永久删除，且无法恢复。` })) return;
     const nextItems = items.filter((item) => item.id !== tripId);
-    removeTripStorage(tripId);
-    saveTripLibrary(nextItems);
+    removeTripStorage(tripId, storageScope);
+    saveTripLibrary(nextItems, storageScope);
     setItems(nextItems);
     if (tripId === activeTripId) {
       if (nextItems[0]) openTrip(nextItems[0].id);
@@ -208,7 +211,7 @@ export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCo
           {isOpen && <div className="trip-library-list">
             {groupItems.map((item) => {
               const isActive = item.id === activeTripId;
-              const details = isActive ? currentDetails : loadTripDetails(defaultTripDetails, item.id);
+              const details = isActive ? currentDetails : loadTripDetails(defaultTripDetails, item.id, storageScope);
               const days = getTripDays(details.startDate, details.endDate);
               const isExpanded = expandedTrips[item.id] ?? isActive;
               const pendingPlans = isActive ? plans.filter((plan) => plan.day === 0) : [];
