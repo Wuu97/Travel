@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { defaultTripDetails } from "../data";
 import type { ItineraryItem, TripDetails, TripLibraryItem } from "../model";
-import { loadTripDetails, loadTripLibrary, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
+import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
 import { createId } from "../../shared/utils/createId";
 import { getTripDays } from "../utils";
 import { CustomDateRangePicker } from "./CustomDateRangePicker";
@@ -53,6 +53,7 @@ export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCo
   const [items, setItems] = useState<TripLibraryItem[]>([defaultLibraryTrip]);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [libraryScope, setLibraryScope] = useState(storageScope);
+  const [hasPersistedLibrary, setHasPersistedLibrary] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [draft, setDraft] = useState<TripDraft>(defaultTripDraft);
   const [createErrors, setCreateErrors] = useState<Partial<Record<keyof TripDraft, string>>>({});
@@ -69,11 +70,13 @@ export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCo
   useEffect(() => {
     if (!hydrated) return;
     const timer = window.setTimeout(() => {
-      const loadedItems = loadTripLibrary(defaultLibraryTrip, storageScope).map((item) => ({ ...item, status: loadTripDetails(defaultTripDetails, item.id, storageScope).status }));
+      const storedItems = loadTripLibrary(storageScope);
+      const persisted = hasStoredTripLibrary(storageScope);
+      const loadedItems = (storedItems.length ? storedItems : [defaultLibraryTrip]).map((item) => ({ ...item, status: loadTripDetails(defaultTripDetails, item.id, storageScope).status }));
       const requestedId = new URLSearchParams(window.location.search).get("trip");
       setActiveTripId(loadedItems.some((item) => item.id === requestedId) ? requestedId : loadedItems[0]?.id || null);
       setItems(loadedItems);
-      saveTripLibrary(loadedItems, storageScope);
+      setHasPersistedLibrary(persisted);
       setLibraryScope(storageScope);
       setLibraryLoaded(true);
     }, 0);
@@ -81,7 +84,7 @@ export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCo
   }, [hydrated, storageScope]);
 
   useEffect(() => {
-    if (!hydrated || !libraryLoaded || libraryScope !== storageScope || !activeTripId) return;
+    if (!hydrated || !libraryLoaded || !hasPersistedLibrary || libraryScope !== storageScope || !activeTripId) return;
     const timer = window.setTimeout(() => setItems((current) => {
       const currentItem = { id: activeTripId, title: currentDetails.title, startDate: currentDetails.startDate, endDate: currentDetails.endDate, status: currentDetails.status };
       const next = current.some((item) => item.id === activeTripId)
@@ -91,7 +94,7 @@ export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCo
       return next;
     }), 0);
     return () => window.clearTimeout(timer);
-  }, [activeTripId, currentDetails.endDate, currentDetails.startDate, currentDetails.status, currentDetails.title, hydrated, libraryLoaded, libraryScope, storageScope]);
+  }, [activeTripId, currentDetails.endDate, currentDetails.startDate, currentDetails.status, currentDetails.title, hasPersistedLibrary, hydrated, libraryLoaded, libraryScope, storageScope]);
 
   const openTrip = (tripId: string, day = 1) => {
     if (tripId === activeTripId) {
@@ -121,10 +124,11 @@ export function TripLibrary({ activeDay, collapsed = false, currentDetails, onCo
     const companions = ["你", ...draft.companions.split(/[,，]/).map((name) => name.trim()).filter(Boolean)];
     const uniqueCompanions = [...new Set(companions)];
     const details: TripDetails = { ...defaultTripDetails, title: destination, startDate: draft.startDate, endDate: draft.endDate, status: "筹备中", companions: uniqueCompanions, memberRoles: Object.fromEntries(uniqueCompanions.filter((name) => name !== "你").map((name) => [name, "同行人"])) };
-    const nextItems = [...items, { id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }];
+    const nextItems = hasPersistedLibrary ? [...items, { id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }] : [{ id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }];
     saveTrip({ expenses: [], budgetItems: [], plans: [] }, id, storageScope);
     saveTripDetails(details, id, storageScope);
     saveTripLibrary(nextItems, storageScope);
+    setHasPersistedLibrary(true);
     setItems(nextItems);
     setCreateOpen(false);
     setDraft(defaultTripDraft());

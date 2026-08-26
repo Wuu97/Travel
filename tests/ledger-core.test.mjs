@@ -156,10 +156,12 @@ test("scopes trip snapshots, libraries, and chat history by the active user", as
     assert.equal(tripStorage.loadStoredTrip(fallback, "trip", "user-b").plans[0].id, "b");
     assert.deepEqual(tripStorage.loadStoredTrip(fallback, "trip", "guest"), fallback);
 
+    assert.deepEqual(tripStorage.loadTripLibrary("new-user"), []);
+    assert.equal(values.has(tripStorage.getTripLibraryStorageKey("new-user")), false);
     tripStorage.saveTripLibrary([{ ...libraryFallback, title: "A" }], "user-a");
     tripStorage.saveTripLibrary([{ ...libraryFallback, title: "B" }], "user-b");
-    assert.equal(tripStorage.loadTripLibrary(libraryFallback, "user-a")[0].title, "A");
-    assert.equal(tripStorage.loadTripLibrary(libraryFallback, "user-b")[0].title, "B");
+    assert.equal(tripStorage.loadTripLibrary("user-a")[0].title, "A");
+    assert.equal(tripStorage.loadTripLibrary("user-b")[0].title, "B");
     chatStorage.saveChats([{ id: "a", title: "A", messages: [], createdAt: 1, updatedAt: 1 }], "user-a");
     chatStorage.saveChats([{ id: "b", title: "B", messages: [], createdAt: 2, updatedAt: 2 }], "user-b");
     assert.equal(chatStorage.loadSavedChats("user-a")[0].id, "a");

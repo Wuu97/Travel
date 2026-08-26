@@ -20,6 +20,22 @@ export const getTripDetailsStorageKey = (tripId: string, userId?: LocalStorageSc
 export const getTripLibraryStorageKey = (userId?: LocalStorageScope) =>
   `${TRIP_LIBRARY_STORAGE_KEY}:${getLocalStorageScope(userId)}`;
 
+export function hasStoredTripSnapshot(tripId: string, userId?: LocalStorageScope) {
+  return typeof window !== "undefined" && localStorage.getItem(getTripSnapshotStorageKey(tripId, userId)) !== null;
+}
+
+export function hasStoredTripLibrary(userId?: LocalStorageScope) {
+  if (typeof window === "undefined") return false;
+  try {
+    const storedValue = localStorage.getItem(getTripLibraryStorageKey(userId));
+    if (storedValue === null) return false;
+    const items = JSON.parse(storedValue) as TripLibraryItem[];
+    return Array.isArray(items) && items.every((item) => item && typeof item.id === "string" && typeof item.title === "string");
+  } catch {
+    return false;
+  }
+}
+
 export function loadStoredTrip(fallback: StoredTrip, tripId?: string, userId?: LocalStorageScope): StoredTrip {
   if (typeof window === "undefined") return fallback;
   try {
@@ -75,8 +91,8 @@ export function saveTripDetails(details: TripDetails, tripId?: string, userId?: 
   localStorage.setItem(tripId ? getTripDetailsStorageKey(tripId, userId) : `${TRIP_DETAILS_STORAGE_KEY}:${getLocalStorageScope(userId)}`, JSON.stringify(details));
 }
 
-export function loadTripLibrary(fallback: TripLibraryItem, userId?: LocalStorageScope): TripLibraryItem[] {
-  if (typeof window === "undefined") return [fallback];
+export function loadTripLibrary(userId?: LocalStorageScope): TripLibraryItem[] {
+  if (typeof window === "undefined") return [];
   try {
     const storedValue = localStorage.getItem(getTripLibraryStorageKey(userId));
     if (storedValue !== null) {
@@ -84,10 +100,9 @@ export function loadTripLibrary(fallback: TripLibraryItem, userId?: LocalStorage
       if (Array.isArray(items) && items.every((item) => item && typeof item.id === "string" && typeof item.title === "string")) return items;
     }
   } catch {
-    // The default entry preserves the existing single-trip data after a malformed snapshot.
+    // Treat malformed data as an empty library without overwriting it.
   }
-  localStorage.setItem(getTripLibraryStorageKey(userId), JSON.stringify([fallback]));
-  return [fallback];
+  return [];
 }
 
 export function saveTripLibrary(items: TripLibraryItem[], userId?: LocalStorageScope) {

@@ -23,6 +23,8 @@ type Options = TripState & TripSetters & {
   accessToken: string | null;
   authReady: boolean;
   enabled: boolean;
+  persistLocal: boolean;
+  onRemoteTripLoaded: () => void;
   storageScope: string;
   tripId: string;
 };
@@ -36,6 +38,8 @@ export function useTripPersistence({
   enabled,
   expenses,
   plans,
+  persistLocal,
+  onRemoteTripLoaded,
   setBudgetItems,
   setDetails,
   setExpenses,
@@ -49,13 +53,13 @@ export function useTripPersistence({
   const lastSavedRef = useRef("");
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !persistLocal) return;
     saveTrip({ expenses, budgetItems, plans }, tripId, storageScope);
-  }, [budgetItems, enabled, expenses, plans, storageScope, tripId]);
+  }, [budgetItems, enabled, expenses, persistLocal, plans, storageScope, tripId]);
 
   useEffect(() => {
-    if (enabled) saveTripDetails(details, tripId, storageScope);
-  }, [details, enabled, storageScope, tripId]);
+    if (enabled && persistLocal) saveTripDetails(details, tripId, storageScope);
+  }, [details, enabled, persistLocal, storageScope, tripId]);
 
   useEffect(() => {
     if (!syncError) return;
@@ -97,6 +101,7 @@ export function useTripPersistence({
           setBudgetItems(trip.budgetItems.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "estimated")).filter((item): item is ExpenseItem => item !== null));
           setPlans(sortItineraryItems(trip.plans));
           if (trip.details) setDetails(trip.details);
+          onRemoteTripLoaded();
         }
         lastSavedRef.current = trip ? JSON.stringify(trip) : "";
         setVersion(loadedVersion);
@@ -110,10 +115,10 @@ export function useTripPersistence({
     return () => {
       cancelled = true;
     };
-  }, [accessToken, authReady, enabled, setBudgetItems, setDetails, setExpenses, setPlans, storageScope, tripId]);
+  }, [accessToken, authReady, enabled, onRemoteTripLoaded, setBudgetItems, setDetails, setExpenses, setPlans, storageScope, tripId]);
 
   useEffect(() => {
-    if (!enabled || !accessToken || syncedAccessToken !== accessToken) return;
+    if (!enabled || !persistLocal || !accessToken || syncedAccessToken !== accessToken) return;
     const snapshot = { expenses, budgetItems, plans, details };
     const fingerprint = JSON.stringify(snapshot);
     if (fingerprint === lastSavedRef.current) return;
@@ -123,7 +128,7 @@ export function useTripPersistence({
         .catch((error) => setSyncError(error instanceof Error ? error.message : "保存失败，请稍后重试。"));
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [accessToken, budgetItems, details, enabled, expenses, plans, storageScope, syncedAccessToken, tripId, version]);
+  }, [accessToken, budgetItems, details, enabled, expenses, persistLocal, plans, storageScope, syncedAccessToken, tripId, version]);
 
   return { disableRemoteSync: () => setSyncedAccessToken(null), syncError };
 }

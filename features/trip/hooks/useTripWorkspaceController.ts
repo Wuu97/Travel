@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { TripWorkspaceProps } from "../components/TripWorkspace";
 import { defaultTripDetails, getDefaultStoredTrip } from "../data";
 import type { ExpenseItem, ItineraryItem, LedgerItem } from "../model";
-import { clearTripStorage, loadStoredTrip, loadTripDetails } from "../storage";
+import { clearTripStorage, hasStoredTripSnapshot, loadStoredTrip, loadTripDetails, loadTripLibrary } from "../storage";
 import { syncExpenseRelationTitle } from "../expenseRelations";
 import { destinationPinyin, getTripDestination } from "../utils";
 import { useExpenseEntry } from "./useExpenseEntry";
@@ -50,6 +50,9 @@ export function useTripWorkspaceController({
 }: Options) {
   const { initialDetails, initialTrip, tripId } = useTripBootstrap(loadPersistedState, storageScope);
   const [hydratedStorageScope, setHydratedStorageScope] = useState(storageScope);
+  const hasPersistedTripInScope = useCallback(() => storageScope === "guest" || hasStoredTripSnapshot(tripId, storageScope) || loadTripLibrary(storageScope).some((trip) => trip.id === tripId), [storageScope, tripId]);
+  const [hasPersistedTrip, setHasPersistedTrip] = useState(hasPersistedTripInScope);
+  const markRemoteTripLoaded = useCallback(() => setHasPersistedTrip(true), []);
   const [tripDetails, setTripDetails] = useState(initialDetails);
   const [expenses, setExpenses] = useState<LedgerItem[]>(initialTrip.expenses);
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
@@ -64,10 +67,11 @@ export function useTripWorkspaceController({
       setBudgetItems(trip.budgetItems);
       setPlans(trip.plans);
       setTripDetails(loadTripDetails(defaultTripDetails, tripId, storageScope));
+      setHasPersistedTrip(hasPersistedTripInScope());
       setHydratedStorageScope(storageScope);
     });
     return () => { cancelled = true; };
-  }, [loadPersistedState, storageScope, tripId]);
+  }, [hasPersistedTripInScope, loadPersistedState, storageScope, tripId]);
   const tripDestination = getTripDestination(tripDetails.title);
   const planMenuRef = useRef<HTMLDivElement>(null);
   const timelineListRef = useRef<HTMLDivElement>(null);
@@ -138,6 +142,8 @@ export function useTripWorkspaceController({
     budgetItems,
     details: tripDetails,
     enabled: loadPersistedState && hydratedStorageScope === storageScope,
+    onRemoteTripLoaded: markRemoteTripLoaded,
+    persistLocal: hasPersistedTrip,
     expenses,
     plans,
     setBudgetItems,
