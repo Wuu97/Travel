@@ -46,6 +46,20 @@ export const getTripDays = (startDate: string, endDate: string) => {
   }
   return days;
 };
+
+/** Repairs only invalid persisted days; day 0 remains the supported pending state. */
+export function clampItineraryDays(items: ItineraryItem[]): ItineraryItem[] {
+  return items.map((item) => {
+    const day = item.day ?? 1;
+    return { ...item, day: !Number.isFinite(day) ? 1 : Math.min(31, Math.max(0, Math.trunc(day))) };
+  });
+}
+
+/** Moves plans outside a shortened trip to the existing pending itinerary state. */
+export function movePlansOutsideTripToPending(items: ItineraryItem[], lastDay: number): ItineraryItem[] {
+  const safeLastDay = Math.max(1, Math.min(31, lastDay));
+  return clampItineraryDays(items).map((item) => (item.day ?? 1) > safeLastDay ? { ...item, day: 0 } : item);
+}
 export const typeColors: Record<
   ItineraryItem["type"],
   { color: string; tint: string }

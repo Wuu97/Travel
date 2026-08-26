@@ -9,6 +9,7 @@ const sources = [
   "features/trip/expenseRelations.ts",
   "features/trip/budgetRules.ts",
   "features/trip/utils.ts",
+  "features/trip/snapshotValidation.ts",
   "features/trip/hooks/useTripImports.ts",
 ];
 
@@ -66,6 +67,25 @@ test("keeps expense links stable on rename and safely unlinks them on itinerary 
     assert.deepEqual(clearExpenseRelation(actual, "lingyin"), [{ id: "ticket-actual", title: "门票", amount: 75, type: "门票", occurrence: "actual" }]);
     assert.deepEqual(resolveExpenseRelation(budget[0], []), { id: "ticket-budget", title: "门票", amount: 80, type: "门票", occurrence: "estimated" });
     assert.equal(resolveExpenseRelation(budget[0], [plan]).relatedItineraryTitle, "灵隐寺");
+  } finally { await compilation.cleanup(); }
+});
+
+test("moves shortened-trip plans to pending without changing IDs or expense links", async () => {
+  const compilation = await compileTypeScript(sources, "trip-day-clamp-");
+  try {
+    const { clampItineraryDays, movePlansOutsideTripToPending } = await compilation.importModule("trip/utils.js");
+    const { isStoredTrip } = await compilation.importModule("trip/snapshotValidation.js");
+    const plans = [
+      { id: "day-3", title: "A", type: "景点", day: 3 },
+      { id: "day-4", title: "B", type: "餐饮", day: 4 },
+      { id: "day-5", title: "C", type: "住宿", day: 5 },
+    ];
+    const shortened = movePlansOutsideTripToPending(plans, 3);
+    assert.deepEqual(shortened.map((plan) => [plan.id, plan.day]), [["day-3", 3], ["day-4", 0], ["day-5", 0]]);
+    assert.deepEqual(movePlansOutsideTripToPending(plans, 7), plans);
+    assert.equal(shortened.some((plan) => plan.day < 0), false);
+    assert.deepEqual(clampItineraryDays([{ ...plans[0], day: 0 }, { ...plans[1], day: -2 }, { ...plans[2], day: Number.NaN }]).map((plan) => plan.day), [0, 0, 1]);
+    assert.equal(isStoredTrip({ plans: shortened, budgetItems: [{ id: "budget", title: "门票", amount: 80, type: "门票", occurrence: "estimated", relatedItineraryItemId: "day-4" }], expenses: [{ id: "actual", title: "门票", amount: 75, type: "门票", occurrence: "actual", relatedItineraryItemId: "day-4" }] }), true);
   } finally { await compilation.cleanup(); }
 });
 

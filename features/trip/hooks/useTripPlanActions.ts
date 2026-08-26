@@ -48,8 +48,9 @@ export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, n
     setPendingPlanId(id);
   };
   const movePlanToDay = (id: string, day: number) => {
-    setPlans((current) => sortItineraryItems(current.map((plan) => plan.id === id ? { ...plan, day } : plan)));
-    setActiveDay(day);
+    const targetDay = Math.max(0, Math.min(31, day));
+    setPlans((current) => sortItineraryItems(current.map((plan) => plan.id === id ? { ...plan, day: targetDay } : plan)));
+    setActiveDay(targetDay);
     setPendingPlanId(id);
   };
   const openManualPlan = () => setManualPlan({ id: createId("plan"), title: "", type: "交通", time: "", day: activeDay, creator: "你" });
@@ -57,7 +58,7 @@ export function useTripPlanActions({ activeDay, city, editingPlan, manualPlan, n
     if (!manualPlan?.title.trim()) return;
     const savedPlan = { ...manualPlan, title: manualPlan.title.trim() };
     setPlans((current) => sortItineraryItems([...current, savedPlan]));
-    setActiveDay(savedPlan.day || activeDay);
+    setActiveDay(savedPlan.day ?? activeDay);
     setPendingPlanId(savedPlan.id);
     setManualPlan(null);
 

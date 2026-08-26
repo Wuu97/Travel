@@ -1,5 +1,5 @@
 import type { StoredTrip, TripDetails, TripLibraryItem } from "./model";
-import { sortItineraryItems } from "./utils";
+import { clampItineraryDays, sortItineraryItems } from "./utils";
 import { normalizeTripExpense } from "./expense";
 
 const TRIP_STORAGE_KEY = "tuyu-local-trip";
@@ -19,7 +19,7 @@ export function loadStoredTrip(fallback: StoredTrip, tripId?: string): StoredTri
       expenses: Array.isArray(data.expenses) ? data.expenses.map((item) => normalizeTripExpense(item as Record<string, unknown>, "actual")).filter((item): item is StoredTrip["expenses"][number] => item !== null) : fallback.expenses,
       budgetItems: Array.isArray(data.budgetItems) ? data.budgetItems.map((item) => normalizeTripExpense(item as Record<string, unknown>, "estimated")).filter((item): item is StoredTrip["budgetItems"][number] => item !== null) : fallback.budgetItems,
       plans: Array.isArray(data.plans)
-        ? sortItineraryItems(data.plans.map((item, index) => typeof item === "string" ? { id: `legacy-plan-${index}-${item}`, title: item, type: ["交通", "餐饮", "景点"][index % 3] as StoredTrip["plans"][number]["type"], day: 1 } : item))
+        ? sortItineraryItems(clampItineraryDays(data.plans.map((item, index) => typeof item === "string" ? { id: `legacy-plan-${index}-${item}`, title: item, type: ["交通", "餐饮", "景点"][index % 3] as StoredTrip["plans"][number]["type"], day: 1 } : item)))
         : fallback.plans,
     };
   } catch {

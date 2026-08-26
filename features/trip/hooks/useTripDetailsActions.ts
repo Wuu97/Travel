@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { readTripCover } from "../cover";
 import type { ItineraryItem, TripDetails } from "../model";
-import { getTripDays } from "../utils";
+import { getTripDays, movePlansOutsideTripToPending } from "../utils";
 
 type Options = { activeDay: number; announceSave: () => void; inlineTitle: string | null; setActiveDay: (day: number) => void; setDetails: Dispatch<SetStateAction<TripDetails>>; setInlineTitle: (value: string | null) => void; setPlans: Dispatch<SetStateAction<ItineraryItem[]>> };
 
@@ -14,7 +14,7 @@ export function useTripDetailsActions({ activeDay, announceSave, inlineTitle, se
       if (!nextDays.some((item) => item.day === activeDay)) setActiveDay(1);
       if (patch.startDate !== undefined || patch.endDate !== undefined) {
         const lastDay = nextDays.at(-1)!.day;
-        setPlans((plans) => plans.map((plan) => (plan.day ?? 1) > lastDay ? { ...plan, day: 0 } : plan));
+        setPlans((plans) => movePlansOutsideTripToPending(plans, lastDay));
       }
       return next;
     });

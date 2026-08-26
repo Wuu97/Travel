@@ -65,7 +65,9 @@ export function useTripWorkspaceView() {
   }, []);
 
   useEffect(() => {
-    const value = Number(new URLSearchParams(window.location.search).get("day"));
+    const rawValue = new URLSearchParams(window.location.search).get("day");
+    if (rawValue === null) return;
+    const value = Number(rawValue);
     if (!Number.isInteger(value) || value < 0) return;
     const timer = window.setTimeout(() => setActiveDay(value), 0);
     return () => window.clearTimeout(timer);
