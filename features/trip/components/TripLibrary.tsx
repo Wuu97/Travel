@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { defaultTripDetails } from "../data";
 import type { ItineraryItem, TripDetails, TripLibraryItem } from "../model";
 import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
@@ -49,7 +49,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   const [cloudDeleteCapabilities, setCloudDeleteCapabilities] = useState<Map<string, boolean>>(() => new Map());
   const [cloudListError, setCloudListError] = useState<string | null>(null);
   const [cloudListRetrying, setCloudListRetrying] = useState(false);
-  const [cloudListRequest, setCloudListRequest] = useState(0);
+  const cloudListLoadingRef = useRef(false);
   const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -65,6 +65,29 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     "已结束": true,
   });
   const [expandedTrips, setExpandedTrips] = useState<Record<string, boolean>>({});
+
+  const loadCloudTrips = useCallback(async () => {
+    if (!accessToken || cloudListLoadingRef.current) return;
+    cloudListLoadingRef.current = true;
+    setCloudListRetrying(true);
+    try {
+      const cloudItems = await listAccessibleTrips(accessToken);
+      setCloudDeleteCapabilities(new Map(cloudItems.map((item) => [item.id, item.canDelete === true])));
+      setItems((current) => {
+        const mergedItems = mergeTripLibraryItems(current, cloudItems);
+        if (cloudItems.length) saveTripLibrary(mergedItems, storageScope);
+        return mergedItems;
+      });
+      setCloudListError(null);
+    } catch {
+      // Keep the current local/merged list and selection untouched.
+      setCloudDeleteCapabilities(new Map());
+      setCloudListError("云端旅行暂时无法加载，当前显示本地数据。");
+    } finally {
+      cloudListLoadingRef.current = false;
+      setCloudListRetrying(false);
+    }
+  }, [accessToken, storageScope]);
 
   useEffect(() => {
     const markRemoteTrip = (event: Event) => {
@@ -125,30 +148,14 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
       // The local scoped library is immediately available even while the cloud
       // discovery request is pending or unavailable.
       applyItems(storedItems, persisted);
-      void listAccessibleTrips(accessToken)
-        .then((cloudItems) => {
-          if (cancelled) return;
-          setCloudDeleteCapabilities(new Map(cloudItems.map((item) => [item.id, item.canDelete === true])));
-          const mergedItems = mergeTripLibraryItems(storedItems, cloudItems);
-          if (cloudItems.length) saveTripLibrary(mergedItems, storageScope);
-          applyItems(mergedItems, persisted || cloudItems.length > 0);
-          setCloudListError(null);
-          setCloudListRetrying(false);
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setCloudDeleteCapabilities(new Map());
-          setCloudListError("云端旅行暂时无法加载，当前显示本地数据。");
-          setCloudListRetrying(false);
-        });
+      void loadCloudTrips();
     }, 0);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [accessToken, authReady, cloudListRequest, hydrated, storageScope]);
+  }, [accessToken, authReady, hydrated, loadCloudTrips, storageScope]);
 
   const retryCloudList = () => {
     if (!accessToken || cloudListRetrying) return;
-    setCloudListRetrying(true);
-    setCloudListRequest((current) => current + 1);
+    void loadCloudTrips();
   };
 
   useEffect(() => {

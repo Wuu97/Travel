@@ -6,11 +6,16 @@ const root = new URL("../", import.meta.url);
 
 test("云端旅行列表失败时保留本地列表，并提供独立且防重的重试", async () => {
   const source = await readFile(new URL("features/trip/components/TripLibrary.tsx", root), "utf8");
-  assert.match(source, /applyItems\(storedItems, persisted\);[\s\S]*?void listAccessibleTrips\(accessToken\)/);
+  assert.match(source, /applyItems\(storedItems, persisted\);[\s\S]*?void loadCloudTrips\(\);/);
   assert.match(source, /云端旅行暂时无法加载，当前显示本地数据。/);
   assert.match(source, /if \(!accessToken \|\| cloudListRetrying\) return;/);
   assert.match(source, /disabled=\{cloudListRetrying\}/);
   assert.match(source, /setCloudListError\(null\);/);
+  assert.match(source, /const loadCloudTrips = useCallback\(async \(\) => \{/);
+  assert.match(source, /void loadCloudTrips\(\);/);
+  assert.doesNotMatch(source, /cloudListRequest/);
+  const retry = source.slice(source.indexOf("const retryCloudList"), source.indexOf("useEffect(() => {", source.indexOf("const retryCloudList")));
+  assert.doesNotMatch(retry, /applyItems|replaceState|tuyu-tripchange|loadTripLibrary/);
 });
 
 test("同步失败与版本冲突使用独立恢复路径", async () => {
