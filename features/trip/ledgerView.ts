@@ -8,10 +8,12 @@ const relatedTitle = (item: ExpenseItem | LedgerItem, plans: ItineraryItem[]) =>
 
 export function filterLedgerItems<T extends ExpenseItem | LedgerItem>(items: T[], occurrence: "estimated" | "actual", filters: LedgerFilters, plans: ItineraryItem[]) {
   const query = normalized(filters.query);
+  const hasDateFilter = Boolean(filters.startDate || filters.endDate);
   return items.filter((item) => (filters.occurrence === "all" || filters.occurrence === occurrence)
     && (filters.category === "all" || item.type === filters.category)
-    && (!filters.startDate || !item.date || item.date >= filters.startDate)
-    && (!filters.endDate || !item.date || item.date <= filters.endDate)
+    && (!hasDateFilter || Boolean(item.date))
+    && (!filters.startDate || (item.date && item.date >= filters.startDate))
+    && (!filters.endDate || (item.date && item.date <= filters.endDate))
     && (!query || [item.title, item.note, item.payer, relatedTitle(item, plans)].some((value) => normalized(value).includes(query))));
 }
 
