@@ -51,6 +51,28 @@ export function useTripPersistence({
   const [version, setVersion] = useState<number | undefined>();
   const [syncError, setSyncError] = useState<string | null>(null);
   const lastSavedRef = useRef("");
+  const deletingRef = useRef(false);
+  const saveAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const onDelete = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== tripId) return;
+      deletingRef.current = true;
+      saveAbortRef.current?.abort();
+      setSyncedAccessToken(null);
+    };
+    const onDeleteCancelled = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== tripId) return;
+      deletingRef.current = false;
+      setSyncedAccessToken(accessToken);
+    };
+    window.addEventListener("tuyu-tripdelete", onDelete);
+    window.addEventListener("tuyu-tripdeletecancel", onDeleteCancelled);
+    return () => {
+      window.removeEventListener("tuyu-tripdelete", onDelete);
+      window.removeEventListener("tuyu-tripdeletecancel", onDeleteCancelled);
+    };
+  }, [accessToken, tripId]);
 
   useEffect(() => {
     if (!enabled || !persistLocal) return;
@@ -123,9 +145,13 @@ export function useTripPersistence({
     const fingerprint = JSON.stringify(snapshot);
     if (fingerprint === lastSavedRef.current) return;
     const timer = window.setTimeout(() => {
-      void saveSharedTrip(tripId, snapshot, version, accessToken)
-        .then((result) => { lastSavedRef.current = fingerprint; setVersion(result.version); setSyncError(null); })
-        .catch((error) => setSyncError(error instanceof Error ? error.message : "保存失败，请稍后重试。"));
+      if (deletingRef.current) return;
+      const controller = new AbortController();
+      saveAbortRef.current = controller;
+      void saveSharedTrip(tripId, snapshot, version, accessToken, controller.signal)
+        .then((result) => { if (!deletingRef.current) { lastSavedRef.current = fingerprint; setVersion(result.version); setSyncError(null); } })
+        .catch((error) => { if (!controller.signal.aborted) setSyncError(error instanceof Error ? error.message : "保存失败，请稍后重试。"); })
+        .finally(() => { if (saveAbortRef.current === controller) saveAbortRef.current = null; });
     }, 400);
     return () => window.clearTimeout(timer);
   }, [accessToken, budgetItems, details, enabled, expenses, persistLocal, plans, storageScope, syncedAccessToken, tripId, version]);

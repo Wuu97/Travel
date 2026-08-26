@@ -24,11 +24,12 @@ export async function listAccessibleTrips(accessToken: string): Promise<TripLibr
     : [];
 }
 
-export async function saveSharedTrip(tripId: string, trip: StoredTrip, version: number | undefined, accessToken: string) {
+export async function saveSharedTrip(tripId: string, trip: StoredTrip, version: number | undefined, accessToken: string, signal?: AbortSignal) {
   const response = await fetch(tripUrl(tripId), {
     method: "PUT",
     headers: { ...authHeaders(accessToken), "Content-Type": "application/json" },
     body: JSON.stringify({ trip, version }),
+    signal,
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || "无法保存共享行程。");
@@ -51,5 +52,6 @@ export async function acceptTripInvite(token: string, accessToken: string) {
 
 export async function deleteSharedTrip(tripId: string, accessToken: string) {
   const response = await fetch(tripUrl(tripId), { method: "DELETE", headers: authHeaders(accessToken) });
-  if (!response.ok) throw new Error("无法删除共享行程。");
+  const data = await response.json().catch(() => ({})) as { error?: unknown };
+  if (!response.ok) throw new Error(typeof data.error === "string" && data.error.trim() ? data.error : "无法删除云端行程，请重试。");
 }

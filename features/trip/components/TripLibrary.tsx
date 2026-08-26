@@ -3,8 +3,8 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { defaultTripDetails } from "../data";
 import type { ItineraryItem, TripDetails, TripLibraryItem } from "../model";
-import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, removeTripStorage, resolveInitialTripId, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
-import { listAccessibleTrips } from "../api";
+import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
+import { deleteSharedTrip, listAccessibleTrips } from "../api";
 import { createId } from "../../shared/utils/createId";
 import { getTripDays } from "../utils";
 import { CustomDateRangePicker } from "./CustomDateRangePicker";
@@ -14,14 +14,6 @@ import { SidebarHeader } from "../../shared/components/SidebarHeader";
 import { ScrollArea } from "../../shared/components/ScrollArea";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import { TripSidebarIcon } from "./TripSidebarIcon";
-
-const defaultLibraryTrip: TripLibraryItem = {
-  id: "hangzhou-summer-trip",
-  title: defaultTripDetails.title,
-  startDate: defaultTripDetails.startDate,
-  endDate: defaultTripDetails.endDate,
-  status: defaultTripDetails.status,
-};
 
 const newTripId = () => createId("trip");
 const subscribeToHydration = () => () => {};
@@ -52,8 +44,10 @@ type Props = {
 
 export function TripLibrary({ accessToken, activeDay, authReady, collapsed = false, currentDetails, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
   const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationState, getServerHydrationState);
-  const [activeTripId, setActiveTripId] = useState<string | null>(defaultLibraryTrip.id);
-  const [items, setItems] = useState<TripLibraryItem[]>([defaultLibraryTrip]);
+  const [activeTripId, setActiveTripId] = useState<string | null>(null);
+  const [items, setItems] = useState<TripLibraryItem[]>([]);
+  const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [libraryScope, setLibraryScope] = useState(storageScope);
   const [hasPersistedLibrary, setHasPersistedLibrary] = useState(false);
@@ -66,9 +60,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     "筹备中": true,
     "已结束": true,
   });
-  const [expandedTrips, setExpandedTrips] = useState<Record<string, boolean>>({
-    [defaultLibraryTrip.id]: true,
-  });
+  const [expandedTrips, setExpandedTrips] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!hydrated) return;
@@ -78,13 +70,17 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
       const persisted = hasStoredTripLibrary(storageScope);
       const applyItems = (libraryItems: TripLibraryItem[], isPersisted: boolean) => {
         if (cancelled) return;
-        const loadedItems = libraryItems.length ? libraryItems : [defaultLibraryTrip];
+        const loadedItems = libraryItems;
         const requestedId = new URLSearchParams(window.location.search).get("trip");
-        const selectedTripId = resolveInitialTripId(libraryItems, requestedId, defaultLibraryTrip.id);
+        const selectedTripId = requestedId && libraryItems.some((item) => item.id === requestedId) ? requestedId : libraryItems[0]?.id || null;
         setActiveTripId(selectedTripId);
-        if (libraryItems.length && selectedTripId !== requestedId) {
+        if (selectedTripId !== requestedId) {
           const url = new URL(window.location.href);
-          url.searchParams.set("trip", selectedTripId);
+          if (selectedTripId) url.searchParams.set("trip", selectedTripId);
+          else {
+            url.searchParams.delete("trip");
+            url.searchParams.delete("day");
+          }
           window.history.replaceState(null, "", url);
           window.dispatchEvent(new Event("tuyu-tripchange"));
         }
@@ -205,8 +201,21 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
 
   const deleteTrip = async (tripId: string) => {
     const trip = items.find((item) => item.id === tripId);
-    if (!trip) return;
+    if (!trip || deletingTripId) return;
     if (!await confirm({ title: "删除行程？", description: `“${trip.title}”及其全部行程数据将被永久删除，且无法恢复。` })) return;
+    setDeleteError(null);
+    setDeletingTripId(tripId);
+    window.dispatchEvent(new CustomEvent("tuyu-tripdelete", { detail: tripId }));
+    try {
+      // Authenticated trips are cloud-authoritative: never report local deletion
+      // until the existing authenticated DELETE endpoint has succeeded.
+      if (accessToken) await deleteSharedTrip(tripId, accessToken);
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent("tuyu-tripdeletecancel", { detail: tripId }));
+      setDeleteError(error instanceof Error ? error.message : "删除云端行程失败，请重试。");
+      setDeletingTripId(null);
+      return;
+    }
     const nextItems = items.filter((item) => item.id !== tripId);
     removeTripStorage(tripId, storageScope);
     saveTripLibrary(nextItems, storageScope);
@@ -219,8 +228,10 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
         url.searchParams.delete("trip");
         url.searchParams.delete("day");
         window.history.replaceState(null, "", url);
+        window.dispatchEvent(new Event("tuyu-tripchange"));
       }
     }
+    setDeletingTripId(null);
   };
 
   const groups: Array<{ label: string; status: TripDetails["status"] }> = [
@@ -232,6 +243,8 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   return <section className={`trip-library trip-sidebar ${collapsed ? "is-collapsed" : ""}`} aria-label="全部行程">
     <SidebarHeader action={<button aria-label="新建行程" className="sidebar-header-action" title="新建行程" type="button" onClick={() => setCreateOpen(true)}>＋ 新建</button>} className="trip-sidebar-heading" collapseButton={<SidebarCollapseButton className="sidebar-header-collapse" collapseLabel="收起行程侧栏" collapsed={collapsed} expandLabel="展开行程侧栏" onToggle={() => onCollapsedChange?.(!collapsed)} />} title="全部行程" />
     <div className="trip-sidebar-groups">
+      {deleteError && <p className="sync-error" role="status">{deleteError}</p>}
+      {libraryLoaded && !items.length && <p className="trip-library-empty" role="status">暂无行程，创建一个新的旅行计划吧。</p>}
       {groups.map(({ label, status }) => {
         const groupItems = items.filter((item) => (item.id === activeTripId ? currentDetails.status : item.status || "筹备中") === status);
         const isOpen = openGroups[status];
@@ -248,7 +261,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
               return <div className={`trip-library-item ${isActive ? "selected" : ""}`} key={item.id}>
                 <div className="trip-library-trip-row">
                   <button className="trip-library-open" type="button" title={item.title} onClick={() => openTrip(item.id)}><TripSidebarIcon name="mountain" /><span><b>{item.title}</b><small>{item.startDate} - {item.endDate}</small></span></button>
-                  <button aria-label={`删除${item.title}`} className="trip-library-delete" title="删除行程" type="button" onClick={() => deleteTrip(item.id)}>×</button>
+                  <button aria-label={`删除${item.title}`} className="trip-library-delete" disabled={deletingTripId !== null} title={deletingTripId === item.id ? "正在删除" : "删除行程"} type="button" onClick={() => void deleteTrip(item.id)}>{deletingTripId === item.id ? "…" : "×"}</button>
                   <button className={`trip-library-tree-toggle${isExpanded ? " is-open" : ""}`} type="button" aria-expanded={isExpanded} aria-label={`${isExpanded ? "收起" : "展开"}${item.title}的天数`} onClick={() => setExpandedTrips((current) => ({ ...current, [item.id]: !isExpanded }))}><svg aria-hidden="true" className="sidebar-chevron" viewBox="0 0 12 12"><path d="m1 3 5 6 5-6" /></svg></button>
                 </div>
                 {isExpanded && <ScrollArea ariaLabel={`${item.title} 的天数`} className="trip-library-days">

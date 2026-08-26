@@ -1,12 +1,12 @@
-import { createTripInvite, deleteSharedTrip } from "../api";
+import { createTripInvite } from "../api";
 import type { TripDetails } from "../model";
 import { copyText } from "../../shared/utils/copyText";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 
-type Options = { accessToken: string | null; disableRemoteSync: () => void; onReset: () => void; onStatusChange: (patch: Partial<TripDetails>) => void; onClosePopover: () => void; setShareStatus: (value: "copied" | "failed") => void; setShared: (value: boolean) => void; tripId: string };
+type Options = { accessToken: string | null; onStatusChange: (patch: Partial<TripDetails>) => void; onClosePopover: () => void; setShareStatus: (value: "copied" | "failed") => void; setShared: (value: boolean) => void; tripId: string };
 
 /** Owns user-facing trip lifecycle operations that span local and shared storage. */
-export function useTripLifecycle({ accessToken, disableRemoteSync, onClosePopover, onReset, onStatusChange, setShareStatus, setShared, tripId }: Options) {
+export function useTripLifecycle({ accessToken, onClosePopover, onStatusChange, setShareStatus, setShared, tripId }: Options) {
   const { confirm } = useConfirmation();
   const copyInviteLink = async () => {
     try {
@@ -25,16 +25,5 @@ export function useTripLifecycle({ accessToken, disableRemoteSync, onClosePopove
     onStatusChange({ status: "已结束" });
     onClosePopover();
   };
-  const deleteTrip = async () => {
-    if (!await confirm({ title: "删除行程？", description: "本地和共享数据将被清除，且无法恢复。" })) return;
-    try {
-      if (accessToken) await deleteSharedTrip(tripId, accessToken);
-    } catch {
-      // Local-only trips remain removable when shared storage is unavailable.
-    }
-    disableRemoteSync();
-    onReset();
-    onClosePopover();
-  };
-  return { archiveTrip, copyInviteLink, deleteTrip };
+  return { archiveTrip, copyInviteLink };
 }

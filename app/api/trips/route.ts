@@ -77,6 +77,10 @@ export async function DELETE(request: Request) {
   if ("error" in context) return context.error;
   const tripId = getTripId(request);
   if (!tripId) return invalidTripId();
-  const { error } = await context.client.from("trips").delete().eq("id", tripId);
-  return error ? Response.json({ error: error.message }, { status: 502 }) : Response.json({ deleted: true });
+  // Keep the owner-only RLS policy authoritative. Selecting the deleted row also
+  // prevents a denied RLS delete from being reported as a successful no-op.
+  const { data, error } = await context.client.from("trips").delete().eq("id", tripId).select("id").maybeSingle();
+  if (error) return Response.json({ error: error.message }, { status: 502 });
+  if (!data) return Response.json({ error: "只有行程所有者可以删除整个共享行程。" }, { status: 403 });
+  return Response.json({ deleted: true });
 }

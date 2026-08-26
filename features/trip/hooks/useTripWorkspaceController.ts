@@ -3,7 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { TripWorkspaceProps } from "../components/TripWorkspace";
 import { defaultTripDetails, getDefaultStoredTrip } from "../data";
 import type { ExpenseItem, ItineraryItem, LedgerItem } from "../model";
-import { clearTripStorage, hasStoredTripSnapshot, loadStoredTrip, loadTripDetails, loadTripLibrary } from "../storage";
+import { hasStoredTripSnapshot, loadStoredTrip, loadTripDetails, loadTripLibrary } from "../storage";
 import { syncExpenseRelationTitle } from "../expenseRelations";
 import { destinationPinyin, getTripDestination } from "../utils";
 import { useExpenseEntry } from "./useExpenseEntry";
@@ -49,8 +49,11 @@ export function useTripWorkspaceController({
   storageScope,
 }: Options) {
   const { initialDetails, initialTrip, tripId } = useTripBootstrap(loadPersistedState, storageScope);
+  const hasTripInUrl = typeof window !== "undefined" && Boolean(new URLSearchParams(window.location.search).get("trip"));
   const [hydratedStorageScope, setHydratedStorageScope] = useState(storageScope);
-  const hasPersistedTripInScope = useCallback(() => storageScope === "guest" || hasStoredTripSnapshot(tripId, storageScope) || loadTripLibrary(storageScope).some((trip) => trip.id === tripId), [storageScope, tripId]);
+  // The default workspace is only a presentation fallback. It must never become
+  // a persisted guest trip simply because the library is empty.
+  const hasPersistedTripInScope = useCallback(() => hasStoredTripSnapshot(tripId, storageScope) || loadTripLibrary(storageScope).some((trip) => trip.id === tripId), [storageScope, tripId]);
   const [hasPersistedTrip, setHasPersistedTrip] = useState(hasPersistedTripInScope);
   const markRemoteTripLoaded = useCallback(() => setHasPersistedTrip(true), []);
   const [tripDetails, setTripDetails] = useState(initialDetails);
@@ -136,12 +139,12 @@ export function useTripWorkspaceController({
     setType: setLedgerType,
     setVisible: setLedgerVisible,
   } = workspaceView.ledger;
-  const { disableRemoteSync, syncError } = useTripPersistence({
+  const { syncError } = useTripPersistence({
     accessToken,
     authReady,
     budgetItems,
     details: tripDetails,
-    enabled: loadPersistedState && hydratedStorageScope === storageScope,
+    enabled: loadPersistedState && hasTripInUrl && hydratedStorageScope === storageScope,
     onRemoteTripLoaded: markRemoteTripLoaded,
     persistLocal: hasPersistedTrip,
     expenses,
@@ -227,20 +230,9 @@ export function useTripWorkspaceController({
       setInlineTitle: setInlineTripTitle,
       setPlans,
     });
-  const { archiveTrip, copyInviteLink, deleteTrip } = useTripLifecycle({
+  const { archiveTrip, copyInviteLink } = useTripLifecycle({
     accessToken,
-    disableRemoteSync,
     onClosePopover: () => setTripPopover(null),
-    onReset: () => {
-      const fallback = getDefaultStoredTrip();
-      clearTripStorage(tripId, storageScope);
-      setExpenses(fallback.expenses);
-      setBudgetItems(fallback.budgetItems);
-      setPlans(fallback.plans);
-      setTripDetails(defaultTripDetails);
-      setWorkspaceTab("plan");
-      setActiveDay(1);
-    },
     onStatusChange: updateTripDetails,
     setShareStatus,
     setShared,
@@ -346,7 +338,6 @@ export function useTripWorkspaceController({
     onCoverChange: chooseCoverImage,
     onCopy: copyActivePlan,
     onDelete: deleteActivePlan,
-    onDeleteTrip: () => void deleteTrip(),
     onDetailsChange: updateTripDetails,
     onEdit: editActivePlan,
     onEditBudget: (id) => editExpense(id, "estimated"),
