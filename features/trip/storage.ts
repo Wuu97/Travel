@@ -106,13 +106,29 @@ export function loadTripLibrary(userId?: LocalStorageScope): TripLibraryItem[] {
 }
 
 /** Keeps local-only trips while allowing authoritative cloud metadata to win by id. */
+export function sortTripLibraryItems(items: TripLibraryItem[]) {
+  const statusOrder: Record<NonNullable<TripLibraryItem["status"]>, number> = { "进行中": 0, "筹备中": 1, "已结束": 2 };
+  return [...items].sort((first, second) => {
+    const firstStatus = first.status || "筹备中";
+    const secondStatus = second.status || "筹备中";
+    const statusDifference = statusOrder[firstStatus] - statusOrder[secondStatus];
+    if (statusDifference) return statusDifference;
+    const dateDifference = firstStatus === "筹备中"
+      ? first.startDate.localeCompare(second.startDate)
+      : firstStatus === "已结束"
+        ? second.endDate.localeCompare(first.endDate)
+        : second.startDate.localeCompare(first.startDate);
+    return dateDifference || first.id.localeCompare(second.id);
+  });
+}
+
 export function mergeTripLibraryItems(localItems: TripLibraryItem[], cloudItems: TripLibraryItem[]) {
   const cloudById = new Map(cloudItems.map((item) => [item.id, item]));
   const localIds = new Set(localItems.map((item) => item.id));
-  return [
+  return sortTripLibraryItems([
     ...localItems.map((item) => cloudById.get(item.id) || item),
-    ...cloudItems.filter((item) => !localIds.has(item.id)).sort((first, second) => first.id.localeCompare(second.id)),
-  ];
+    ...cloudItems.filter((item) => !localIds.has(item.id)),
+  ]);
 }
 
 export function resolveInitialTripId(items: TripLibraryItem[], requestedTripId: string | null, fallbackTripId: string) {

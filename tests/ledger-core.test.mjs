@@ -166,9 +166,9 @@ test("scopes trip snapshots, libraries, and chat history by the active user", as
       [{ ...libraryFallback, id: "local", title: "本地" }, { ...libraryFallback, id: "shared", title: "旧标题" }],
       [{ ...libraryFallback, id: "shared", title: "云端标题", status: "进行中" }, { ...libraryFallback, id: "cloud", title: "云端旅行" }],
     ), [
-      { ...libraryFallback, id: "local", title: "本地" },
       { ...libraryFallback, id: "shared", title: "云端标题", status: "进行中" },
       { ...libraryFallback, id: "cloud", title: "云端旅行" },
+      { ...libraryFallback, id: "local", title: "本地" },
     ]);
     const cloudTrips = [{ ...libraryFallback, id: "cloud-a", title: "云端 A" }, { ...libraryFallback, id: "cloud-b", title: "云端 B" }];
     assert.equal(tripStorage.resolveInitialTripId(cloudTrips, null, libraryFallback.id), "cloud-a");

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { defaultTripDetails } from "../data";
 import type { ItineraryItem, TripDetails, TripLibraryItem } from "../model";
-import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
+import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary, sortTripLibraryItems } from "../storage";
 import { deleteSharedTrip, listAccessibleTrips } from "../api";
 import { createId } from "../../shared/utils/createId";
 import { getTripDays } from "../utils";
@@ -119,7 +119,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
       const persisted = hasStoredTripLibrary(storageScope);
       const applyItems = (libraryItems: TripLibraryItem[], isPersisted: boolean) => {
         if (cancelled) return;
-        const loadedItems = libraryItems;
+        const loadedItems = sortTripLibraryItems(libraryItems);
         const requestedId = new URLSearchParams(window.location.search).get("trip");
         const selectedTripId = requestedId && libraryItems.some((item) => item.id === requestedId) ? requestedId : libraryItems[0]?.id || null;
         setActiveTripId(selectedTripId);
@@ -199,7 +199,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     const companions = ["你", ...draft.companions.split(/[,，]/).map((name) => name.trim()).filter(Boolean)];
     const uniqueCompanions = [...new Set(companions)];
     const details: TripDetails = { ...defaultTripDetails, title: destination, startDate: draft.startDate, endDate: draft.endDate, status: "筹备中", companions: uniqueCompanions, memberRoles: Object.fromEntries(uniqueCompanions.filter((name) => name !== "你").map((name) => [name, "同行人"])) };
-    const nextItems = hasPersistedLibrary ? [...items, { id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }] : [{ id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }];
+    const nextItems = sortTripLibraryItems(hasPersistedLibrary ? [...items, { id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }] : [{ id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }]);
     saveTrip({ expenses: [], budgetItems: [], plans: [] }, id, storageScope);
     saveTripDetails(details, id, storageScope);
     saveTripLibrary(nextItems, storageScope);
@@ -301,7 +301,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     <div className="trip-sidebar-groups">
       {cloudListError && <p className="sync-error" role="status">{cloudListError}<button type="button" disabled={cloudListRetrying} onClick={retryCloudList}>{cloudListRetrying ? "正在重试" : "重试"}</button></p>}
       {deleteError && <p className="sync-error" role="status">{deleteError}</p>}
-      {libraryLoaded && !items.length && <p className="trip-library-empty" role="status">暂无行程，创建一个新的旅行计划吧。</p>}
+      {libraryLoaded && !items.length && <p className="trip-library-empty" role="status">还没有旅行，创建你的第一段旅程吧。</p>}
       {groups.map(({ label, status }) => {
         const groupItems = items.filter((item) => (item.id === activeTripId ? currentDetails.status : item.status || "筹备中") === status);
         const isOpen = openGroups[status];
