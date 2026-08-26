@@ -84,6 +84,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
       /></TripCapabilitiesContext.Provider>
       {workspace.syncError && <p className="sync-error" role="status">{workspace.syncError.message}{workspace.syncError.retry && <button type="button" disabled={workspace.syncError.retrying} onClick={() => void workspace.syncError?.retry?.()}>{workspace.syncError.retrying ? "正在重试" : "重试同步"}</button>}</p>}
       {workspace.syncConflict && <div className="sync-error" role="alert"><p>旅行已被其他成员更新。</p><button type="button" disabled={workspace.syncConflict.resolving} onClick={workspace.syncConflict.useRemoteSnapshot}>使用最新版本</button><button type="button" disabled={workspace.syncConflict.resolving} onClick={() => void workspace.syncConflict?.retryLocalSnapshot()}>保留我的修改</button></div>}
+      {workspace.importUndo && <div className="sync-error" role="status">已导入 {workspace.importUndo.batch.itineraryItemIds.length} 个行程、{workspace.importUndo.batch.budgetItemIds.length} 笔预计费用{workspace.workspaceProps.canEditTrip && <button type="button" onClick={workspace.importUndo.undo}>撤销</button>}</div>}
       <SiteFooter />
       <AuthControl
         configured={auth.configured}

@@ -77,6 +77,7 @@ export function useTripWorkspaceController({
   const [expenses, setExpenses] = useState<LedgerItem[]>(initialTrip.expenses);
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
+  const [lastImportBatch, setLastImportBatch] = useState<{ batchId: string; importedAt: number; itineraryItemIds: string[]; budgetItemIds: string[] } | null>(null);
   useEffect(() => {
     if (!accessToken || !activeRealTripId) { queueMicrotask(() => { setCanEditTrip(true); setCanManageMembers(true); setCanDeleteTrip(true); setCapabilityTripId(null); setPermissionStatus("ready"); }); return; }
     queueMicrotask(() => { setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setCapabilityTripId(null); setPermissionStatus("loading"); });
@@ -212,11 +213,13 @@ export function useTripWorkspaceController({
   } = useTripImports({
     budgetItems,
     expenses,
+    onImported: (itineraryItemIds, budgetItemIds) => setLastImportBatch({ batchId: crypto.randomUUID(), importedAt: Date.now(), itineraryItemIds, budgetItemIds }),
     plans,
     setBudgetItems,
     setExpenses,
     setPlans,
   });
+  const undoLastImport = () => { if (!safeCanEditTrip || !lastImportBatch) return; setPlans((current) => current.filter((item) => !lastImportBatch.itineraryItemIds.includes(item.id))); setBudgetItems((current) => current.filter((item) => !lastImportBatch.budgetItemIds.includes(item.id))); setLastImportBatch(null); };
   const { selectedImports, toggleImport, toggleImports } = useTripImportSelection();
   const {
     addPlan,
@@ -445,6 +448,8 @@ export function useTripWorkspaceController({
     addItineraryItems: (items: ItineraryItem[]) => { if (ensureRealTrip()) addItineraryItems(items); },
     isExpenseAdded,
     isPlanAdded,
+    lastImportBatch,
+    undoLastImport,
     selectedImports,
     toggleImport,
     toggleImports,
@@ -455,6 +460,7 @@ export function useTripWorkspaceController({
     syncConflict: conflict ? { resolving: resolvingConflict, retryLocalSnapshot, useRemoteSnapshot } : null,
     workspaceProps,
     importContext,
+    importUndo: lastImportBatch ? { batch: lastImportBatch, undo: undoLastImport } : null,
     travelContext: tripDestination ? {
       city: tripDestination,
       destination: tripDestination,
