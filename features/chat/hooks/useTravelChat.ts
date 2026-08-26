@@ -27,6 +27,7 @@ export function useTravelChat({ accessToken, authReady, enabled, storageScope }:
   const { confirm } = useConfirmation();
   const [question, setQuestion] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   // TravelApp remounts this hook after client hydration. Seed from the local
   // copy during that remount so a refresh never flashes an empty history while
   // the authenticated cloud request is still in flight.
@@ -48,6 +49,7 @@ export function useTravelChat({ accessToken, authReady, enabled, storageScope }:
     enabled && typeof window !== "undefined" ? loadSavedChats(storageScope) : [],
   );
   const travelContextRef = useRef<TravelContext | undefined>(undefined);
+  const lastAiRequestRef = useRef<{ chatId: string; displayHistory: ChatMessage[]; history: ChatMessage[]; userMessage: string } | null>(null);
   const setTravelContext = useCallback((travelContext: TravelContext | undefined) => { travelContextRef.current = travelContext; }, []);
 
   const replaceSavedChats = useCallback((next: SavedChat[]) => {
@@ -118,21 +120,28 @@ export function useTravelChat({ accessToken, authReady, enabled, storageScope }:
     if (accessToken) void fetch("/api/chats", { method: "PUT", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ chat }) });
   };
 
-  const sendQuestion = async (userMessage: string, history: ChatMessage[], chatId: string) => {
-    const messagesWithQuestion = [...history, { role: "user" as const, content: userMessage }];
+  const sendQuestion = async (userMessage: string, history: ChatMessage[], chatId: string, displayHistory = [...history, { role: "user" as const, content: userMessage }], clearVerifiedDataError = false) => {
+    const messagesWithQuestion = displayHistory;
     setChatMessages(messagesWithQuestion);
     setAiBusy(true);
     try {
       const feedbackEvents = readFeedbackEvents();
       const response = await fetch("/api/ai", { method: "POST", headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({ message: userMessage, history, ...(travelContextRef.current ? { travelContext: travelContextRef.current } : {}), ...(feedbackEvents.length ? { feedbackEvents } : {}) }) });
+      if (!response.ok) throw new Error("AI 服务暂时不可用。");
       const data = await response.json();
-      const messages = [...messagesWithQuestion, normalizeAssistantResponse(data.reply ?? data, data.error || "暂时无法生成回复。")];
+      const retainedMessages = clearVerifiedDataError
+        ? messagesWithQuestion.map((message) => message.verifiedDataUnavailable ? { ...message, verifiedDataUnavailable: undefined } : message)
+        : messagesWithQuestion;
+      const messages = [...retainedMessages, normalizeAssistantResponse(data.reply ?? data, data.error || "暂时无法生成回复。")];
       setChatMessages(messages);
       saveChat(messages, chatId);
+      setAiError(null);
     } catch {
-      const messages = [...messagesWithQuestion, { role: "assistant" as const, content: "无法连接 AI 服务，请检查本地预览是否正在运行。" }];
-      setChatMessages(messages);
-      saveChat(messages, chatId);
+      // Keep the user message and prior conversation intact so retry never
+      // duplicates a user turn or destroys history.
+      setChatMessages(messagesWithQuestion);
+      saveChat(messagesWithQuestion, chatId);
+      setAiError("AI 暂时不可用，请稍后重试。");
     } finally {
       setAiBusy(false);
     }
@@ -142,7 +151,15 @@ export function useTravelChat({ accessToken, authReady, enabled, storageScope }:
     if (!question.trim() || aiBusy) return;
     const userMessage = question.trim();
     setQuestion("");
-    await sendQuestion(userMessage, chatMessages, activeChatId);
+    const displayHistory = [...chatMessages, { role: "user" as const, content: userMessage }];
+    lastAiRequestRef.current = { chatId: activeChatId, displayHistory, history: chatMessages, userMessage };
+    await sendQuestion(userMessage, chatMessages, activeChatId, displayHistory);
+  };
+
+  const retryLastQuestion = async () => {
+    const last = lastAiRequestRef.current;
+    if (!last || aiBusy) return;
+    await sendQuestion(last.userMessage, last.history, last.chatId, last.displayHistory, true);
   };
 
   const newChat = (draft = "") => {
@@ -177,5 +194,5 @@ export function useTravelChat({ accessToken, authReady, enabled, storageScope }:
     downloadChatTranscript(title, chatMessages);
   };
 
-  return { activeChatId, aiBusy, ask, chatMessages, chatScrollRef, deleteChat, exportChat, historyOpen, historyPanelRef, newChat, openChat, question, savedChats, setHistoryOpen, setQuestion, setTravelContext, startNewChatAndAsk };
+  return { activeChatId, aiBusy, aiError, ask, chatMessages, chatScrollRef, deleteChat, exportChat, historyOpen, historyPanelRef, newChat, openChat, question, retryLastQuestion, savedChats, setHistoryOpen, setQuestion, setTravelContext, startNewChatAndAsk };
 }

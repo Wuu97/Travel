@@ -8,7 +8,7 @@ import { searchTravelRestaurants } from "./restaurants";
 import type { TravelPlace, TravelRestaurant, TravelRoute } from "./types";
 
 export type ToolExecutorProviders = { amapPlaceProvider: PlaceProvider; amapRestaurantProvider: RestaurantProvider; amapRouteProvider: RouteProvider };
-export type ExecutedTravelData = { places: TravelPlace[]; restaurants: TravelRestaurant[]; routes: TravelRoute[] };
+export type ExecutedTravelData = { places: TravelPlace[]; restaurants: TravelRestaurant[]; routes: TravelRoute[]; verifiedDataUnavailable?: boolean };
 
 function resolveProviders(): ToolExecutorProviders | null {
   try { return createAmapProviders(); }
@@ -30,7 +30,8 @@ export async function executeDataRequests(
   options: { providers?: ToolExecutorProviders | null; travelContext?: TravelContext } = {},
 ): Promise<ExecutedTravelData> {
   const providers = options.providers === undefined ? resolveProviders() : options.providers;
-  if (!providers || !requests.length) return { places: [], restaurants: [], routes: [] };
+  if (!requests.length) return { places: [], restaurants: [], routes: [] };
+  if (!providers) return { places: [], restaurants: [], routes: [], verifiedDataUnavailable: true };
   const context = options.travelContext;
   const placeCache = new Map<string, Promise<TravelPlace[]>>();
   const lookupPlace = (query: string, city?: string, area?: string) => {
@@ -42,6 +43,7 @@ export async function executeDataRequests(
     }
     return result;
   };
+  let verifiedDataUnavailable = false;
   const results = await Promise.all(requests.map(async (request) => {
     try {
       if (request.type === "place_search") {
@@ -65,11 +67,12 @@ export async function executeDataRequests(
       if (!from || !to) return {};
       const route = await providers.amapRouteProvider.getRoute({ from, to, mode: request.mode ?? "driving" });
       return route ? { routes: [route] } : {};
-    } catch { return {}; }
+    } catch { verifiedDataUnavailable = true; return {}; }
   }));
   return {
     places: dedupe(results.flatMap((result) => result.places ?? [])),
     restaurants: dedupe(results.flatMap((result) => result.restaurants ?? [])),
     routes: results.flatMap((result) => result.routes ?? []).filter((route, index, all) => all.findIndex((candidate) => `${candidate.from.name}|${candidate.to.name}|${candidate.mode ?? ""}` === `${route.from.name}|${route.to.name}|${route.mode ?? ""}`) === index),
+    ...(verifiedDataUnavailable ? { verifiedDataUnavailable: true } : {}),
   };
 }

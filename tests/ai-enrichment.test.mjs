@@ -158,6 +158,6 @@ test("keeps Amap AI place, restaurant, and route providers compatible with share
         amapRestaurantProvider: new AmapRestaurantProvider(failedClient),
         amapRouteProvider: new AmapRouteProvider(failedClient),
       },
-    }), { places: [], restaurants: [], routes: [] });
+    }), { places: [], restaurants: [], routes: [], verifiedDataUnavailable: true });
   } finally { await compilation.cleanup(); }
 });

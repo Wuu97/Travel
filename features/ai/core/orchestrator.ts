@@ -69,7 +69,7 @@ export async function requestTravelAdvice({ context, feedbackEvents, history, lo
     { message, travelContext, firstAnswer: enriched.content, data: rankedData, toolResultBudget: contextBudget.maxToolResultTokens, recommendationMeta: [...places.scores, ...restaurants.scores] },
     (reasoningMessages) => requestLlmCompletion(reasoningMessages, { maxTokens: contextBudget.maxOutputTokens }),
   );
-  const reply = { ...enriched, ...(reasonedAnswer ? { content: reasonedAnswer } : {}) };
+  const reply = { ...enriched, ...(reasonedAnswer ? { content: reasonedAnswer } : {}), ...(executed.verifiedDataUnavailable ? { verifiedDataUnavailable: true } : {}) };
   delete reply.dataRequests;
   return reply;
 }

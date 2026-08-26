@@ -187,7 +187,7 @@ export function useTripWorkspaceController({
     setType: setLedgerType,
     setVisible: setLedgerVisible,
   } = workspaceView.ledger;
-  const { conflict, resolvingConflict, retryLocalSnapshot, syncError, useRemoteSnapshot } = useTripPersistence({
+  const { conflict, resolvingConflict, retryLocalSnapshot, retrySync, syncError, syncRetrying, useRemoteSnapshot } = useTripPersistence({
     accessToken,
     authReady,
     budgetItems,
@@ -451,7 +451,7 @@ export function useTripWorkspaceController({
   };
 
   return {
-    syncError: activationError || syncError,
+    syncError: activationError ? { message: activationError, retry: null, retrying: false } : syncError ? { message: syncError, retry: retrySync, retrying: syncRetrying } : null,
     syncConflict: conflict ? { resolving: resolvingConflict, retryLocalSnapshot, useRemoteSnapshot } : null,
     workspaceProps,
     importContext,

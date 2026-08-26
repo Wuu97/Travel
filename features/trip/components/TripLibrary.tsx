@@ -47,6 +47,9 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
   const [items, setItems] = useState<TripLibraryItem[]>([]);
   const [cloudDeleteCapabilities, setCloudDeleteCapabilities] = useState<Map<string, boolean>>(() => new Map());
+  const [cloudListError, setCloudListError] = useState<string | null>(null);
+  const [cloudListRetrying, setCloudListRetrying] = useState(false);
+  const [cloudListRequest, setCloudListRequest] = useState(0);
   const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -114,9 +117,14 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
       };
       if (!authReady || !accessToken) {
         setCloudDeleteCapabilities(new Map());
+        setCloudListError(null);
+        setCloudListRetrying(false);
         applyItems(storedItems, persisted);
         return;
       }
+      // The local scoped library is immediately available even while the cloud
+      // discovery request is pending or unavailable.
+      applyItems(storedItems, persisted);
       void listAccessibleTrips(accessToken)
         .then((cloudItems) => {
           if (cancelled) return;
@@ -124,14 +132,24 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
           const mergedItems = mergeTripLibraryItems(storedItems, cloudItems);
           if (cloudItems.length) saveTripLibrary(mergedItems, storageScope);
           applyItems(mergedItems, persisted || cloudItems.length > 0);
+          setCloudListError(null);
+          setCloudListRetrying(false);
         })
         .catch(() => {
+          if (cancelled) return;
           setCloudDeleteCapabilities(new Map());
-          applyItems(storedItems, persisted);
+          setCloudListError("云端旅行暂时无法加载，当前显示本地数据。");
+          setCloudListRetrying(false);
         });
     }, 0);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [accessToken, authReady, hydrated, storageScope]);
+  }, [accessToken, authReady, cloudListRequest, hydrated, storageScope]);
+
+  const retryCloudList = () => {
+    if (!accessToken || cloudListRetrying) return;
+    setCloudListRetrying(true);
+    setCloudListRequest((current) => current + 1);
+  };
 
   useEffect(() => {
     if (!hydrated || !libraryLoaded || !hasPersistedLibrary || libraryScope !== storageScope || !activeTripId) return;
@@ -274,6 +292,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   return <section className={`trip-library trip-sidebar ${collapsed ? "is-collapsed" : ""}`} aria-label="全部行程">
     <SidebarHeader action={<button aria-label="新建行程" className="sidebar-header-action" title="新建行程" type="button" onClick={() => setCreateOpen(true)}>＋ 新建</button>} className="trip-sidebar-heading" collapseButton={<SidebarCollapseButton className="sidebar-header-collapse" collapseLabel="收起行程侧栏" collapsed={collapsed} expandLabel="展开行程侧栏" onToggle={() => onCollapsedChange?.(!collapsed)} />} title="全部行程" />
     <div className="trip-sidebar-groups">
+      {cloudListError && <p className="sync-error" role="status">{cloudListError}<button type="button" disabled={cloudListRetrying} onClick={retryCloudList}>{cloudListRetrying ? "正在重试" : "重试"}</button></p>}
       {deleteError && <p className="sync-error" role="status">{deleteError}</p>}
       {libraryLoaded && !items.length && <p className="trip-library-empty" role="status">暂无行程，创建一个新的旅行计划吧。</p>}
       {groups.map(({ label, status }) => {

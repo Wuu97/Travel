@@ -49,6 +49,7 @@ export type ChatMessage = {
   expenseItems?: ExpenseItem[];
   richContent?: RichContent;
   structuredTravelResponse?: StructuredTravelResponse;
+  verifiedDataUnavailable?: boolean;
 };
 
 export type SavedChat = {
@@ -77,6 +78,7 @@ export function normalizeChatMessage(value: unknown): ChatMessage | null {
     expenseItems: Array.isArray(raw.expenseItems) ? raw.expenseItems as ExpenseItem[] : [],
     richContent: normalizeRichContent(raw.richContent),
     ...(structured?.isStructured ? { structuredTravelResponse: structured.response } : {}),
+    ...(raw.verifiedDataUnavailable === true ? { verifiedDataUnavailable: true } : {}),
   };
 }
 

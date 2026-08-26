@@ -52,14 +52,18 @@ export function useTripPersistence({
   const [syncedAccessToken, setSyncedAccessToken] = useState<string | null>(null);
   const [version, setVersion] = useState<number | undefined>();
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncRetrying, setSyncRetrying] = useState(false);
   const [conflict, setConflict] = useState<TripSyncConflict | null>(null);
   const [resolvingConflict, setResolvingConflict] = useState(false);
   const lastSavedRef = useRef("");
   const deletingRef = useRef(false);
   const saveAbortRef = useRef<AbortController | null>(null);
   const conflictPendingRef = useRef(false);
+  const failedSyncRef = useRef<{ snapshot: TripState; version: number | undefined } | null>(null);
   const detailsRef = useRef(details);
   const snapshot = useMemo(() => ({ expenses, budgetItems, plans, details }), [budgetItems, details, expenses, plans]);
+  const snapshotRef = useRef(snapshot);
+  const versionRef = useRef(version);
   const normalizeSnapshot = useCallback((trip: StoredTrip, fallbackDetails: TripDetails): TripState => ({
     expenses: trip.expenses.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "actual")).filter((item): item is LedgerItem => item !== null),
     budgetItems: trip.budgetItems.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "estimated")).filter((item): item is ExpenseItem => item !== null),
@@ -76,6 +80,11 @@ export function useTripPersistence({
   useEffect(() => {
     detailsRef.current = details;
   }, [details]);
+
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+    versionRef.current = version;
+  }, [snapshot, version]);
 
   useEffect(() => {
     const onDelete = (event: Event) => {
@@ -105,12 +114,6 @@ export function useTripPersistence({
   useEffect(() => {
     if (enabled && persistLocal) saveTripDetails(details, tripId, storageScope);
   }, [details, enabled, persistLocal, storageScope, tripId]);
-
-  useEffect(() => {
-    if (!syncError) return;
-    const timer = window.setTimeout(() => setSyncError(null), 8_000);
-    return () => window.clearTimeout(timer);
-  }, [syncError]);
 
   useEffect(() => {
     if (!enabled || !authReady || !accessToken) return;
@@ -155,8 +158,11 @@ export function useTripPersistence({
         setSyncError(null);
         setSyncedAccessToken(accessToken);
       })
-      .catch((error) => {
-        if (!cancelled) setSyncError(error instanceof Error ? error.message : "云端同步不可用，已保留本地副本。");
+      .catch(() => {
+        if (!cancelled) {
+          failedSyncRef.current = { snapshot: snapshotRef.current, version: versionRef.current };
+          setSyncError("云端同步失败，本地修改已保留。");
+        }
       });
 
     return () => {
@@ -200,6 +206,32 @@ export function useTripPersistence({
     } finally { setResolvingConflict(false); }
   };
 
+  const retrySync = async () => {
+    const failed = failedSyncRef.current;
+    if (!failed || !accessToken || syncRetrying || conflict) return;
+    setSyncRetrying(true);
+    try {
+      const result = await saveSharedTrip(tripId, failed.snapshot, failed.version, accessToken);
+      lastSavedRef.current = JSON.stringify(failed.snapshot);
+      setVersion(result.version);
+      failedSyncRef.current = null;
+      setSyncError(null);
+    } catch (error) {
+      if (error instanceof TripVersionConflictError) {
+        conflictPendingRef.current = true;
+        try {
+          const latest = await loadSharedTrip(tripId, accessToken);
+          if (!latest.trip) throw new Error("云端旅行不存在。");
+          setConflict({ localSnapshot: failed.snapshot, remoteSnapshot: normalizeSnapshot(latest.trip, detailsRef.current), remoteVersion: latest.version });
+          setSyncError(null);
+        } catch {
+          conflictPendingRef.current = false;
+          setSyncError("云端同步失败，本地修改已保留。");
+        }
+      } else setSyncError("云端同步失败，本地修改已保留。");
+    } finally { setSyncRetrying(false); }
+  };
+
   useEffect(() => {
     if (!enabled || !persistLocal || !accessToken || syncedAccessToken !== accessToken || conflict || resolvingConflict || conflictPendingRef.current) return;
     const fingerprint = JSON.stringify(snapshot);
@@ -221,12 +253,13 @@ export function useTripPersistence({
             }).catch((reason) => { conflictPendingRef.current = false; setSyncError(reason instanceof Error ? reason.message : "保存冲突，无法读取云端最新版本。"); });
             return;
           }
-          setSyncError(error instanceof Error ? error.message : "保存失败，请稍后重试。");
+          failedSyncRef.current = { snapshot, version };
+          setSyncError("云端同步失败，本地修改已保留。");
         })
         .finally(() => { if (saveAbortRef.current === controller) saveAbortRef.current = null; });
     }, 400);
     return () => window.clearTimeout(timer);
   }, [accessToken, conflict, details, enabled, normalizeSnapshot, persistLocal, resolvingConflict, snapshot, storageScope, syncedAccessToken, tripId, version]);
 
-  return { conflict, disableRemoteSync: () => setSyncedAccessToken(null), resolvingConflict, retryLocalSnapshot, syncError, useRemoteSnapshot };
+  return { conflict, disableRemoteSync: () => setSyncedAccessToken(null), resolvingConflict, retryLocalSnapshot, retrySync, syncError, syncRetrying, useRemoteSnapshot };
 }
