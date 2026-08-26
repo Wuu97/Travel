@@ -46,6 +46,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationState, getServerHydrationState);
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
   const [items, setItems] = useState<TripLibraryItem[]>([]);
+  const [cloudDeleteCapabilities, setCloudDeleteCapabilities] = useState<Map<string, boolean>>(() => new Map());
   const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -66,7 +67,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     const markRemoteTrip = (event: Event) => {
       const tripId = (event as CustomEvent<string>).detail;
       if (typeof tripId !== "string") return;
-      setItems((current) => current.map((item) => item.id === tripId ? { ...item, cloudBacked: true, canDelete: true } : item));
+      setItems((current) => current.map((item) => item.id === tripId ? { ...item, cloudBacked: true, canDelete: undefined } : item));
     };
     window.addEventListener("tuyu-tripremote", markRemoteTrip);
     return () => window.removeEventListener("tuyu-tripremote", markRemoteTrip);
@@ -112,17 +113,20 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
         setLibraryLoaded(true);
       };
       if (!authReady || !accessToken) {
+        setCloudDeleteCapabilities(new Map());
         applyItems(storedItems, persisted);
         return;
       }
       void listAccessibleTrips(accessToken)
         .then((cloudItems) => {
           if (cancelled) return;
+          setCloudDeleteCapabilities(new Map(cloudItems.map((item) => [item.id, item.canDelete === true])));
           const mergedItems = mergeTripLibraryItems(storedItems, cloudItems);
           if (cloudItems.length) saveTripLibrary(mergedItems, storageScope);
           applyItems(mergedItems, persisted || cloudItems.length > 0);
         })
         .catch(() => {
+          setCloudDeleteCapabilities(new Map());
           applyItems(storedItems, persisted);
         });
     }, 0);
@@ -226,8 +230,9 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   const deleteTrip = async (tripId: string) => {
     const trip = items.find((item) => item.id === tripId);
     if (!trip || deletingTripId) return;
-    const cloudBacked = trip.cloudBacked === true;
-    if (cloudBacked && trip.canDelete !== true) return;
+    const cloudCapability = cloudDeleteCapabilities.get(tripId);
+    const cloudBacked = Boolean(accessToken) && (trip.cloudBacked === true || cloudCapability !== undefined);
+    if (cloudBacked && cloudCapability !== true) return;
     if (!await confirm({ title: "删除行程？", description: `“${trip.title}”及其全部行程数据将被永久删除，且无法恢复。` })) return;
     setDeleteError(null);
     setDeletingTripId(tripId);
@@ -284,7 +289,9 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
               const days = getTripDays(details.startDate, details.endDate);
               const isExpanded = expandedTrips[item.id] ?? isActive;
               const pendingPlans = isActive ? plans.filter((plan) => plan.day === 0) : [];
-              const canDeleteItem = item.cloudBacked !== true || item.canDelete === true;
+              const cloudCapability = cloudDeleteCapabilities.get(item.id);
+              const cloudBacked = Boolean(accessToken) && (item.cloudBacked === true || cloudCapability !== undefined);
+              const canDeleteItem = !cloudBacked || cloudCapability === true;
               return <div className={`trip-library-item ${isActive ? "selected" : ""}`} key={item.id}>
                 <div className="trip-library-trip-row">
                   <button className="trip-library-open" type="button" title={item.title} onClick={() => openTrip(item.id)}><TripSidebarIcon name="mountain" /><span><b>{item.title}</b><small>{item.startDate} - {item.endDate}</small></span></button>

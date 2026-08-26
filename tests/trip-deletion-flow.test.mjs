@@ -43,9 +43,9 @@ test("cloud deletion uses per-trip discovery metadata and preserves owner-only s
     readFile(new URL("../features/trip/hooks/useTripWorkspaceController.ts", import.meta.url), "utf8"),
     readFile(new URL("../features/trip/hooks/useTripLifecycle.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(library, /if \(cloudBacked && trip\.canDelete !== true\) return/);
+  assert.match(library, /if \(cloudBacked && cloudCapability !== true\) return/);
   assert.match(library, /if \(cloudBacked && accessToken\) await deleteSharedTrip\(tripId, accessToken\)/);
-  assert.match(library, /const canDeleteItem = item\.cloudBacked !== true \|\| item\.canDelete === true/);
+  assert.match(library, /const canDeleteItem = !cloudBacked \|\| cloudCapability === true/);
   assert.match(library, /tuyu-tripremote/);
   assert.match(library, /catch \(error\)[\s\S]*setDeleteError[\s\S]*return;/);
   assert.match(library, /removeTripStorage\(tripId, storageScope\);[\s\S]*saveTripLibrary\(nextItems, storageScope\)/);

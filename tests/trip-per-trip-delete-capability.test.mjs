@@ -29,8 +29,8 @@ test("cloud deletion is decided by each trip's owner capability, not the active 
   assert.match(api, /typeof \(trip as TripLibraryItem\)\.canDelete === "boolean"/);
   assert.match(model, /cloudBacked\?: boolean;/);
   assert.match(model, /canDelete\?: boolean;/);
-  assert.match(library, /if \(cloudBacked && trip\.canDelete !== true\) return/);
-  assert.match(library, /const canDeleteItem = item\.cloudBacked !== true \|\| item\.canDelete === true/);
+  assert.match(library, /if \(cloudBacked && cloudCapability !== true\) return/);
+  assert.match(library, /const canDeleteItem = !cloudBacked \|\| cloudCapability === true/);
   assert.match(library, /if \(cloudBacked && accessToken\) await deleteSharedTrip\(tripId, accessToken\)/);
   assert.doesNotMatch(library, /isActive && canDeleteTrip/);
 });

@@ -54,13 +54,19 @@ export function useTripWorkspaceController({
   const { initialDetails, initialTrip, tripId } = useTripBootstrap(loadPersistedState, storageScope);
   const isAuthenticated = authReady && Boolean(accessToken);
   const hasTripInUrl = typeof window !== "undefined" && Boolean(new URLSearchParams(window.location.search).get("trip"));
+  const requiresMembershipResolution = Boolean(accessToken && hasTripInUrl && tripId !== DEFAULT_TRIP_ID);
   const [activatedTripId, setActivatedTripId] = useState<string | null>(null);
   const [activationError, setActivationError] = useState<string | null>(null);
-  const [canEditTrip, setCanEditTrip] = useState(true);
-  const [canManageMembers, setCanManageMembers] = useState(true);
-  const [canDeleteTrip, setCanDeleteTrip] = useState(true);
+  const [canEditTrip, setCanEditTrip] = useState(() => !requiresMembershipResolution);
+  const [canManageMembers, setCanManageMembers] = useState(() => !requiresMembershipResolution);
+  const [canDeleteTrip, setCanDeleteTrip] = useState(() => !requiresMembershipResolution);
+  const [capabilityTripId, setCapabilityTripId] = useState<string | null>(null);
   const [permissionStatus, setPermissionStatus] = useState<"loading" | "ready" | "error">("ready");
   const activeRealTripId = activatedTripId || (hasTripInUrl && tripId !== DEFAULT_TRIP_ID ? tripId : null);
+  const membershipPending = Boolean(accessToken && activeRealTripId) && capabilityTripId !== activeRealTripId;
+  const safeCanEditTrip = membershipPending ? false : canEditTrip;
+  const safeCanManageMembers = membershipPending ? false : canManageMembers;
+  const safeCanDeleteTrip = membershipPending ? false : canDeleteTrip;
   const [hydratedStorageScope, setHydratedStorageScope] = useState(storageScope);
   // The default workspace is only a presentation fallback. It must never become
   // a persisted guest trip simply because the library is empty.
@@ -72,12 +78,12 @@ export function useTripWorkspaceController({
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
   useEffect(() => {
-    if (!accessToken || !activeRealTripId) { queueMicrotask(() => { setCanEditTrip(true); setCanManageMembers(true); setCanDeleteTrip(true); setPermissionStatus("ready"); }); return; }
-    queueMicrotask(() => { setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setPermissionStatus("loading"); });
-    void listTripMembers(activeRealTripId, accessToken).then((membership) => { setCanEditTrip(membership.canEdit); setCanManageMembers(membership.canManage); setCanDeleteTrip(membership.canDelete); setPermissionStatus("ready"); }).catch(() => { setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setPermissionStatus("error"); });
+    if (!accessToken || !activeRealTripId) { queueMicrotask(() => { setCanEditTrip(true); setCanManageMembers(true); setCanDeleteTrip(true); setCapabilityTripId(null); setPermissionStatus("ready"); }); return; }
+    queueMicrotask(() => { setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setCapabilityTripId(null); setPermissionStatus("loading"); });
+    void listTripMembers(activeRealTripId, accessToken).then((membership) => { setCanEditTrip(membership.canEdit); setCanManageMembers(membership.canManage); setCanDeleteTrip(membership.canDelete); setCapabilityTripId(activeRealTripId); setPermissionStatus("ready"); }).catch(() => { setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setCapabilityTripId(null); setPermissionStatus("error"); });
   }, [accessToken, activeRealTripId]);
   const ensureRealTrip = useCallback(() => {
-    if (!canEditTrip) return false;
+    if (!safeCanEditTrip) return false;
     // Guest mode keeps its pre-existing local-default persistence behavior.
     // Only a ready authenticated session needs first-trip activation.
     if (!isAuthenticated) return true;
@@ -101,7 +107,7 @@ export function useTripWorkspaceController({
     window.history.replaceState(null, "", url);
     window.dispatchEvent(new CustomEvent("tuyu-tripcreated", { detail: item }));
     return true;
-  }, [activeRealTripId, budgetItems, canEditTrip, expenses, isAuthenticated, plans, storageScope, tripDetails]);
+  }, [activeRealTripId, budgetItems, expenses, isAuthenticated, plans, safeCanEditTrip, storageScope, tripDetails]);
   useEffect(() => {
     if (!loadPersistedState) return;
     let cancelled = false;
@@ -351,9 +357,9 @@ export function useTripWorkspaceController({
     accessToken,
     activeDay,
     authReady,
-    canEditTrip,
-    canManageMembers,
-    canDeleteTrip,
+    canEditTrip: safeCanEditTrip,
+    canManageMembers: safeCanManageMembers,
+    canDeleteTrip: safeCanDeleteTrip,
     tripId: activeRealTripId || tripId,
     permissionStatus,
     budgetItems,
