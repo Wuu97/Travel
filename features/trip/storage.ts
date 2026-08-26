@@ -106,8 +106,13 @@ export function loadTripLibrary(userId?: LocalStorageScope): TripLibraryItem[] {
 }
 
 /** Keeps local-only trips while allowing authoritative cloud metadata to win by id. */
-export function sortTripLibraryItems(items: TripLibraryItem[]) {
+export function sortTripLibraryItems(items: TripLibraryItem[], referenceDate = new Date()) {
   const statusOrder: Record<NonNullable<TripLibraryItem["status"]>, number> = { "进行中": 0, "筹备中": 1, "已结束": 2 };
+  const referenceDay = Date.UTC(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+  const dayDistance = (date: string) => {
+    const [year, month, day] = date.split("-").map(Number);
+    return Math.abs(Date.UTC(year, month - 1, day) - referenceDay);
+  };
   return [...items].sort((first, second) => {
     const firstStatus = first.status || "筹备中";
     const secondStatus = second.status || "筹备中";
@@ -117,7 +122,7 @@ export function sortTripLibraryItems(items: TripLibraryItem[]) {
       ? first.startDate.localeCompare(second.startDate)
       : firstStatus === "已结束"
         ? second.endDate.localeCompare(first.endDate)
-        : second.startDate.localeCompare(first.startDate);
+        : dayDistance(first.startDate) - dayDistance(second.startDate);
     return dateDifference || first.id.localeCompare(second.id);
   });
 }
