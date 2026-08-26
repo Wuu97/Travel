@@ -63,7 +63,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
         to={to}
       />
       <TripWorkspace {...workspace.workspaceProps} />
-      <TripCapabilitiesContext.Provider value={{ canEditTrip: workspace.workspaceProps.canEditTrip, canManageMembers: workspace.workspaceProps.canEditTrip, canDeleteTrip: workspace.workspaceProps.canEditTrip }}><AiAssistantSection
+      <TripCapabilitiesContext.Provider value={{ canEditTrip: workspace.workspaceProps.canEditTrip, canManageMembers: workspace.workspaceProps.canManageMembers, canDeleteTrip: workspace.workspaceProps.canDeleteTrip }}><AiAssistantSection
         activeChatId={chat.activeChatId}
         busy={chat.aiBusy}
         historyOpen={chat.historyOpen}

@@ -57,6 +57,8 @@ export function useTripWorkspaceController({
   const [activatedTripId, setActivatedTripId] = useState<string | null>(null);
   const [activationError, setActivationError] = useState<string | null>(null);
   const [canEditTrip, setCanEditTrip] = useState(true);
+  const [canManageMembers, setCanManageMembers] = useState(true);
+  const [canDeleteTrip, setCanDeleteTrip] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState<"loading" | "ready" | "error">("ready");
   const activeRealTripId = activatedTripId || (hasTripInUrl && tripId !== DEFAULT_TRIP_ID ? tripId : null);
   const [hydratedStorageScope, setHydratedStorageScope] = useState(storageScope);
@@ -70,9 +72,9 @@ export function useTripWorkspaceController({
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
   useEffect(() => {
-    if (!accessToken || !activeRealTripId) { queueMicrotask(() => { setCanEditTrip(true); setPermissionStatus("ready"); }); return; }
-    queueMicrotask(() => { setCanEditTrip(false); setPermissionStatus("loading"); });
-    void listTripMembers(activeRealTripId, accessToken).then((membership) => { setCanEditTrip(membership.canEdit); setPermissionStatus("ready"); }).catch(() => { setCanEditTrip(false); setPermissionStatus("error"); });
+    if (!accessToken || !activeRealTripId) { queueMicrotask(() => { setCanEditTrip(true); setCanManageMembers(true); setCanDeleteTrip(true); setPermissionStatus("ready"); }); return; }
+    queueMicrotask(() => { setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setPermissionStatus("loading"); });
+    void listTripMembers(activeRealTripId, accessToken).then((membership) => { setCanEditTrip(membership.canEdit); setCanManageMembers(membership.canManage); setCanDeleteTrip(membership.canDelete); setPermissionStatus("ready"); }).catch(() => { setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setPermissionStatus("error"); });
   }, [accessToken, activeRealTripId]);
   const ensureRealTrip = useCallback(() => {
     if (!canEditTrip) return false;
@@ -350,6 +352,8 @@ export function useTripWorkspaceController({
     activeDay,
     authReady,
     canEditTrip,
+    canManageMembers,
+    canDeleteTrip,
     permissionStatus,
     budgetItems,
     coverInputRef,
