@@ -21,7 +21,7 @@ export async function listAccessibleTrips(accessToken: string): Promise<TripLibr
   const data = await response.json().catch(() => ({})) as { trips?: unknown; error?: unknown };
   if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "无法读取云端旅行列表。");
   return Array.isArray(data.trips)
-    ? data.trips.filter((trip): trip is TripLibraryItem => Boolean(trip && typeof trip === "object" && typeof (trip as TripLibraryItem).id === "string" && typeof (trip as TripLibraryItem).title === "string" && typeof (trip as TripLibraryItem).startDate === "string" && typeof (trip as TripLibraryItem).endDate === "string" && ["筹备中", "进行中", "已结束"].includes((trip as TripLibraryItem).status || "")))
+    ? data.trips.filter((trip): trip is TripLibraryItem => Boolean(trip && typeof trip === "object" && typeof (trip as TripLibraryItem).id === "string" && typeof (trip as TripLibraryItem).title === "string" && typeof (trip as TripLibraryItem).startDate === "string" && typeof (trip as TripLibraryItem).endDate === "string" && (trip as TripLibraryItem).cloudBacked === true && typeof (trip as TripLibraryItem).canDelete === "boolean" && ["筹备中", "进行中", "已结束"].includes((trip as TripLibraryItem).status || "")))
     : [];
 }
 

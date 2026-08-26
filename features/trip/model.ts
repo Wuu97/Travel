@@ -67,4 +67,6 @@ export type TripLibraryItem = {
   startDate: string;
   endDate: string;
   status?: TripDetails["status"];
+  cloudBacked?: boolean;
+  canDelete?: boolean;
 };

@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     return Response.json({ canDelete: trip.owner_id === context.userId, canEdit, canManage: trip.owner_id === context.userId, members: [{ userId: trip.owner_id, role: "owner", status: "active" }, ...(data || []).map((member) => ({ userId: member.user_id, role: membershipRoleToProductRole(member.role), status: "active" }))] });
   }
   if (!tripId) {
-    const { data, error } = await context.client.from("trips").select("id, payload");
+    const { data, error } = await context.client.from("trips").select("id, owner_id, payload");
     if (error) return Response.json({ error: error.message }, { status: 502 });
     const trips = (data || []).flatMap((row): TripLibraryItem[] => {
       const payload = row.payload;
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
       if (!details || typeof details !== "object") return [];
       const { title, startDate, endDate, status } = details as Record<string, unknown>;
       return typeof title === "string" && typeof startDate === "string" && typeof endDate === "string" && (status === "筹备中" || status === "进行中" || status === "已结束")
-        ? [{ id: row.id, title, startDate, endDate, status }]
+        ? [{ id: row.id, title, startDate, endDate, status, cloudBacked: true, canDelete: row.owner_id === context.userId }]
         : [];
     }).sort((first, second) => first.id.localeCompare(second.id));
     return Response.json({ trips });

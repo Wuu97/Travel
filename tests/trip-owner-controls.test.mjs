@@ -20,9 +20,8 @@ test("owner-only trip controls use distinct member-management and deletion capab
   assert.equal(collaborator.canManageMembers || collaborator.canDeleteTrip, false);
   assert.equal(companion.canManageMembers || companion.canDeleteTrip, false);
 
-  assert.match(library, /const \{ canDeleteTrip \} = useTripCapabilities\(\)/);
-  assert.match(library, /if \(cloudBacked && \(tripId !== activeTripId \|\| !canDeleteTrip\)\) return/);
-  assert.match(library, /const canDeleteItem = !isCloudBackedTrip\(item\.id, accessToken, cloudTripIds\) \|\| \(isActive && canDeleteTrip\)/);
+  assert.match(library, /if \(cloudBacked && trip\.canDelete !== true\) return/);
+  assert.match(library, /const canDeleteItem = item\.cloudBacked !== true \|\| item\.canDelete === true/);
   assert.match(library, /\{canDeleteItem && <button aria-label=\{`删除\$\{item\.title\}`\}/);
 
   assert.match(members, /const \{ canManageMembers \} = useTripCapabilities\(\)/);

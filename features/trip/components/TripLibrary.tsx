@@ -14,8 +14,6 @@ import { SidebarHeader } from "../../shared/components/SidebarHeader";
 import { ScrollArea } from "../../shared/components/ScrollArea";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import { TripSidebarIcon } from "./TripSidebarIcon";
-import { isCloudBackedTrip } from "../cloudStatus";
-import { useTripCapabilities } from "./TripCapabilities";
 
 const newTripId = () => createId("trip");
 const subscribeToHydration = () => () => {};
@@ -45,11 +43,9 @@ type Props = {
 };
 
 export function TripLibrary({ accessToken, activeDay, authReady, collapsed = false, currentDetails, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
-  const { canDeleteTrip } = useTripCapabilities();
   const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationState, getServerHydrationState);
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
   const [items, setItems] = useState<TripLibraryItem[]>([]);
-  const [cloudTripIds, setCloudTripIds] = useState<Set<string>>(() => new Set());
   const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -70,7 +66,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     const markRemoteTrip = (event: Event) => {
       const tripId = (event as CustomEvent<string>).detail;
       if (typeof tripId !== "string") return;
-      setCloudTripIds((current) => new Set(current).add(tripId));
+      setItems((current) => current.map((item) => item.id === tripId ? { ...item, cloudBacked: true, canDelete: true } : item));
     };
     window.addEventListener("tuyu-tripremote", markRemoteTrip);
     return () => window.removeEventListener("tuyu-tripremote", markRemoteTrip);
@@ -116,20 +112,17 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
         setLibraryLoaded(true);
       };
       if (!authReady || !accessToken) {
-        setCloudTripIds(new Set());
         applyItems(storedItems, persisted);
         return;
       }
       void listAccessibleTrips(accessToken)
         .then((cloudItems) => {
           if (cancelled) return;
-          setCloudTripIds(new Set(cloudItems.map((item) => item.id)));
           const mergedItems = mergeTripLibraryItems(storedItems, cloudItems);
           if (cloudItems.length) saveTripLibrary(mergedItems, storageScope);
           applyItems(mergedItems, persisted || cloudItems.length > 0);
         })
         .catch(() => {
-          setCloudTripIds(new Set());
           applyItems(storedItems, persisted);
         });
     }, 0);
@@ -233,8 +226,8 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   const deleteTrip = async (tripId: string) => {
     const trip = items.find((item) => item.id === tripId);
     if (!trip || deletingTripId) return;
-    const cloudBacked = isCloudBackedTrip(tripId, accessToken, cloudTripIds);
-    if (cloudBacked && (tripId !== activeTripId || !canDeleteTrip)) return;
+    const cloudBacked = trip.cloudBacked === true;
+    if (cloudBacked && trip.canDelete !== true) return;
     if (!await confirm({ title: "删除行程？", description: `“${trip.title}”及其全部行程数据将被永久删除，且无法恢复。` })) return;
     setDeleteError(null);
     setDeletingTripId(tripId);
@@ -242,7 +235,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     try {
       // Only trips discovered in cloud (or successfully read from a remote
       // snapshot) require the authoritative DELETE before local cleanup.
-      if (accessToken && isCloudBackedTrip(tripId, accessToken, cloudTripIds)) await deleteSharedTrip(tripId, accessToken);
+      if (cloudBacked && accessToken) await deleteSharedTrip(tripId, accessToken);
     } catch (error) {
       window.dispatchEvent(new CustomEvent("tuyu-tripdeletecancel", { detail: tripId }));
       setDeleteError(error instanceof Error ? error.message : "删除云端行程失败，请重试。");
@@ -253,11 +246,6 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     removeTripStorage(tripId, storageScope);
     saveTripLibrary(nextItems, storageScope);
     setItems(nextItems);
-    setCloudTripIds((current) => {
-      const next = new Set(current);
-      next.delete(tripId);
-      return next;
-    });
     if (tripId === activeTripId) {
       if (nextItems[0]) openTrip(nextItems[0].id);
       else {
@@ -296,7 +284,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
               const days = getTripDays(details.startDate, details.endDate);
               const isExpanded = expandedTrips[item.id] ?? isActive;
               const pendingPlans = isActive ? plans.filter((plan) => plan.day === 0) : [];
-              const canDeleteItem = !isCloudBackedTrip(item.id, accessToken, cloudTripIds) || (isActive && canDeleteTrip);
+              const canDeleteItem = item.cloudBacked !== true || item.canDelete === true;
               return <div className={`trip-library-item ${isActive ? "selected" : ""}`} key={item.id}>
                 <div className="trip-library-trip-row">
                   <button className="trip-library-open" type="button" title={item.title} onClick={() => openTrip(item.id)}><TripSidebarIcon name="mountain" /><span><b>{item.title}</b><small>{item.startDate} - {item.endDate}</small></span></button>

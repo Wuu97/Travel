@@ -35,7 +35,7 @@ test("cloud-delete eligibility distinguishes cloud, authenticated local-only, an
   } finally { await compilation.cleanup(); }
 });
 
-test("cloud deletion uses discovery/remote state and preserves owner-only server auth", async () => {
+test("cloud deletion uses per-trip discovery metadata and preserves owner-only server auth", async () => {
   const [library, api, route, controller, lifecycle] = await Promise.all([
     readFile(new URL("../features/trip/components/TripLibrary.tsx", import.meta.url), "utf8"),
     readFile(new URL("../features/trip/api.ts", import.meta.url), "utf8"),
@@ -43,8 +43,9 @@ test("cloud deletion uses discovery/remote state and preserves owner-only server
     readFile(new URL("../features/trip/hooks/useTripWorkspaceController.ts", import.meta.url), "utf8"),
     readFile(new URL("../features/trip/hooks/useTripLifecycle.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(library, /setCloudTripIds\(new Set\(cloudItems\.map\(\(item\) => item\.id\)\)\)/);
-  assert.match(library, /if \(accessToken && isCloudBackedTrip\(tripId, accessToken, cloudTripIds\)\) await deleteSharedTrip\(tripId, accessToken\)/);
+  assert.match(library, /if \(cloudBacked && trip\.canDelete !== true\) return/);
+  assert.match(library, /if \(cloudBacked && accessToken\) await deleteSharedTrip\(tripId, accessToken\)/);
+  assert.match(library, /const canDeleteItem = item\.cloudBacked !== true \|\| item\.canDelete === true/);
   assert.match(library, /tuyu-tripremote/);
   assert.match(library, /catch \(error\)[\s\S]*setDeleteError[\s\S]*return;/);
   assert.match(library, /removeTripStorage\(tripId, storageScope\);[\s\S]*saveTripLibrary\(nextItems, storageScope\)/);
