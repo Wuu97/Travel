@@ -3,15 +3,25 @@ import type { ChatMessage } from "../model";
 import { ChatImportPanel } from "./ChatImportPanel";
 import { StructuredTravelResponse } from "../../travel/components/ai/StructuredTravelResponse";
 import { AiRichContent } from "./AiRichContent";
+import { useTripCapabilities } from "../../trip/components/TripCapabilities";
 
 type Props = { isExpenseAdded: (item: ExpenseItem, destination: "budget" | "ledger") => boolean; isPlanAdded: (item: ItineraryItem) => boolean; onAddExpenses: (items: ExpenseItem[], destination: "budget" | "ledger") => void; onAddItineraries: (items: ItineraryItem[]) => void; onToggle: (id: string) => void; onToggleMany: (ids: string[]) => void; selected: Record<string, boolean> };
 
 /** Adapts trip-domain import actions to the chat message-list renderer contract. */
 export function createTripImportRenderer({ isExpenseAdded, isPlanAdded, onAddExpenses, onAddItineraries, onToggle, onToggleMany, selected }: Props) {
   return function renderTripImports(message: ChatMessage) {
-    return <>{message.structuredTravelResponse
-      ? <StructuredTravelResponse response={message.structuredTravelResponse} content={message.richContent} isPlanAdded={isPlanAdded} onAddItineraries={onAddItineraries} />
-      : <AiRichContent content={message.richContent} isPlanAdded={isPlanAdded} onAddItineraries={onAddItineraries} />}
-      <ChatImportPanel isExpenseAdded={isExpenseAdded} isPlanAdded={isPlanAdded} message={message} onAddExpenses={onAddExpenses} onAddItineraries={onAddItineraries} onToggle={onToggle} onToggleMany={onToggleMany} selected={selected} /></>;
+    return <TripImportContent isExpenseAdded={isExpenseAdded} isPlanAdded={isPlanAdded} message={message} onAddExpenses={onAddExpenses} onAddItineraries={onAddItineraries} onToggle={onToggle} onToggleMany={onToggleMany} selected={selected} />;
   };
+}
+
+function TripImportContent({ isExpenseAdded, isPlanAdded, message, onAddExpenses, onAddItineraries, onToggle, onToggleMany, selected }: Props & { message: ChatMessage }) {
+  const { canEditTrip } = useTripCapabilities();
+  const addItineraries = (items: ItineraryItem[]) => { if (canEditTrip) onAddItineraries(items); };
+  const addExpenses = (items: ExpenseItem[], destination: "budget" | "ledger") => { if (canEditTrip) onAddExpenses(items, destination); };
+  const toggle = (id: string) => { if (canEditTrip) onToggle(id); };
+  const toggleMany = (ids: string[]) => { if (canEditTrip) onToggleMany(ids); };
+  return <>{message.structuredTravelResponse
+      ? <StructuredTravelResponse response={message.structuredTravelResponse} content={message.richContent} isPlanAdded={isPlanAdded} onAddItineraries={addItineraries} />
+      : <AiRichContent content={message.richContent} isPlanAdded={isPlanAdded} onAddItineraries={addItineraries} />}
+      <ChatImportPanel isExpenseAdded={isExpenseAdded} isPlanAdded={isPlanAdded} message={message} onAddExpenses={addExpenses} onAddItineraries={addItineraries} onToggle={toggle} onToggleMany={toggleMany} selected={selected} /></>;
 }

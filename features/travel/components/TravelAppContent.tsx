@@ -12,6 +12,7 @@ import { SiteFooter } from "../../landing/components/SiteFooter";
 import { useAnchorNavigation } from "../../navigation/hooks/useAnchorNavigation";
 import { useTravelSearch } from "../../search/hooks/useTravelSearch";
 import { TripWorkspace } from "../../trip/components/TripWorkspace";
+import { TripCapabilitiesContext } from "../../trip/components/TripCapabilities";
 import { useTripWorkspaceController } from "../../trip/hooks/useTripWorkspaceController";
 import { useEffect } from "react";
 
@@ -62,7 +63,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
         to={to}
       />
       <TripWorkspace {...workspace.workspaceProps} />
-      <AiAssistantSection
+      <TripCapabilitiesContext.Provider value={{ canEditTrip: workspace.workspaceProps.canEditTrip, canManageMembers: workspace.workspaceProps.canEditTrip, canDeleteTrip: workspace.workspaceProps.canEditTrip }}><AiAssistantSection
         activeChatId={chat.activeChatId}
         busy={chat.aiBusy}
         historyOpen={chat.historyOpen}
@@ -78,7 +79,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
         renderImports={renderImportPanel}
         savedChats={chat.savedChats}
         scrollRef={chat.chatScrollRef}
-      />
+      /></TripCapabilitiesContext.Provider>
       {workspace.syncError && <p className="sync-error" role="status">{workspace.syncError}</p>}
       <SiteFooter />
       <AuthControl

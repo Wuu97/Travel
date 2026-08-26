@@ -2,13 +2,15 @@
 import type { ItineraryItem } from "../../trip/model";
 import type { RichContent, RichPlace, RichRestaurant, RichRoute, RichCostItem } from "../model";
 import { TravelImageGallery, type GalleryImage } from "./TravelImageGallery";
+import { useTripCapabilities } from "../../trip/components/TripCapabilities";
 
 type Props = { content?: RichContent; isPlanAdded: (item: ItineraryItem) => boolean; onAddItineraries: (items: ItineraryItem[]) => void };
 
 function ImportAction({ item, isPlanAdded, onAddItineraries }: Pick<Props, "isPlanAdded" | "onAddItineraries"> & { item?: ItineraryItem }) {
+  const { canEditTrip } = useTripCapabilities();
   if (!item) return null;
   const added = isPlanAdded(item);
-  return <button className="rich-card-action" type="button" disabled={added} onClick={() => onAddItineraries([item])}>{added ? "✓ 已加入" : "加入行程"}</button>;
+  return <button className="rich-card-action" type="button" disabled={added || !canEditTrip} onClick={() => onAddItineraries([item])}>{added ? "✓ 已加入" : "加入行程"}</button>;
 }
 
 function Card({ item, kind, isPlanAdded, onAddItineraries }: { item: RichPlace | RichRestaurant; kind: "place" | "restaurant" } & Pick<Props, "isPlanAdded" | "onAddItineraries">) {
