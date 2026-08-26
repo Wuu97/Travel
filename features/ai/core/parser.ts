@@ -33,11 +33,12 @@ function parseExpenseItems(value: unknown): ExpenseItem[] {
   return value.flatMap((item, index) => {
     if (!item || typeof item !== "object") return [];
     const raw = item as Record<string, unknown>;
-    if (typeof raw.title !== "string" || !raw.title.trim() || typeof raw.amount !== "number" || !Number.isFinite(raw.amount) || raw.amount < 0 || !isExpenseType(raw.type)) return [];
+    const type = raw.category ?? raw.type;
+    if (typeof raw.title !== "string" || !raw.title.trim() || typeof raw.amount !== "number" || !Number.isFinite(raw.amount) || raw.amount <= 0 || !isExpenseType(type)) return [];
     return [{
-      id: typeof raw.id === "string" && raw.id.trim() ? raw.id : `ai-expense-${Date.now()}-${index}`,
-      title: raw.title.trim(), amount: Math.round(raw.amount * 100) / 100, type: raw.type,
-      occurrence: raw.occurrence === "actual" ? "actual" : "estimated",
+      id: typeof raw.id === "string" && raw.id.trim() ? raw.id.trim() : `ai-expense-${Date.now()}-${index}`,
+      title: raw.title.trim(), amount: Math.round(raw.amount * 100) / 100, type,
+      occurrence: "estimated",
       ...(typeof raw.note === "string" && raw.note.trim() ? { note: raw.note.trim() } : {}),
       ...(typeof raw.relatedItineraryItemId === "string" && raw.relatedItineraryItemId.trim() ? { relatedItineraryItemId: raw.relatedItineraryItemId.trim() } : {}),
       ...(typeof raw.relatedItineraryTitle === "string" && raw.relatedItineraryTitle.trim() ? { relatedItineraryTitle: raw.relatedItineraryTitle.trim() } : {}),
@@ -78,7 +79,7 @@ export function parseAiReply(content: string): AiReply {
       content: answer.trim().replace(/\\n/g, "\n"),
       ...(richContent ? { richContent } : {}),
       ...(structured.isStructured ? { structuredTravelResponse: structured.response } : {}),
-      itineraryItems: parseItineraryItems(parsed.itineraryItems), expenseItems: parseExpenseItems(parsed.expenseItems), ...(dataRequests.length ? { dataRequests } : {}),
+      itineraryItems: parseItineraryItems(parsed.itineraryItems), expenseItems: parseExpenseItems(parsed.expenses ?? parsed.expenseItems).map((item) => ({ ...item, occurrence: "estimated" as const })), ...(dataRequests.length ? { dataRequests } : {}),
       };
     }
   }

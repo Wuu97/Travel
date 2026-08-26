@@ -141,7 +141,7 @@ export function useTripWorkspaceController({
     setExpenses,
     setPlans,
   });
-  const { selectedImports, toggleImport } = useTripImportSelection();
+  const { selectedImports, toggleImport, toggleImports } = useTripImportSelection();
   const {
     addPlan,
     copyPlan,
@@ -365,6 +365,7 @@ export function useTripWorkspaceController({
     isPlanAdded,
     selectedImports,
     toggleImport,
+    toggleImports,
   };
 
   return {

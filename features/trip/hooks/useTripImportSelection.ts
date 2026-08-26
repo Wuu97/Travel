@@ -4,5 +4,9 @@ import { useState } from "react";
 export function useTripImportSelection() {
   const [selectedImports, setSelectedImports] = useState<Record<string, boolean>>({});
   const toggleImport = (id: string) => setSelectedImports((current) => ({ ...current, [id]: !current[id] }));
-  return { selectedImports, toggleImport };
+  const toggleImports = (ids: string[]) => setSelectedImports((current) => {
+    const nextValue = !ids.every((id) => current[id]);
+    return { ...current, ...Object.fromEntries(ids.map((id) => [id, nextValue])) };
+  });
+  return { selectedImports, toggleImport, toggleImports };
 }

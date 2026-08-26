@@ -43,11 +43,22 @@ export type ItineraryAction = {
   title: string;
 };
 
+export type TravelExpenseSuggestion = {
+  id: string;
+  title: string;
+  amount: number;
+  category: "住宿" | "餐饮" | "交通" | "门票" | "活动" | "其他";
+  occurrence: "estimated";
+  relatedItineraryItemId?: string;
+  relatedItineraryTitle?: string;
+};
+
 /** Provider-neutral, presentation-ready response returned by the travel AI. */
 export type StructuredTravelResponse = {
   answer: string;
   places?: TravelPlaceCard[];
   restaurants?: TravelRestaurantCard[];
   routes?: TravelRouteCard[];
+  expenses?: TravelExpenseSuggestion[];
   itineraryActions?: ItineraryAction[];
 };

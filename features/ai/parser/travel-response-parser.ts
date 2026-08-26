@@ -1,6 +1,6 @@
 import type { RichContent } from "../../chat/model";
-import type { ItineraryItem } from "../../trip/model";
-import type { ItineraryAction, StructuredTravelResponse, TravelCoordinates, TravelPlaceCard, TravelRestaurantCard, TravelRouteCard } from "../schemas/travel-response";
+import type { ExpenseCategory, ItineraryItem } from "../../trip/model";
+import type { ItineraryAction, StructuredTravelResponse, TravelCoordinates, TravelExpenseSuggestion, TravelPlaceCard, TravelRestaurantCard, TravelRouteCard } from "../schemas/travel-response";
 
 type ParsedStructuredTravelResponse = { response: StructuredTravelResponse; isStructured: boolean };
 type RecordValue = Record<string, unknown>;
@@ -61,12 +61,23 @@ function actions(value: unknown): ItineraryAction[] {
   }), (item) => `${item.type}|${item.targetId || item.title}`, 12);
 }
 
+function expenses(value: unknown): TravelExpenseSuggestion[] {
+  const categories = new Set<ExpenseCategory>(["住宿", "餐饮", "交通", "门票", "活动", "其他"]);
+  return compact(list(value).flatMap((item, index): TravelExpenseSuggestion[] => {
+    const raw = record(item); const title = text(raw?.title); const amount = number(raw?.amount);
+    const category = raw?.category ?? raw?.type;
+    if (!title || amount === undefined || amount <= 0 || !categories.has(category as ExpenseCategory)) return [];
+    return [{ id: text(raw?.id, 120) || `structured-expense-${index}-${title}`, title, amount: Math.round(amount * 100) / 100, category: category as ExpenseCategory, occurrence: "estimated", relatedItineraryItemId: text(raw?.relatedItineraryItemId, 120), relatedItineraryTitle: text(raw?.relatedItineraryTitle, 300) }];
+  }), (item) => item.id, 12);
+}
+
 /** Parses raw or fenced JSON and falls back to a plain Markdown-compatible answer. */
 export function parseStructuredTravelResponse(value: unknown): ParsedStructuredTravelResponse {
   const parsed = record(parseJson(value));
   const answer = text(parsed?.answer, 20_000) ?? text(parsed?.content, 20_000);
   if (!parsed || !answer) return { response: { answer: typeof value === "string" ? value.trim() : "" }, isStructured: false };
   const parsedRestaurants = restaurants(parsed.restaurants);
+  const parsedExpenses = expenses(parsed.expenses);
   // Restaurant facts may only be surfaced after the verified Amap merge. The first
   // model pass has no such provider result yet, so its standalone restaurant cards are dropped.
   const response: StructuredTravelResponse = {
@@ -74,6 +85,7 @@ export function parseStructuredTravelResponse(value: unknown): ParsedStructuredT
     ...(places(parsed.places).length ? { places: places(parsed.places) } : {}),
     ...(parsedRestaurants.length ? { restaurants: [] } : {}),
     ...(routes(parsed.routes).length ? { routes: routes(parsed.routes) } : {}),
+    ...(parsedExpenses.length ? { expenses: parsedExpenses } : {}),
     ...(actions(parsed.itineraryActions).length ? { itineraryActions: actions(parsed.itineraryActions) } : {}),
   };
   return { response, isStructured: true };

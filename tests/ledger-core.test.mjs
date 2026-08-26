@@ -7,6 +7,8 @@ const sources = [
   "features/trip/model.ts",
   "features/trip/expense.ts",
   "features/trip/budgetRules.ts",
+  "features/trip/utils.ts",
+  "features/trip/hooks/useTripImports.ts",
 ];
 
 test("normalizes legacy LedgerItem data while retaining actual expense metadata", async () => {
@@ -19,6 +21,24 @@ test("normalizes legacy LedgerItem data while retaining actual expense metadata"
     assert.equal(normalizeTripExpense({ id: "bad", item: "", type: "餐饮", amount: 10 }, "actual"), null);
     assert.throws(() => createTripExpense({ title: "  ", type: "餐饮", amount: 10, occurrence: "actual" }));
     assert.throws(() => createTripExpense({ title: "午餐", type: "餐饮", amount: Number.NaN, occurrence: "actual" }));
+  } finally { await compilation.cleanup(); }
+});
+
+test("imports selected AI expenses as unique estimated budget records", async () => {
+  const compilation = await compileTypeScript(sources, "ledger-imports-");
+  try {
+    const { prepareExpenseImports } = await compilation.importModule("trip/hooks/useTripImports.js");
+    const existing = [{ id: "stay", title: "住宿", amount: 1600, type: "住宿", occurrence: "estimated" }];
+    const selected = [
+      { id: "food", title: "餐饮", amount: 800, type: "餐饮", occurrence: "estimated" },
+      { id: "ticket", title: "灵隐寺门票", amount: 75, type: "门票", occurrence: "estimated", relatedItineraryItemId: "lingyin", relatedItineraryTitle: "灵隐寺" },
+      { id: "food", title: "餐饮", amount: 800, type: "餐饮", occurrence: "estimated" },
+      existing[0],
+    ];
+    assert.deepEqual(prepareExpenseImports(selected, existing), [
+      { id: "food", title: "餐饮", amount: 800, type: "餐饮", occurrence: "estimated" },
+      { id: "ticket", title: "灵隐寺门票", amount: 75, type: "门票", occurrence: "estimated", relatedItineraryItemId: "lingyin", relatedItineraryTitle: "灵隐寺" },
+    ]);
   } finally { await compilation.cleanup(); }
 });
 

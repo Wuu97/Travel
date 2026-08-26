@@ -37,6 +37,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
     onAddExpenses: workspace.importContext.addExpenseItems,
     onAddItineraries: workspace.importContext.addItineraryItems,
     onToggle: workspace.importContext.toggleImport,
+    onToggleMany: workspace.importContext.toggleImports,
     selected: workspace.importContext.selectedImports,
   });
   useScrollRestoration();

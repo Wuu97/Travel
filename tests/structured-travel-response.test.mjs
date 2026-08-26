@@ -34,3 +34,29 @@ test("does not surface unverified model restaurant cards", async () => {
     assert.equal(reply.richContent?.restaurants, undefined);
   } finally { await compilation.cleanup(); }
 });
+
+test("parses structured expense suggestions as estimated budgets with itinerary links", async () => {
+  const compilation = await compileTypeScript(aiTestSources, "travel-structured-expenses-");
+  try {
+    const { parseAiReply } = await compilation.importModule("ai/core/parser.js");
+    const reply = parseAiReply(JSON.stringify({ answer: "杭州两日预算", expenses: [
+      { id: "stay", title: "西湖住宿", amount: 1600, category: "住宿", occurrence: "actual" },
+      { id: "ticket", title: "灵隐寺门票", amount: 75, category: "门票", occurrence: "estimated", relatedItineraryItemId: "lingyin", relatedItineraryTitle: "灵隐寺" },
+      { id: "unknown", title: "待定费用", category: "其他" },
+    ] }));
+    assert.deepEqual(reply.expenseItems, [
+      { id: "stay", title: "西湖住宿", amount: 1600, type: "住宿", occurrence: "estimated" },
+      { id: "ticket", title: "灵隐寺门票", amount: 75, type: "门票", occurrence: "estimated", relatedItineraryItemId: "lingyin", relatedItineraryTitle: "灵隐寺" },
+    ]);
+    assert.equal(reply.structuredTravelResponse?.expenses?.[1]?.relatedItineraryItemId, "lingyin");
+  } finally { await compilation.cleanup(); }
+});
+
+test("keeps legacy expenseItems responses readable while importing them as budgets", async () => {
+  const compilation = await compileTypeScript(aiTestSources, "travel-legacy-expenses-");
+  try {
+    const { parseAiReply } = await compilation.importModule("ai/core/parser.js");
+    const reply = parseAiReply(JSON.stringify({ answer: "旧响应", expenseItems: [{ id: "legacy", title: "交通", amount: 300, type: "交通", occurrence: "actual" }] }));
+    assert.deepEqual(reply.expenseItems, [{ id: "legacy", title: "交通", amount: 300, type: "交通", occurrence: "estimated" }]);
+  } finally { await compilation.cleanup(); }
+});
