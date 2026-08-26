@@ -28,8 +28,11 @@ test("冲突恢复可以采用云端快照，或按远端最新版本重试本�
 
   assert.match(persistence, /applySnapshot\(conflict\.remoteSnapshot\);/);
   assert.match(persistence, /setVersion\(conflict\.remoteVersion\);/);
+  assert.match(persistence, /const retryLocalSnapshot = async \(\) => \{[\s\S]*?const localSnapshot = conflict\.localSnapshot;/);
+  assert.doesNotMatch(persistence, /const retryLocalSnapshot = async \(\) => \{[\s\S]*?const localSnapshot = snapshot;/);
   assert.match(persistence, /const result = await saveSharedTrip\(tripId, localSnapshot, conflict\.remoteVersion, accessToken\);/);
   assert.match(persistence, /lastSavedRef\.current = JSON\.stringify\(localSnapshot\);/);
+  assert.match(persistence, /setConflict\(\{ localSnapshot, remoteSnapshot: normalizeSnapshot\(latest\.trip, detailsRef\.current\), remoteVersion: latest\.version \}\);/);
   assert.match(persistence, /setConflict\(null\);/);
   assert.match(persistence, /else setSyncError\(error instanceof Error \? error\.message : "保存失败，请稍后重试。"\);/);
 });

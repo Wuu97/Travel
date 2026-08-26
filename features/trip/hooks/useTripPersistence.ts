@@ -176,7 +176,7 @@ export function useTripPersistence({
 
   const retryLocalSnapshot = async () => {
     if (!conflict || !accessToken || resolvingConflict) return;
-    const localSnapshot = snapshot;
+    const localSnapshot = conflict.localSnapshot;
     conflictPendingRef.current = true;
     setResolvingConflict(true);
     try {
