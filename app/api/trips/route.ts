@@ -1,6 +1,6 @@
 import { requireSupabaseUser } from "../../../features/auth/supabase";
 import { isStoredTrip } from "../../../features/trip/snapshotValidation";
-import { getTripId } from "../../../features/trip/tripId";
+import { getTripId, getTripRequestTarget } from "../../../features/trip/tripId";
 import type { TripLibraryItem } from "../../../features/trip/model";
 import { membershipRoleToProductRole, productRoleToMembershipRole } from "../../../features/trip/members";
 
@@ -13,9 +13,11 @@ const invalidTripId = () => Response.json({ error: "行程 ID 格式无效。" }
 export async function GET(request: Request) {
   const context = await requireSupabaseUser(request, "请先登录后访问共享行程。");
   if ("error" in context) return context.error;
-  const tripId = getTripId(request);
+  const target = getTripRequestTarget(request);
   const action = new URL(request.url).searchParams.get("action");
   if (action === "members") {
+    const tripId = target.kind === "detail" ? target.tripId : null;
+    if (!tripId) return invalidTripId();
     const { data: trip, error: tripError } = await context.client.from("trips").select("owner_id").eq("id", tripId).maybeSingle();
     if (tripError) return Response.json({ error: tripError.message }, { status: 502 });
     if (!trip) return Response.json({ error: "无权访问该旅行成员。" }, { status: 403 });
@@ -25,7 +27,7 @@ export async function GET(request: Request) {
     const canEdit = currentMember === "owner" || currentMember === "editor";
     return Response.json({ canDelete: trip.owner_id === context.userId, canEdit, canManage: trip.owner_id === context.userId, members: [{ userId: trip.owner_id, role: "owner", status: "active" }, ...(data || []).map((member) => ({ userId: member.user_id, role: membershipRoleToProductRole(member.role), status: "active" }))] });
   }
-  if (!tripId) {
+  if (target.kind === "list") {
     const { data, error } = await context.client.from("trips").select("id, owner_id, payload");
     if (error) return Response.json({ error: error.message }, { status: 502 });
     const trips = (data || []).flatMap((row): TripLibraryItem[] => {
@@ -39,6 +41,8 @@ export async function GET(request: Request) {
     }).sort((first, second) => first.id.localeCompare(second.id));
     return Response.json({ trips });
   }
+  if (target.kind === "invalid") return invalidTripId();
+  const tripId = target.tripId;
   const { data, error } = await context.client.from("trips").select("payload, version, updated_at").eq("id", tripId).maybeSingle();
   if (error) return Response.json({ error: error.message }, { status: 502 });
   if (!data) return Response.json({ trip: null });

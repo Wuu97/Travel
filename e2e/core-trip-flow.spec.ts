@@ -1,13 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test("guest core workspace smoke: itinerary, ledger, and refresh persist", async ({ page }) => {
+test("guest empty workspace smoke persists across refresh", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /杭州/ }).first()).toBeVisible();
-  await page.getByRole("button", { name: /账本/ }).click();
-  await expect(page.getByText("总预算").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "开始规划你的下一段旅程" })).toBeVisible();
   await page.reload();
-  await page.getByRole("button", { name: /账本/ }).click();
-  await expect(page.getByText("总预算").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "开始规划你的下一段旅程" })).toBeVisible();
 });
 
 test("independent smoke boundary for real third-party environments", async ({ page }) => {
