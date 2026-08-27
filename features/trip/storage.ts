@@ -161,33 +161,47 @@ export function migrateGuestTripLibrary(userId: string): GuestTripMigrationResul
   const guestItems = loadTripLibrary("guest");
   const userItems = loadTripLibrary(userId);
   const userIds = new Set(userItems.map((item) => item.id));
-  const migratedIds: string[] = [];
-  const migratedItems: TripLibraryItem[] = [];
+  const candidates: Array<{ item: TripLibraryItem; snapshot: string; details: string | null }> = [];
   for (const item of guestItems) {
-    if (item.id === "hangzhou-summer-trip" || userIds.has(item.id) || !hasStoredTripSnapshot(item.id, "guest")) continue;
+    const destinationSnapshotKey = getTripSnapshotStorageKey(item.id, userId);
+    const destinationDetailsKey = getTripDetailsStorageKey(item.id, userId);
+    if (item.id === "hangzhou-summer-trip" || userIds.has(item.id) || localStorage.getItem(destinationSnapshotKey) !== null || localStorage.getItem(destinationDetailsKey) !== null || !hasStoredTripSnapshot(item.id, "guest")) continue;
     const snapshotKey = getTripSnapshotStorageKey(item.id, "guest");
     const detailsKey = getTripDetailsStorageKey(item.id, "guest");
     const snapshot = localStorage.getItem(snapshotKey);
     const details = localStorage.getItem(detailsKey);
     if (!snapshot) continue;
+    candidates.push({ item, snapshot, details });
+  }
+  if (!candidates.length) return { status: "noop", migratedIds: [] };
+  const migratedIds = candidates.map(({ item }) => item.id);
+  const userLibraryKey = getTripLibraryStorageKey(userId);
+  const previousUserLibrary = localStorage.getItem(userLibraryKey);
+  const rollback = () => {
+    candidates.forEach(({ item }) => {
+      localStorage.removeItem(getTripSnapshotStorageKey(item.id, userId));
+      localStorage.removeItem(getTripDetailsStorageKey(item.id, userId));
+    });
+    if (previousUserLibrary === null) localStorage.removeItem(userLibraryKey);
+    else localStorage.setItem(userLibraryKey, previousUserLibrary);
+  };
+  try {
+    for (const { item, snapshot, details } of candidates) {
     try {
       localStorage.setItem(getTripSnapshotStorageKey(item.id, userId), snapshot);
       if (details) localStorage.setItem(getTripDetailsStorageKey(item.id, userId), details);
-      migratedIds.push(item.id);
-      migratedItems.push(item);
     } catch {
-      // Keep every guest source untouched so the complete batch can retry.
+      rollback();
       return { status: "failed", migratedIds };
     }
   }
-  if (!migratedIds.length) return { status: "noop", migratedIds: [] };
-  try {
-    saveTripLibrary(mergeTripLibraryItems(userItems, migratedItems), userId);
+    saveTripLibrary(mergeTripLibraryItems(userItems, candidates.map(({ item }) => item)), userId);
     const remaining = guestItems.filter((item) => !migratedIds.includes(item.id));
     saveTripLibrary(remaining, "guest");
     migratedIds.forEach((id) => removeTripStorage(id, "guest"));
     return { status: "success", migratedIds };
   } catch {
+    rollback();
     return { status: "failed", migratedIds };
   }
 }
