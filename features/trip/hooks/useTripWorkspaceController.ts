@@ -23,6 +23,7 @@ import { useTripPlanActions } from "./useTripPlanActions";
 import { useTripSummary } from "./useTripSummary";
 import { useTripWorkspaceView } from "./useTripWorkspaceView";
 import { useWorkspaceOverlays } from "./useWorkspaceOverlays";
+import { writeHistoryIfChanged } from "../../navigation/history";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type Options = {
@@ -53,7 +54,11 @@ export function useTripWorkspaceController({
 }: Options) {
   const { initialDetails, initialTrip, tripId } = useTripBootstrap(loadPersistedState, storageScope);
   const isAuthenticated = authReady && Boolean(accessToken);
-  const hasTripInUrl = typeof window !== "undefined" && Boolean(new URLSearchParams(window.location.search).get("trip"));
+  // TravelApp deliberately renders one server-equivalent pass before it reads
+  // browser persistence. Keep URL selection behind that same gate so a
+  // bookmarked trip cannot turn the first client render into a different
+  // workspace from the server HTML.
+  const hasTripInUrl = loadPersistedState && typeof window !== "undefined" && Boolean(new URLSearchParams(window.location.search).get("trip"));
   const requiresMembershipResolution = Boolean(accessToken && hasTripInUrl && tripId !== DEFAULT_TRIP_ID);
   const [activatedTripId, setActivatedTripId] = useState<string | null>(null);
   const [activationError, setActivationError] = useState<string | null>(null);
@@ -113,7 +118,7 @@ export function useTripWorkspaceController({
     setHasPersistedTrip(true);
     const url = new URL(window.location.href);
     url.searchParams.set("trip", id);
-    window.history.replaceState(null, "", url);
+    writeHistoryIfChanged("replace", url);
     window.dispatchEvent(new CustomEvent("tuyu-tripcreated", { detail: item }));
     return true;
   }, [activeRealTripId, budgetItems, expenses, isAuthenticated, plans, safeCanEditTrip, storageScope, tripDetails]);

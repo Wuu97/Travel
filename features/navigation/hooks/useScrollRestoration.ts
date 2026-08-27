@@ -4,11 +4,6 @@ export function useScrollRestoration() {
   useLayoutEffect(() => {
     if ("scrollRestoration" in window.history)
       window.history.scrollRestoration = "manual";
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}${window.location.search}`,
-    );
 
     const savedPosition = sessionStorage.getItem("tuyu-scroll-position");
     if (savedPosition) window.scrollTo(0, Number(savedPosition));

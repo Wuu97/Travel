@@ -5,6 +5,5 @@ export function useAnchorNavigation() {
   return (event: MouseEvent<HTMLAnchorElement>, target: string) => {
     event.preventDefault();
     document.querySelector(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
   };
 }

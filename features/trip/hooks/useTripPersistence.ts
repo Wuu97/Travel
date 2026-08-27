@@ -4,6 +4,7 @@ import type { ExpenseItem, ItineraryItem, LedgerItem, StoredTrip, TripDetails } 
 import { saveTrip, saveTripDetails } from "../storage";
 import { normalizeTripExpense } from "../expense";
 import { sortItineraryItems } from "../utils";
+import { writeHistoryIfChanged } from "../../navigation/history";
 
 type TripState = {
   expenses: LedgerItem[];
@@ -135,7 +136,7 @@ export function useTripPersistence({
       const url = new URL(window.location.href);
       url.searchParams.set("trip", acceptedTripId);
       url.searchParams.delete("invite");
-      window.history.replaceState(null, "", url);
+      writeHistoryIfChanged("replace", url);
       if (acceptedTripId !== tripId) {
         window.dispatchEvent(new Event("tuyu-tripchange"));
         return { redirected: true as const };

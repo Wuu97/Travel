@@ -14,6 +14,7 @@ import { SidebarHeader } from "../../shared/components/SidebarHeader";
 import { ScrollArea } from "../../shared/components/ScrollArea";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import { TripSidebarIcon } from "./TripSidebarIcon";
+import { writeHistoryIfChanged } from "../../navigation/history";
 
 const newTripId = () => createId("trip");
 const subscribeToHydration = () => () => {};
@@ -136,8 +137,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
             url.searchParams.delete("trip");
             url.searchParams.delete("day");
           }
-          window.history.replaceState(null, "", url);
-          window.dispatchEvent(new Event("tuyu-tripchange"));
+          if (writeHistoryIfChanged("replace", url)) window.dispatchEvent(new Event("tuyu-tripchange"));
         }
         setItems(loadedItems);
         setHasPersistedLibrary(isPersisted);
@@ -181,7 +181,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     if (tripId === activeTripId) {
       const url = new URL(window.location.href);
       url.searchParams.set("day", String(day));
-      window.history.replaceState(null, "", url);
+      writeHistoryIfChanged("replace", url);
       onSelectDay(day);
       return;
     }
@@ -189,8 +189,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     url.searchParams.set("trip", tripId);
     url.searchParams.set("day", String(day));
     sessionStorage.setItem("tuyu-scroll-position", String(window.scrollY));
-    window.history.pushState(null, "", url);
-    window.dispatchEvent(new Event("tuyu-tripchange"));
+    if (writeHistoryIfChanged("push", url)) window.dispatchEvent(new Event("tuyu-tripchange"));
   };
 
   const createTrip = () => {
@@ -289,8 +288,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
         const url = new URL(window.location.href);
         url.searchParams.delete("trip");
         url.searchParams.delete("day");
-        window.history.replaceState(null, "", url);
-        window.dispatchEvent(new Event("tuyu-tripchange"));
+        if (writeHistoryIfChanged("replace", url)) window.dispatchEvent(new Event("tuyu-tripchange"));
       }
     }
     setDeletingTripId(null);
