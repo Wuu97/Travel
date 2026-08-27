@@ -100,6 +100,12 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   }, []);
 
   useEffect(() => {
+    const openCreate = () => setCreateOpen(true);
+    window.addEventListener("tuyu-tripcreateopen", openCreate);
+    return () => window.removeEventListener("tuyu-tripcreateopen", openCreate);
+  }, []);
+
+  useEffect(() => {
     const addCreatedTrip = (event: Event) => {
       const item = (event as CustomEvent<TripLibraryItem>).detail;
       if (!item || typeof item.id !== "string") return;

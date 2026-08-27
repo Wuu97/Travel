@@ -371,6 +371,7 @@ export function useTripWorkspaceController({
     canEditTrip: safeCanEditTrip,
     canManageMembers: safeCanManageMembers,
     canDeleteTrip: safeCanDeleteTrip,
+    workspaceEmpty: hydratedStorageScope === storageScope && !hasPersistedTrip && !activeRealTripId,
     tripId: activeRealTripId || tripId,
     permissionStatus,
     budgetItems,
@@ -451,10 +452,11 @@ export function useTripWorkspaceController({
     tripPopoverRef,
     workspaceTab,
   };
+  const workspaceEmpty = hydratedStorageScope === storageScope && !hasPersistedTrip && !activeRealTripId;
   const importContext = {
-    addExpenseItems: (items: ExpenseItem[], destination: "budget" | "ledger") => { if (ensureRealTrip()) addExpenseItems(items, destination); },
-    addImportBatch: (itineraryItems: ItineraryItem[], budgetItems: ExpenseItem[]) => { if (ensureRealTrip()) addImportBatch(itineraryItems, budgetItems); },
-    addItineraryItems: (items: ItineraryItem[]) => { if (ensureRealTrip()) addItineraryItems(items); },
+    addExpenseItems: (items: ExpenseItem[], destination: "budget" | "ledger") => { if (!workspaceEmpty && ensureRealTrip()) addExpenseItems(items, destination); },
+    addImportBatch: (itineraryItems: ItineraryItem[], budgetItems: ExpenseItem[]) => { if (!workspaceEmpty && ensureRealTrip()) addImportBatch(itineraryItems, budgetItems); },
+    addItineraryItems: (items: ItineraryItem[]) => { if (!workspaceEmpty && ensureRealTrip()) addItineraryItems(items); },
     isExpenseAdded,
     isPlanAdded,
     lastImportBatch,
