@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { defaultTripDetails } from "../data";
 import type { ItineraryItem, TripDetails, TripLibraryItem } from "../model";
 import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary, sortTripLibraryItems } from "../storage";
@@ -15,11 +15,10 @@ import { ScrollArea } from "../../shared/components/ScrollArea";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import { TripSidebarIcon } from "./TripSidebarIcon";
 import { writeHistoryIfChanged } from "../../navigation/history";
+import { selectTripFromLibrary } from "../librarySelection";
+import { useClientHydrated } from "../../shared/hooks/useClientHydrated";
 
 const newTripId = () => createId("trip");
-const subscribeToHydration = () => () => {};
-const getClientHydrationState = () => true;
-const getServerHydrationState = () => false;
 
 type TripDraft = { destination: string; startDate: string; endDate: string; companions: string };
 
@@ -44,7 +43,9 @@ type Props = {
 };
 
 export function TripLibrary({ accessToken, activeDay, authReady, collapsed = false, currentDetails, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
-  const hydrated = useSyncExternalStore(subscribeToHydration, getClientHydrationState, getServerHydrationState);
+  // Server and first client render intentionally share this neutral state.
+  // Browser storage is restored only after hydration commits.
+  const hydrated = useClientHydrated();
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
   const [items, setItems] = useState<TripLibraryItem[]>([]);
   const [cloudDeleteCapabilities, setCloudDeleteCapabilities] = useState<Map<string, boolean>>(() => new Map());
@@ -128,9 +129,11 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
         if (cancelled) return;
         const loadedItems = sortTripLibraryItems(libraryItems);
         const requestedId = new URLSearchParams(window.location.search).get("trip");
-        const selectedTripId = requestedId && libraryItems.some((item) => item.id === requestedId) ? requestedId : libraryItems[0]?.id || null;
+        const { selectedTripId, needsUrlCorrection } = selectTripFromLibrary(libraryItems, requestedId);
         setActiveTripId(selectedTripId);
-        if (selectedTripId !== requestedId) {
+        // Hydration restores local state first. Only a missing or stale URL is
+        // corrected; a valid URL never emits a synthetic navigation event.
+        if (needsUrlCorrection) {
           const url = new URL(window.location.href);
           if (selectedTripId) url.searchParams.set("trip", selectedTripId);
           else {

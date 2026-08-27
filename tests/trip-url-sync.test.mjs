@@ -13,9 +13,14 @@ function createBrowser(pathname, search = "", hash = "") {
 }
 
 test("trip URL 同步仅在真实导航时写 history 并派发 tripchange", async () => {
-  const compilation = await compileTypeScript(["features/navigation/history.ts"], "trip-url-sync-");
+  const compilation = await compileTypeScript(["features/navigation/history.ts", "features/trip/librarySelection.ts", "features/trip/model.ts"], "trip-url-sync-");
   try {
-    const { writeHistoryIfChanged } = await compilation.importModule("history.js");
+    const { writeHistoryIfChanged } = await compilation.importModule("navigation/history.js");
+    const { selectTripFromLibrary } = await compilation.importModule("trip/librarySelection.js");
+    const items = [{ id: "a", title: "A", startDate: "2026-01-01", endDate: "2026-01-02", status: "筹备中" }];
+    assert.deepEqual(selectTripFromLibrary(items, "a"), { selectedTripId: "a", needsUrlCorrection: false });
+    assert.deepEqual(selectTripFromLibrary(items, "stale"), { selectedTripId: "a", needsUrlCorrection: true });
+    assert.deepEqual(selectTripFromLibrary([], "stale"), { selectedTripId: null, needsUrlCorrection: true });
     const same = createBrowser("/", "?trip=a&day=1");
     assert.equal(writeHistoryIfChanged("replace", new URL("https://travel.test/?trip=a&day=1"), same.location, same.history), false);
     assert.deepEqual(same.calls, []);

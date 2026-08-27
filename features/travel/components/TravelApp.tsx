@@ -3,10 +3,8 @@
 import { ConfirmDialogProvider } from "../../shared/components/ConfirmDialog";
 import { useSyncExternalStore } from "react";
 import { TravelAppContent } from "./TravelAppContent";
+import { useClientHydrated } from "../../shared/hooks/useClientHydrated";
 
-const subscribeToHydration = () => () => {};
-const getClientHydrationState = () => true;
-const getServerHydrationState = () => false;
 const subscribeToTripLocation = (onStoreChange: () => void) => {
   window.addEventListener("popstate", onStoreChange);
   window.addEventListener("tuyu-tripchange", onStoreChange);
@@ -19,11 +17,7 @@ const getTripLocation = () => window.location.search;
 const getServerTripLocation = () => "";
 
 export function TravelApp() {
-  const hydrated = useSyncExternalStore(
-    subscribeToHydration,
-    getClientHydrationState,
-    getServerHydrationState,
-  );
+  const hydrated = useClientHydrated();
   const tripLocation = useSyncExternalStore(
     subscribeToTripLocation,
     getTripLocation,
