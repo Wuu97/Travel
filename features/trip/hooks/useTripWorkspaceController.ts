@@ -81,8 +81,9 @@ export function useTripWorkspaceController({
   const migratedUserRef = useRef<string | null>(null);
   useEffect(() => {
     if (!accessToken || storageScope === "guest" || migratedUserRef.current === storageScope) return;
-    try { migrateGuestTripLibrary(storageScope); migratedUserRef.current = storageScope; }
-    catch { queueMicrotask(() => setActivationError("旅行迁移失败，游客数据已保留。请稍后重试。")); }
+    const result = migrateGuestTripLibrary(storageScope);
+    if (result.status === "success" || result.status === "noop") { migratedUserRef.current = storageScope; return; }
+    queueMicrotask(() => setActivationError("旅行迁移失败，游客数据已保留。请稍后重试。"));
   }, [accessToken, storageScope]);
   useEffect(() => {
     if (!accessToken || !activeRealTripId) { queueMicrotask(() => { setCanEditTrip(true); setCanManageMembers(true); setCanDeleteTrip(true); setCapabilityTripId(null); setPermissionStatus("ready"); }); return; }

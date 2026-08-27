@@ -151,8 +151,13 @@ export function removeTripStorage(tripId: string, userId?: LocalStorageScope) {
 }
 
 /** Moves only persisted guest trips into a signed-in user's isolated scope. */
-export function migrateGuestTripLibrary(userId: string) {
-  if (typeof window === "undefined" || !userId || userId === "guest") return { migratedIds: [] as string[] };
+export type GuestTripMigrationResult =
+  | { status: "success"; migratedIds: string[] }
+  | { status: "noop"; migratedIds: [] }
+  | { status: "failed"; migratedIds: string[] };
+
+export function migrateGuestTripLibrary(userId: string): GuestTripMigrationResult {
+  if (typeof window === "undefined" || !userId || userId === "guest") return { status: "noop", migratedIds: [] };
   const guestItems = loadTripLibrary("guest");
   const userItems = loadTripLibrary(userId);
   const userIds = new Set(userItems.map((item) => item.id));
@@ -171,19 +176,19 @@ export function migrateGuestTripLibrary(userId: string) {
       migratedIds.push(item.id);
       migratedItems.push(item);
     } catch {
-      // Keep guest source untouched if any destination write fails.
-      continue;
+      // Keep every guest source untouched so the complete batch can retry.
+      return { status: "failed", migratedIds };
     }
   }
-  if (!migratedIds.length) return { migratedIds };
+  if (!migratedIds.length) return { status: "noop", migratedIds: [] };
   try {
     saveTripLibrary(mergeTripLibraryItems(userItems, migratedItems), userId);
     const remaining = guestItems.filter((item) => !migratedIds.includes(item.id));
     saveTripLibrary(remaining, "guest");
     migratedIds.forEach((id) => removeTripStorage(id, "guest"));
-    return { migratedIds };
+    return { status: "success", migratedIds };
   } catch {
-    return { migratedIds: [] as string[] };
+    return { status: "failed", migratedIds };
   }
 }
 
