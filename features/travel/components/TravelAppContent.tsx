@@ -68,7 +68,7 @@ export function TravelAppContent({ initialAccountLabel, loadPersistedState }: { 
         to={to}
       />
       <TripWorkspace {...workspace.workspaceProps} />
-      <TripCapabilitiesContext.Provider value={{ canEditTrip: workspace.workspaceProps.canEditTrip, canManageMembers: workspace.workspaceProps.canManageMembers, canDeleteTrip: workspace.workspaceProps.canDeleteTrip }}><AiAssistantSection
+      <TripCapabilitiesContext.Provider value={{ canEditTrip: workspace.workspaceProps.canEditTrip, canManageMembers: workspace.workspaceProps.canManageMembers, canDeleteTrip: workspace.workspaceProps.canDeleteTrip, permissionStatus: workspace.workspaceProps.permissionStatus }}><AiAssistantSection
         activeChatId={chat.activeChatId}
         aiError={chat.aiError}
         busy={chat.aiBusy}

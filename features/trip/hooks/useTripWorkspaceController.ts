@@ -78,7 +78,6 @@ export function useTripWorkspaceController({
     ? activatedTripId
     : hasTripInUrl && bootstrapTripId !== DEFAULT_TRIP_ID ? bootstrapTripId : null;
   const activeTripId = activeRealTripId || bootstrapTripId;
-  const onActiveTripChange = useCallback((tripId: string | null) => setActivatedTripId(tripId), []);
   const membershipPending = Boolean(accessToken && activeRealTripId) && capabilityTripId !== activeRealTripId;
   // A trip switch changes activeRealTripId during render, before the
   // membership effect can set its state to loading. Derive that transition
@@ -124,29 +123,41 @@ export function useTripWorkspaceController({
       const localItems = storedLibrary.length || !hasStoredTripSnapshot(bootstrapTripId, storageScope)
         ? storedLibrary
         : [{ id: bootstrapTripId, title: initialDetails.title, startDate: initialDetails.startDate, endDate: initialDetails.endDate, status: initialDetails.status }];
-      let finalItems = localItems;
-      let cloudDeleteCapabilities = new Map<string, boolean>();
-      let error: string | null = null;
-      if (accessToken) {
-        try {
-          const cloudItems = await listAccessibleTrips(accessToken);
-          if (cancelled) return;
-          cloudDeleteCapabilities = new Map(cloudItems.map((item) => [item.id, item.canDelete === true]));
-          finalItems = mergeTripLibraryItems(localItems, cloudItems);
-          if (cloudItems.length) saveTripLibrary(finalItems, storageScope);
-        } catch {
-          error = "云端旅行暂时无法加载，当前显示本地数据。";
-        }
-      }
-      if (cancelled) return;
-      finalItems = sortTripLibraryItems(finalItems);
       const requestedTripId = new URLSearchParams(window.location.search).get("trip");
       const localSelection = selectTripFromLibrary(localItems, requestedTripId).selectedTripId;
-      const selectedTripId = localSelection && finalItems.some((item) => item.id === localSelection)
-        ? localSelection
-        : selectTripFromLibrary(finalItems, requestedTripId).selectedTripId;
-      setLibraryCommit({ scope: storageScope, items: finalItems, cloudDeleteCapabilities, error });
-      setActivatedTripId(selectedTripId);
+      const localCommit = sortTripLibraryItems(localItems);
+
+      // Local snapshots are already a complete, consistent view of trips the
+      // user has opened. Commit them before the network request so switching
+      // between those trips never goes through an empty workspace or skeleton.
+      const requestedTripIsLocal = !requestedTripId || localCommit.some((item) => item.id === requestedTripId);
+      const canCommitLocal = localCommit.length && (!accessToken || requestedTripIsLocal);
+      if (canCommitLocal) {
+        setLibraryCommit({ scope: storageScope, items: localCommit, cloudDeleteCapabilities: new Map(), error: null });
+        setActivatedTripId(localSelection);
+      }
+
+      if (!accessToken) {
+        if (!canCommitLocal) {
+          setLibraryCommit({ scope: storageScope, items: [], cloudDeleteCapabilities: new Map(), error: null });
+          setActivatedTripId(null);
+        }
+        return;
+      }
+
+      try {
+        const cloudItems = await listAccessibleTrips(accessToken);
+        if (cancelled) return;
+        const cloudDeleteCapabilities = new Map(cloudItems.map((item) => [item.id, item.canDelete === true]));
+        const finalItems = sortTripLibraryItems(mergeTripLibraryItems(localItems, cloudItems));
+        if (cloudItems.length) saveTripLibrary(finalItems, storageScope);
+        setLibraryCommit({ scope: storageScope, items: finalItems, cloudDeleteCapabilities, error: null });
+        if (!localCommit.length || !requestedTripIsLocal) setActivatedTripId(selectTripFromLibrary(finalItems, requestedTripId).selectedTripId);
+      } catch {
+        if (cancelled) return;
+        setLibraryCommit({ scope: storageScope, items: localCommit, cloudDeleteCapabilities: new Map(), error: "云端旅行暂时无法加载，当前显示本地数据。" });
+        if (!localCommit.length || !requestedTripIsLocal) setActivatedTripId(null);
+      }
     })();
     return () => { cancelled = true; };
   }, [accessToken, authReady, bootstrapTripId, initialDetails.endDate, initialDetails.startDate, initialDetails.status, initialDetails.title, loadPersistedState, storageScope]);
@@ -205,6 +216,22 @@ export function useTripWorkspaceController({
     });
     return () => { cancelled = true; };
   }, [activatedTripId, activeTripId, authReady, hasPersistedTripInScope, loadPersistedState, storageScope]);
+  const onActiveTripChange = useCallback((tripId: string | null) => {
+    // A library click is an atomic local transition: never publish the new
+    // selected id while the workspace still holds the previous trip's data.
+    // Remote-only trips have no local snapshot and continue through the normal
+    // persistence effect instead.
+    if (tripId && loadPersistedState && authReady && hasStoredTripSnapshot(tripId, storageScope)) {
+      const trip = loadStoredTrip(getDefaultStoredTrip(), tripId, storageScope);
+      setExpenses(trip.expenses);
+      setBudgetItems(trip.budgetItems);
+      setPlans(trip.plans);
+      setTripDetails(loadTripDetails(defaultTripDetails, tripId, storageScope));
+      setHasPersistedTrip(true);
+      setHydratedStorageScope(storageScope);
+    }
+    setActivatedTripId(tripId);
+  }, [authReady, loadPersistedState, storageScope]);
   const tripDestination = getTripDestination(tripDetails.title);
   const planMenuRef = useRef<HTMLDivElement>(null);
   const timelineListRef = useRef<HTMLDivElement>(null);

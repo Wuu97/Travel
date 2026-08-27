@@ -10,13 +10,14 @@ type Props = {
 };
 
 export function TripWorkspaceControls({ activeTab, exportButton, onCopyInvite, onSelectTab }: Props) {
-  const { canManageMembers } = useTripCapabilities();
+  const { canManageMembers, permissionStatus } = useTripCapabilities();
+  const permissionsPending = permissionStatus === "loading";
   return (
     <div className="trip-actions">
       <button className={activeTab === "plan" ? "selected" : ""} onClick={() => onSelectTab("plan")}>攻略</button>
       <button className={activeTab === "budget" ? "selected" : ""} onClick={() => onSelectTab("budget")}>账本</button>
       {exportButton}
-      {canManageMembers && <><button className="share trip-invite" type="button" onClick={() => onCopyInvite("collaborator")}>＋ 邀请协作者</button><button className="share trip-invite" type="button" onClick={() => onCopyInvite("companion")}>＋ 邀请同行人</button></>}
+      {(canManageMembers || permissionsPending) && <><button aria-disabled={permissionsPending} className="share trip-invite" type="button" onClick={() => { if (!permissionsPending) onCopyInvite("collaborator"); }}>＋ 邀请协作者</button><button aria-disabled={permissionsPending} className="share trip-invite" type="button" onClick={() => { if (!permissionsPending) onCopyInvite("companion"); }}>＋ 邀请同行人</button></>}
     </div>
   );
 }

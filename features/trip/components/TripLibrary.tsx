@@ -164,12 +164,16 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
       onSelectDay(day);
       return;
     }
+    // Selection is application state; commit it before updating browser
+    // history. This keeps the sidebar, active details, and selected day in one
+    // React update instead of exposing a URL/history intermediate frame.
+    onSelectDay(day);
+    onActiveTripChange(tripId);
     const url = new URL(window.location.href);
     url.searchParams.set("trip", tripId);
     url.searchParams.set("day", String(day));
     sessionStorage.setItem("tuyu-scroll-position", String(window.scrollY));
     if (writeHistoryIfChanged("push", url, "select-trip")) window.dispatchEvent(new Event("tuyu-tripchange"));
-    onActiveTripChange(tripId);
   };
 
   const createTrip = () => {
