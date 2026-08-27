@@ -27,7 +27,7 @@ type Options = TripState & TripSetters & {
   authReady: boolean;
   enabled: boolean;
   persistLocal: boolean;
-  onRemoteTripLoaded: () => void;
+  onRemoteTripLoaded: (tripId: string) => void;
   storageScope: string;
   tripId: string;
 };
@@ -151,7 +151,7 @@ export function useTripPersistence({
         const { trip, version: loadedVersion } = loaded.result;
         if (trip) {
           applySnapshot(normalizeSnapshot(trip, detailsRef.current));
-          onRemoteTripLoaded();
+          onRemoteTripLoaded(tripId);
           window.dispatchEvent(new CustomEvent("tuyu-tripremote", { detail: tripId }));
         }
         lastSavedRef.current = trip ? JSON.stringify(trip) : "";

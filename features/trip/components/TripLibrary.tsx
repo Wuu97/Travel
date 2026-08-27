@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { defaultTripDetails } from "../data";
 import type { ItineraryItem, TripDetails, TripLibraryItem } from "../model";
 import { loadTripDetails, mergeTripLibraryItems, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary, sortTripLibraryItems } from "../storage";
@@ -40,14 +40,13 @@ type Props = {
   onMovePlan: (id: string, day: number) => void;
   onSelectDay: (day: number) => void;
   storageScope: string;
-  workspaceReady: boolean;
   initialItems: TripLibraryItem[];
   cloudDeleteCapabilities: Map<string, boolean>;
   initialError: string | null;
   libraryReady: boolean;
 };
 
-export function TripLibrary({ accessToken, activeDay, activeTripId: committedActiveTripId, cloudDeleteCapabilities: initialCloudDeleteCapabilities, collapsed = false, currentDetails, initialError, initialItems, libraryReady: committedLibraryReady, onActiveTripChange, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope, workspaceReady }: Props) {
+export function TripLibrary({ accessToken, activeDay, activeTripId: committedActiveTripId, cloudDeleteCapabilities: initialCloudDeleteCapabilities, collapsed = false, currentDetails, initialError, initialItems, libraryReady: committedLibraryReady, onActiveTripChange, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
   const [items, setItems] = useState<TripLibraryItem[]>([]);
   const itemsRef = useRef<TripLibraryItem[]>([]);
   const [cloudDeleteCapabilities, setCloudDeleteCapabilities] = useState<Map<string, boolean>>(() => initialCloudDeleteCapabilities);
@@ -56,8 +55,6 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
   const cloudListLoadingRef = useRef(false);
   const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [libraryLoaded, setLibraryLoaded] = useState(false);
-  const [hasPersistedLibrary, setHasPersistedLibrary] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [draft, setDraft] = useState<TripDraft>(defaultTripDraft);
   const [createErrors, setCreateErrors] = useState<Partial<Record<keyof TripDraft, string>>>({});
@@ -69,17 +66,13 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
   });
   const [expandedTrips, setExpandedTrips] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!committedLibraryReady) return;
-    queueMicrotask(() => {
-      itemsRef.current = initialItems;
-      setItems(initialItems);
-      setCloudDeleteCapabilities(initialCloudDeleteCapabilities);
-      setCloudListError(initialError);
-      setHasPersistedLibrary(initialItems.length > 0);
-      setLibraryLoaded(true);
-    });
-  }, [committedActiveTripId, committedLibraryReady, initialCloudDeleteCapabilities, initialError, initialItems, storageScope]);
+    itemsRef.current = initialItems;
+    setItems(initialItems);
+    setCloudDeleteCapabilities(initialCloudDeleteCapabilities);
+    setCloudListError(initialError);
+  }, [committedLibraryReady, initialCloudDeleteCapabilities, initialError, initialItems]);
 
   const loadCloudTrips = useCallback(async () => {
     if (!accessToken || cloudListLoadingRef.current) return;
@@ -142,7 +135,6 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
         return next;
       });
       onActiveTripChange(item.id);
-      setHasPersistedLibrary(true);
     };
     window.addEventListener("tuyu-tripcreated", addCreatedTrip);
     return () => window.removeEventListener("tuyu-tripcreated", addCreatedTrip);
@@ -188,11 +180,10 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
     const companions = ["你", ...draft.companions.split(/[,，]/).map((name) => name.trim()).filter(Boolean)];
     const uniqueCompanions = [...new Set(companions)];
     const details: TripDetails = { ...defaultTripDetails, title: destination, startDate: draft.startDate, endDate: draft.endDate, status: "筹备中", companions: uniqueCompanions, memberRoles: Object.fromEntries(uniqueCompanions.filter((name) => name !== "你").map((name) => [name, "同行人"])) };
-    const nextItems = sortTripLibraryItems(hasPersistedLibrary ? [...items, { id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }] : [{ id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }]);
+    const nextItems = sortTripLibraryItems([...items, { id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }]);
     saveTrip({ expenses: [], budgetItems: [], plans: [] }, id, storageScope);
     saveTripDetails(details, id, storageScope);
     saveTripLibrary(nextItems, storageScope);
-    setHasPersistedLibrary(true);
     itemsRef.current = nextItems;
     setItems(nextItems);
     setCreateOpen(false);
@@ -286,7 +277,7 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
     { label: "已结束", status: "已结束" },
   ];
 
-  const showLibrary = libraryLoaded && workspaceReady;
+  const showLibrary = committedLibraryReady;
 
   return <section className={`trip-library trip-sidebar ${collapsed ? "is-collapsed" : ""}`} aria-busy={!showLibrary} aria-label="全部行程">
     <SidebarHeader action={<button aria-label="新建行程" className="sidebar-header-action" title="新建行程" type="button" onClick={() => setCreateOpen(true)}>＋ 新建</button>} className="trip-sidebar-heading" collapseButton={<SidebarCollapseButton className="sidebar-header-collapse" collapseLabel="收起行程侧栏" collapsed={collapsed} expandLabel="展开行程侧栏" onToggle={() => onCollapsedChange?.(!collapsed)} />} title="全部行程" />
@@ -294,7 +285,7 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
       {!showLibrary ? null : <>
       {cloudListError && <p className="sync-error" role="status">{cloudListError}<button type="button" disabled={cloudListRetrying} onClick={retryCloudList}>{cloudListRetrying ? "正在重试" : "重试"}</button></p>}
       {deleteError && <p className="sync-error" role="status">{deleteError}</p>}
-      {libraryLoaded && !items.length && <p className="trip-library-empty" role="status">还没有旅行，创建你的第一段旅程吧。</p>}
+      {!items.length && <p className="trip-library-empty" role="status">还没有旅行，创建你的第一段旅程吧。</p>}
       {groups.map(({ label, status }) => {
         // A library group is defined by the committed library item only.  The
         // workspace details hydrate on a different schedule; using their

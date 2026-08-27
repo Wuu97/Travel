@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { TripWorkspaceProps } from "../components/TripWorkspace";
 import { defaultTripDetails, getDefaultStoredTrip } from "../data";
@@ -88,19 +88,14 @@ export function useTripWorkspaceController({
   const safeCanEditTrip = membershipPending ? false : canEditTrip;
   const safeCanManageMembers = membershipPending ? false : canManageMembers;
   const safeCanDeleteTrip = membershipPending ? false : canDeleteTrip;
-  // A scope is hydrated only after its persisted snapshot has been read. In
-  // particular, "guest" must not count as ready while Supabase restores a
-  // signed-in session and may switch the scope to that user.
-  const [hydratedStorageScope, setHydratedStorageScope] = useState<string | null>(null);
+  // This is the one display boundary: the id whose snapshot currently backs
+  // the workspace. Cloud and permission completion deliberately do not enter
+  // this state.
+  const [displayedTripKey, setDisplayedTripKey] = useState<string | null>(null);
   const libraryReady = libraryCommit?.scope === storageScope;
-  const persistenceReady = loadPersistedState && authReady && libraryReady && hydratedStorageScope === storageScope;
-  // The default workspace is only a presentation fallback. It must never become
-  // a persisted guest trip simply because the library is empty.
-  const hasPersistedTripInScope = useCallback(() => hasStoredTripSnapshot(activeTripId, storageScope) || loadTripLibrary(storageScope).some((trip) => trip.id === activeTripId), [activeTripId, storageScope]);
   // Reading local storage here would make the server and first browser render
   // disagree. The persistence effect below resolves this after mounting.
   const [hasPersistedTrip, setHasPersistedTrip] = useState(false);
-  const markRemoteTripLoaded = useCallback(() => setHasPersistedTrip(true), []);
   const [tripDetails, setTripDetails] = useState(initialDetails);
   const [expenses, setExpenses] = useState<LedgerItem[]>(initialTrip.expenses);
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
@@ -108,8 +103,25 @@ export function useTripWorkspaceController({
   const [lastImportBatch, setLastImportBatch] = useState<{ batchId: string; importedAt: number; itineraryItemIds: string[]; budgetItemIds: string[] } | null>(null);
   const [undoImportSuccess, setUndoImportSuccess] = useState(false);
   const migratedUserRef = useRef<string | null>(null);
+  const snapshotKey = `${storageScope}:${activeTripId}`;
+  const hydrateLocalSnapshot = useCallback((tripId: string | null) => {
+    if (!tripId || !hasStoredTripSnapshot(tripId, storageScope)) return false;
+    const trip = loadStoredTrip(getDefaultStoredTrip(), tripId, storageScope);
+    setExpenses(trip.expenses);
+    setBudgetItems(trip.budgetItems);
+    setPlans(trip.plans);
+    setTripDetails(loadTripDetails(defaultTripDetails, tripId, storageScope));
+    setHasPersistedTrip(true);
+    setDisplayedTripKey(`${storageScope}:${tripId}`);
+    return true;
+  }, [storageScope]);
+  const markRemoteTripLoaded = useCallback((tripId: string) => {
+    if (tripId !== activeTripId) return;
+    setHasPersistedTrip(true);
+    setDisplayedTripKey(`${storageScope}:${tripId}`);
+  }, [activeTripId, storageScope]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!loadPersistedState || !authReady) return;
     let cancelled = false;
     void (async () => {
@@ -134,12 +146,14 @@ export function useTripWorkspaceController({
       const canCommitLocal = localCommit.length && (!accessToken || requestedTripIsLocal);
       if (canCommitLocal) {
         setLibraryCommit({ scope: storageScope, items: localCommit, cloudDeleteCapabilities: new Map(), error: null });
+        hydrateLocalSnapshot(localSelection);
         setActivatedTripId(localSelection);
       }
 
       if (!accessToken) {
         if (!canCommitLocal) {
           setLibraryCommit({ scope: storageScope, items: [], cloudDeleteCapabilities: new Map(), error: null });
+          setDisplayedTripKey(null);
           setActivatedTripId(null);
         }
         return;
@@ -152,15 +166,22 @@ export function useTripWorkspaceController({
         const finalItems = sortTripLibraryItems(mergeTripLibraryItems(localItems, cloudItems));
         if (cloudItems.length) saveTripLibrary(finalItems, storageScope);
         setLibraryCommit({ scope: storageScope, items: finalItems, cloudDeleteCapabilities, error: null });
-        if (!localCommit.length || !requestedTripIsLocal) setActivatedTripId(selectTripFromLibrary(finalItems, requestedTripId).selectedTripId);
+        if (!localCommit.length || !requestedTripIsLocal) {
+          const selectedTripId = selectTripFromLibrary(finalItems, requestedTripId).selectedTripId;
+          if (!hydrateLocalSnapshot(selectedTripId)) setDisplayedTripKey(null);
+          setActivatedTripId(selectedTripId);
+        }
       } catch {
         if (cancelled) return;
         setLibraryCommit({ scope: storageScope, items: localCommit, cloudDeleteCapabilities: new Map(), error: "云端旅行暂时无法加载，当前显示本地数据。" });
-        if (!localCommit.length || !requestedTripIsLocal) setActivatedTripId(null);
+        if (!localCommit.length || !requestedTripIsLocal) {
+          setDisplayedTripKey(null);
+          setActivatedTripId(null);
+        }
       }
     })();
     return () => { cancelled = true; };
-  }, [accessToken, authReady, bootstrapTripId, initialDetails.endDate, initialDetails.startDate, initialDetails.status, initialDetails.title, loadPersistedState, storageScope]);
+  }, [accessToken, authReady, bootstrapTripId, hydrateLocalSnapshot, initialDetails.endDate, initialDetails.startDate, initialDetails.status, initialDetails.title, loadPersistedState, storageScope]);
   useEffect(() => {
     if (!accessToken || storageScope === "guest" || migratedUserRef.current === storageScope) return;
     const result = migrateGuestTripLibrary(storageScope);
@@ -190,6 +211,7 @@ export function useTripWorkspaceController({
       return false;
     }
     setActivationError(null);
+    setDisplayedTripKey(`${storageScope}:${id}`);
     setActivatedTripId(id);
     setHasPersistedTrip(true);
     const url = new URL(window.location.href);
@@ -198,40 +220,14 @@ export function useTripWorkspaceController({
     window.dispatchEvent(new CustomEvent("tuyu-tripcreated", { detail: item }));
     return true;
   }, [activeRealTripId, budgetItems, expenses, isAuthenticated, plans, safeCanEditTrip, storageScope, tripDetails]);
-  useEffect(() => {
-    if (!loadPersistedState || !authReady) return;
-    // TripLibrary owns the unified local/cloud collection commit. Do not load
-    // the neutral fallback while that commit has not selected a real trip.
-    if (activatedTripId === undefined) return;
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
-      const trip = loadStoredTrip(getDefaultStoredTrip(), activeTripId, storageScope);
-      setExpenses(trip.expenses);
-      setBudgetItems(trip.budgetItems);
-      setPlans(trip.plans);
-      setTripDetails(loadTripDetails(defaultTripDetails, activeTripId, storageScope));
-      setHasPersistedTrip(hasPersistedTripInScope());
-      setHydratedStorageScope(storageScope);
-    });
-    return () => { cancelled = true; };
-  }, [activatedTripId, activeTripId, authReady, hasPersistedTripInScope, loadPersistedState, storageScope]);
   const onActiveTripChange = useCallback((tripId: string | null) => {
     // A library click is an atomic local transition: never publish the new
     // selected id while the workspace still holds the previous trip's data.
     // Remote-only trips have no local snapshot and continue through the normal
     // persistence effect instead.
-    if (tripId && loadPersistedState && authReady && hasStoredTripSnapshot(tripId, storageScope)) {
-      const trip = loadStoredTrip(getDefaultStoredTrip(), tripId, storageScope);
-      setExpenses(trip.expenses);
-      setBudgetItems(trip.budgetItems);
-      setPlans(trip.plans);
-      setTripDetails(loadTripDetails(defaultTripDetails, tripId, storageScope));
-      setHasPersistedTrip(true);
-      setHydratedStorageScope(storageScope);
-    }
+    if (!hydrateLocalSnapshot(tripId)) setDisplayedTripKey(null);
     setActivatedTripId(tripId);
-  }, [authReady, loadPersistedState, storageScope]);
+  }, [hydrateLocalSnapshot]);
   const tripDestination = getTripDestination(tripDetails.title);
   const planMenuRef = useRef<HTMLDivElement>(null);
   const timelineListRef = useRef<HTMLDivElement>(null);
@@ -301,7 +297,7 @@ export function useTripWorkspaceController({
     authReady,
     budgetItems,
     details: tripDetails,
-    enabled: loadPersistedState && (!isAuthenticated || Boolean(activeRealTripId)) && persistenceReady,
+    enabled: loadPersistedState && libraryReady && (!isAuthenticated || Boolean(activeRealTripId)),
     onRemoteTripLoaded: markRemoteTripLoaded,
     persistLocal: !isAuthenticated || hasPersistedTrip || Boolean(activeRealTripId),
     expenses,
@@ -447,7 +443,11 @@ export function useTripWorkspaceController({
     tripPopover,
     tripPopoverRef,
   });
-  const workspaceEmpty = persistenceReady && !hasPersistedTrip && !activeRealTripId;
+  const workspaceEmpty = libraryReady && activatedTripId === null;
+  const displayReady = loadPersistedState
+    && authReady
+    && libraryReady
+    && (workspaceEmpty || displayedTripKey === snapshotKey);
   const ensureActiveTrip = () => !workspaceEmpty && ensureRealTrip();
   const copyActivePlan = (item: ItineraryItem) => {
     if (!ensureActiveTrip()) return;
@@ -490,12 +490,11 @@ export function useTripWorkspaceController({
     canEditTrip: safeCanEditTrip,
     canManageMembers: safeCanManageMembers,
     canDeleteTrip: safeCanDeleteTrip,
-    browserReady: loadPersistedState && authReady,
     libraryItems: libraryCommit?.items || [],
     libraryCloudDeleteCapabilities: libraryCommit?.cloudDeleteCapabilities || new Map(),
     libraryError: libraryCommit?.error || null,
     libraryReady,
-    persistenceReady,
+    displayReady,
     onActiveTripChange,
     workspaceEmpty,
     tripId: activeTripId,
