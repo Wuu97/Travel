@@ -49,11 +49,19 @@
 
 .manual-plan input[aria-invalid="true"]{border-color:var(--color-brand)}
 
-.trip-workspace-hydrating{display:grid;gap:14px;align-content:center;min-height:440px;padding:32px;border-radius:var(--radius-lg);background:var(--color-surface)}
-.trip-workspace-hydrating span{display:block;height:20px;border-radius:var(--radius-pill);background:linear-gradient(90deg,#f0f3ef,#e7ede7,#f0f3ef)}
-.trip-workspace-hydrating span:nth-child(1){width:34%}
-.trip-workspace-hydrating span:nth-child(2){width:72%}
-.trip-workspace-hydrating span:nth-child(3){width:56%}
+.trip-workspace-hydrating{display:grid;min-height:530px;background:var(--color-surface);overflow:hidden}
+.trip-skeleton{display:block;border-radius:var(--radius-pill);background:linear-gradient(90deg,#f0f3ef,#e7ede7,#f0f3ef)}
+.trip-workspace-hydrating-header{display:grid;gap:8px;padding:16px 18px;border-bottom:1px solid var(--color-border)}
+.trip-skeleton-status{width:52px;height:18px}
+.trip-skeleton-title{width:min(42%,260px);height:26px}
+.trip-skeleton-meta{width:min(58%,360px);height:16px}
+.trip-workspace-hydrating-tabs{display:flex;gap:8px;padding:14px 18px;border-bottom:1px solid var(--color-border-subtle)}
+.trip-workspace-hydrating-tabs .trip-skeleton{width:74px;height:28px}
+.trip-workspace-hydrating-content{display:grid;align-content:start;gap:14px;padding:22px 18px}
+.trip-skeleton-row-heading{width:112px;height:18px;margin-bottom:4px}
+.trip-skeleton-row{width:100%;height:56px;border-radius:var(--radius-sm)}
+.trip-skeleton-row.short{width:68%}
+@media(max-width:760px){.trip-workspace-hydrating{min-height:480px}.trip-workspace-hydrating-header,.trip-workspace-hydrating-tabs,.trip-workspace-hydrating-content{padding-left:12px;padding-right:12px}.trip-skeleton-title{width:62%}.trip-skeleton-meta{width:78%}}
 
 
 
