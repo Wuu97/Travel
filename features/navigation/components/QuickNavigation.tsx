@@ -8,10 +8,11 @@ type QuickNavigationProps = {
   onNavigate: (event: React.MouseEvent<HTMLAnchorElement>, target: string) => void;
   accountLabel?: string | null;
   accessToken?: string | null;
+  authReady: boolean;
   onSignOut?: () => void;
 };
 
-export function QuickNavigation({ accountLabel, accessToken = null, onNavigate, onSignOut }: QuickNavigationProps) {
+export function QuickNavigation({ accountLabel, accessToken = null, authReady, onNavigate, onSignOut }: QuickNavigationProps) {
   const [preferencesOpen, setPreferencesOpen] = useState(false);
 
   return (
@@ -75,7 +76,8 @@ export function QuickNavigation({ accountLabel, accessToken = null, onNavigate, 
             AI 旅行助手
           </a>
         </div>
-        {accountLabel ? (
+        <div className="nav-auth-slot">
+        {!authReady ? <div className="nav-auth-placeholder" aria-hidden="true" /> : accountLabel ? (
           <div className="account-menu">
             <span title={accountLabel}>{accountLabel}</span>
             <button
@@ -97,6 +99,7 @@ export function QuickNavigation({ accountLabel, accessToken = null, onNavigate, 
         ) : (
           <button className="login" type="button" onClick={() => window.dispatchEvent(new Event("travel:open-auth"))}>登录 / 注册</button>
         )}
+        </div>
       </nav>
     </>
 

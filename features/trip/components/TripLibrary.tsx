@@ -145,35 +145,33 @@ export function TripLibrary({ accessToken, activeDay, authReady, browserReady, c
   useEffect(() => {
     if (!browserReady) return;
     let cancelled = false;
-    const timer = window.setTimeout(() => {
-      const storedItems = loadTripLibrary(storageScope);
-      const persisted = hasStoredTripLibrary(storageScope);
-      const applyItems = (libraryItems: TripLibraryItem[], isPersisted: boolean) => {
-        if (cancelled) return;
-        const loadedItems = sortTripLibraryItems(libraryItems);
-        const requestedId = new URLSearchParams(window.location.search).get("trip");
-        const { selectedTripId } = selectTripFromLibrary(libraryItems, requestedId);
-        setActiveTripId(selectedTripId);
-        onActiveTripChange(selectedTripId);
-        itemsRef.current = loadedItems;
-        setItems(loadedItems);
-        setHasPersistedLibrary(isPersisted);
-        setLibraryScope(storageScope);
-        setLibraryLoaded(true);
-      };
-      if (!authReady || !accessToken) {
-        setCloudDeleteCapabilities(new Map());
-        setCloudListError(null);
-        setCloudListRetrying(false);
-        applyItems(storedItems, persisted);
-        return;
-      }
-      // The local scoped library is immediately available even while the cloud
-      // discovery request is pending or unavailable.
+    const storedItems = loadTripLibrary(storageScope);
+    const persisted = hasStoredTripLibrary(storageScope);
+    const applyItems = (libraryItems: TripLibraryItem[], isPersisted: boolean) => {
+      if (cancelled) return;
+      const loadedItems = sortTripLibraryItems(libraryItems);
+      const requestedId = new URLSearchParams(window.location.search).get("trip");
+      const { selectedTripId } = selectTripFromLibrary(libraryItems, requestedId);
+      setActiveTripId(selectedTripId);
+      onActiveTripChange(selectedTripId);
+      itemsRef.current = loadedItems;
+      setItems(loadedItems);
+      setHasPersistedLibrary(isPersisted);
+      setLibraryScope(storageScope);
+      setLibraryLoaded(true);
+    };
+    if (!authReady || !accessToken) {
+      setCloudDeleteCapabilities(new Map());
+      setCloudListError(null);
+      setCloudListRetrying(false);
       applyItems(storedItems, persisted);
-      void loadCloudTrips();
-    }, 0);
-    return () => { cancelled = true; window.clearTimeout(timer); };
+      return () => { cancelled = true; };
+    }
+    // The local scoped library is immediately available even while the cloud
+    // discovery request is pending or unavailable.
+    applyItems(storedItems, persisted);
+    void loadCloudTrips();
+    return () => { cancelled = true; };
   }, [accessToken, authReady, browserReady, loadCloudTrips, onActiveTripChange, storageScope]);
 
   const retryCloudList = () => {

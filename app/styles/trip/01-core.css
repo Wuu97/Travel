@@ -49,6 +49,12 @@
 
 .manual-plan input[aria-invalid="true"]{border-color:var(--color-brand)}
 
+.trip-workspace-hydrating{display:grid;gap:14px;align-content:center;min-height:440px;padding:32px;border-radius:var(--radius-lg);background:var(--color-surface)}
+.trip-workspace-hydrating span{display:block;height:20px;border-radius:var(--radius-pill);background:linear-gradient(90deg,#f0f3ef,#e7ede7,#f0f3ef)}
+.trip-workspace-hydrating span:nth-child(1){width:34%}
+.trip-workspace-hydrating span:nth-child(2){width:72%}
+.trip-workspace-hydrating span:nth-child(3){width:56%}
+
 
 
 .manual-form-error{display:block;margin-top:5px;color:var(--color-danger-action);font-size:var(--font-size-xs)}
@@ -557,4 +563,3 @@
 
 
 .expense-list article:last-child{border:0}
-

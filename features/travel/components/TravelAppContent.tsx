@@ -21,13 +21,16 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
   const storageScope = auth.user?.id || "guest";
   const { active, from, notice, search, setActive, setFrom, setNotice, setTo, to } = useTravelSearch();
   const jumpTo = useAnchorNavigation();
-  const chat = useTravelChat({ accessToken: auth.accessToken, authReady: auth.ready, enabled: loadPersistedState, storageScope });
+  // Auth state determines the storage scope. Do not restore guest-scoped data
+  // while Supabase is still deciding whether this browser has a session.
+  const persistedStateEnabled = loadPersistedState && auth.ready;
+  const chat = useTravelChat({ accessToken: auth.accessToken, authReady: auth.ready, enabled: persistedStateEnabled, storageScope });
   useChatHistoryOverlay(chat.historyOpen, chat.historyPanelRef, chat.setHistoryOpen);
   const workspace = useTripWorkspaceController({
     accessToken: auth.accessToken,
     authReady: auth.ready,
     chatMessages: chat.chatMessages,
-    loadPersistedState,
+    loadPersistedState: persistedStateEnabled,
     newChat: chat.newChat,
     setQuestion: chat.setQuestion,
     storageScope,
@@ -51,6 +54,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
       <TravelDiscoverySections
         accountLabel={auth.user?.email || auth.user?.phone || null}
         accessToken={auth.accessToken}
+        authReady={auth.ready}
         active={active}
         from={from}
         notice={notice}

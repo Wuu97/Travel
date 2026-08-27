@@ -80,7 +80,11 @@ export function useTripWorkspaceController({
   const safeCanEditTrip = membershipPending ? false : canEditTrip;
   const safeCanManageMembers = membershipPending ? false : canManageMembers;
   const safeCanDeleteTrip = membershipPending ? false : canDeleteTrip;
-  const [hydratedStorageScope, setHydratedStorageScope] = useState(storageScope);
+  // A scope is hydrated only after its persisted snapshot has been read. In
+  // particular, "guest" must not count as ready while Supabase restores a
+  // signed-in session and may switch the scope to that user.
+  const [hydratedStorageScope, setHydratedStorageScope] = useState<string | null>(null);
+  const persistenceReady = loadPersistedState && authReady && hydratedStorageScope === storageScope;
   // The default workspace is only a presentation fallback. It must never become
   // a persisted guest trip simply because the library is empty.
   const hasPersistedTripInScope = useCallback(() => hasStoredTripSnapshot(activeTripId, storageScope) || loadTripLibrary(storageScope).some((trip) => trip.id === activeTripId), [activeTripId, storageScope]);
@@ -133,7 +137,7 @@ export function useTripWorkspaceController({
     return true;
   }, [activeRealTripId, budgetItems, expenses, isAuthenticated, plans, safeCanEditTrip, storageScope, tripDetails]);
   useEffect(() => {
-    if (!loadPersistedState) return;
+    if (!loadPersistedState || !authReady) return;
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
@@ -146,7 +150,7 @@ export function useTripWorkspaceController({
       setHydratedStorageScope(storageScope);
     });
     return () => { cancelled = true; };
-  }, [activeTripId, hasPersistedTripInScope, loadPersistedState, storageScope]);
+  }, [activeTripId, authReady, hasPersistedTripInScope, loadPersistedState, storageScope]);
   const tripDestination = getTripDestination(tripDetails.title);
   const planMenuRef = useRef<HTMLDivElement>(null);
   const timelineListRef = useRef<HTMLDivElement>(null);
@@ -216,7 +220,7 @@ export function useTripWorkspaceController({
     authReady,
     budgetItems,
     details: tripDetails,
-    enabled: loadPersistedState && (!isAuthenticated || Boolean(activeRealTripId)) && hydratedStorageScope === storageScope,
+    enabled: loadPersistedState && (!isAuthenticated || Boolean(activeRealTripId)) && persistenceReady,
     onRemoteTripLoaded: markRemoteTripLoaded,
     persistLocal: !isAuthenticated || hasPersistedTrip || Boolean(activeRealTripId),
     expenses,
@@ -347,7 +351,7 @@ export function useTripWorkspaceController({
     tripPopover,
     tripPopoverRef,
   });
-  const workspaceEmpty = hydratedStorageScope === storageScope && !hasPersistedTrip && !activeRealTripId;
+  const workspaceEmpty = persistenceReady && !hasPersistedTrip && !activeRealTripId;
   const ensureActiveTrip = () => !workspaceEmpty && ensureRealTrip();
   const copyActivePlan = (item: ItineraryItem) => {
     if (!ensureActiveTrip()) return;
@@ -390,9 +394,10 @@ export function useTripWorkspaceController({
     canEditTrip: safeCanEditTrip,
     canManageMembers: safeCanManageMembers,
     canDeleteTrip: safeCanDeleteTrip,
-    browserReady: loadPersistedState,
+    browserReady: persistenceReady,
+    persistenceReady,
     onActiveTripChange,
-    workspaceEmpty: hydratedStorageScope === storageScope && !hasPersistedTrip && !activeRealTripId,
+    workspaceEmpty,
     tripId: activeTripId,
     permissionStatus,
     budgetItems,
