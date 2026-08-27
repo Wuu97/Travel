@@ -176,7 +176,9 @@ export function migrateGuestTripLibrary(userId: string): GuestTripMigrationResul
   if (!candidates.length) return { status: "noop", migratedIds: [] };
   const migratedIds = candidates.map(({ item }) => item.id);
   const userLibraryKey = getTripLibraryStorageKey(userId);
+  const guestLibraryKey = getTripLibraryStorageKey("guest");
   const previousUserLibrary = localStorage.getItem(userLibraryKey);
+  const previousGuestLibrary = localStorage.getItem(guestLibraryKey);
   const rollback = () => {
     candidates.forEach(({ item }) => {
       localStorage.removeItem(getTripSnapshotStorageKey(item.id, userId));
@@ -184,6 +186,8 @@ export function migrateGuestTripLibrary(userId: string): GuestTripMigrationResul
     });
     if (previousUserLibrary === null) localStorage.removeItem(userLibraryKey);
     else localStorage.setItem(userLibraryKey, previousUserLibrary);
+    if (previousGuestLibrary === null) localStorage.removeItem(guestLibraryKey);
+    else localStorage.setItem(guestLibraryKey, previousGuestLibrary);
   };
   try {
     for (const { item, snapshot, details } of candidates) {
@@ -198,7 +202,9 @@ export function migrateGuestTripLibrary(userId: string): GuestTripMigrationResul
     saveTripLibrary(mergeTripLibraryItems(userItems, candidates.map(({ item }) => item)), userId);
     const remaining = guestItems.filter((item) => !migratedIds.includes(item.id));
     saveTripLibrary(remaining, "guest");
-    migratedIds.forEach((id) => removeTripStorage(id, "guest"));
+    // The committed user copy is authoritative; cleanup failures retain a safe
+    // guest backup rather than rolling back a successful migration.
+    try { migratedIds.forEach((id) => removeTripStorage(id, "guest")); } catch { /* safe guest residue */ }
     return { status: "success", migratedIds };
   } catch {
     rollback();
