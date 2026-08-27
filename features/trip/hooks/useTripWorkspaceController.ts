@@ -330,13 +330,15 @@ export function useTripWorkspaceController({
     tripPopover,
     tripPopoverRef,
   });
+  const workspaceEmpty = hydratedStorageScope === storageScope && !hasPersistedTrip && !activeRealTripId;
+  const ensureActiveTrip = () => !workspaceEmpty && ensureRealTrip();
   const copyActivePlan = (item: ItineraryItem) => {
-    if (!ensureRealTrip()) return;
+    if (!ensureActiveTrip()) return;
     copyPlan(item);
     setOpenPlanMenuId(null);
   };
   const deleteActivePlan = (id: string) => {
-    if (!ensureRealTrip()) return;
+    if (!ensureActiveTrip()) return;
     void deletePlan(id);
     setOpenPlanMenuId(null);
   };
@@ -398,21 +400,21 @@ export function useTripWorkspaceController({
     menuRef: planMenuRef,
     newMember,
     newPlan,
-    onAddPlan: () => { if (ensureRealTrip()) addPlan(); },
+    onAddPlan: () => { if (ensureActiveTrip()) addPlan(); },
     onAmountChange: setLedgerAmount,
     onDateChange: setLedgerDate,
-    onArchive: () => { if (ensureRealTrip()) void archiveTrip(); },
-    onCoverChange: (event) => { if (ensureRealTrip()) chooseCoverImage(event); },
+    onArchive: () => { if (ensureActiveTrip()) void archiveTrip(); },
+    onCoverChange: (event) => { if (ensureActiveTrip()) chooseCoverImage(event); },
     onCopy: copyActivePlan,
     onDelete: deleteActivePlan,
-    onDetailsChange: (updates) => { if (ensureRealTrip()) updateTripDetails(updates); },
+    onDetailsChange: (updates) => { if (ensureActiveTrip()) updateTripDetails(updates); },
     onEdit: editActivePlan,
     onEditBudget: (id) => editExpense(id, "estimated"),
     onEditExpense: (id) => editExpense(id, "actual"),
     onInlineChange: setInlinePlanEdit,
     onInvite: copyInviteLink,
     onManualAdd: openManualPlan,
-    onMovePlan: (id, day) => { if (ensureRealTrip()) movePlanToDay(id, day); },
+    onMovePlan: (id, day) => { if (ensureActiveTrip()) movePlanToDay(id, day); },
     onNameChange: setLedgerName,
     onNoteChange: setLedgerNote,
     onNewPlanChange: setNewPlan,
@@ -420,16 +422,16 @@ export function useTripWorkspaceController({
     onPayerChange: setLedgerPayer,
     onOptimize: optimizeActiveDay,
     onRelatedItineraryChange: setLedgerRelatedItineraryItemId,
-    onRemoveBudget: (id) => { if (ensureRealTrip()) removeBudgetItem(id); },
-    onRemoveExpense: (id) => { if (ensureRealTrip()) removeExpense(id); },
-    onSaveEdit: () => { if (ensureRealTrip()) savePlan(); },
-    onSaveExpense: () => { if (ensureRealTrip()) addExpense(); },
-    onSaveInline: () => { if (ensureRealTrip()) saveInlinePlan(); },
-    onSaveManual: () => { if (ensureRealTrip()) saveManualPlan(); },
+    onRemoveBudget: (id) => { if (ensureActiveTrip()) removeBudgetItem(id); },
+    onRemoveExpense: (id) => { if (ensureActiveTrip()) removeExpense(id); },
+    onSaveEdit: () => { if (ensureActiveTrip()) savePlan(); },
+    onSaveExpense: () => { if (ensureActiveTrip()) addExpense(); },
+    onSaveInline: () => { if (ensureActiveTrip()) saveInlinePlan(); },
+    onSaveManual: () => { if (ensureActiveTrip()) saveManualPlan(); },
     onSelectDay: setActiveDay,
     onSelectTab: setWorkspaceTab,
     onTitleChange: setInlineTripTitle,
-    onTitleSave: () => { if (ensureRealTrip()) saveInlineTitle(); },
+    onTitleSave: () => { if (ensureActiveTrip()) saveInlineTitle(); },
     onToggleExpense: toggleExpense,
     onToggleMenu: togglePlanMenu,
     onTypeChange: setLedgerType,
@@ -452,11 +454,10 @@ export function useTripWorkspaceController({
     tripPopoverRef,
     workspaceTab,
   };
-  const workspaceEmpty = hydratedStorageScope === storageScope && !hasPersistedTrip && !activeRealTripId;
   const importContext = {
-    addExpenseItems: (items: ExpenseItem[], destination: "budget" | "ledger") => { if (!workspaceEmpty && ensureRealTrip()) addExpenseItems(items, destination); },
-    addImportBatch: (itineraryItems: ItineraryItem[], budgetItems: ExpenseItem[]) => { if (!workspaceEmpty && ensureRealTrip()) addImportBatch(itineraryItems, budgetItems); },
-    addItineraryItems: (items: ItineraryItem[]) => { if (!workspaceEmpty && ensureRealTrip()) addItineraryItems(items); },
+    addExpenseItems: (items: ExpenseItem[], destination: "budget" | "ledger") => { if (ensureActiveTrip()) addExpenseItems(items, destination); },
+    addImportBatch: (itineraryItems: ItineraryItem[], budgetItems: ExpenseItem[]) => { if (ensureActiveTrip()) addImportBatch(itineraryItems, budgetItems); },
+    addItineraryItems: (items: ItineraryItem[]) => { if (ensureActiveTrip()) addItineraryItems(items); },
     isExpenseAdded,
     isPlanAdded,
     lastImportBatch,
