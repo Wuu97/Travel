@@ -136,7 +136,7 @@ export function useTripPersistence({
       const url = new URL(window.location.href);
       url.searchParams.set("trip", acceptedTripId);
       url.searchParams.delete("invite");
-      writeHistoryIfChanged("replace", url);
+      writeHistoryIfChanged("replace", url, "accept-invite");
       if (acceptedTripId !== tripId) {
         window.dispatchEvent(new Event("tuyu-tripchange"));
         return { redirected: true as const };

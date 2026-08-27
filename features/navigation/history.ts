@@ -8,9 +8,11 @@ export function toRelativeUrl(url: URL | LocationReader) {
 }
 
 /** Writes browser history only when the complete visible URL actually changes. */
-export function writeHistoryIfChanged(mode: HistoryWriteMode, nextUrl: URL, location: LocationReader = window.location, history: HistoryWriter = window.history) {
+export function writeHistoryIfChanged(mode: HistoryWriteMode, nextUrl: URL, reason: string, location: LocationReader = window.location, history: HistoryWriter = window.history) {
   const next = toRelativeUrl(nextUrl);
-  if (next === toRelativeUrl(location)) return false;
+  const current = toRelativeUrl(location);
+  if (next === current) return false;
+  if (process.env.NODE_ENV === "development") console.debug("[trip-history]", { reason, current, next, operation: mode, timestamp: Date.now() });
   if (mode === "push") history.pushState(null, "", next);
   else history.replaceState(null, "", next);
   return true;

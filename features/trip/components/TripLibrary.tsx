@@ -16,7 +16,6 @@ import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import { TripSidebarIcon } from "./TripSidebarIcon";
 import { writeHistoryIfChanged } from "../../navigation/history";
 import { selectTripFromLibrary } from "../librarySelection";
-import { useClientHydrated } from "../../shared/hooks/useClientHydrated";
 
 const newTripId = () => createId("trip");
 
@@ -32,22 +31,23 @@ const defaultTripDraft = (): TripDraft => ({
 type Props = {
   accessToken: string | null;
   authReady: boolean;
+  browserReady: boolean;
   activeDay: number;
   collapsed?: boolean;
   currentDetails: TripDetails;
   plans: ItineraryItem[];
+  onActiveTripChange: (tripId: string | null) => void;
   onCollapsedChange?: (collapsed: boolean) => void;
   onMovePlan: (id: string, day: number) => void;
   onSelectDay: (day: number) => void;
   storageScope: string;
 };
 
-export function TripLibrary({ accessToken, activeDay, authReady, collapsed = false, currentDetails, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
-  // Server and first client render intentionally share this neutral state.
-  // Browser storage is restored only after hydration commits.
-  const hydrated = useClientHydrated();
+export function TripLibrary({ accessToken, activeDay, authReady, browserReady, collapsed = false, currentDetails, onActiveTripChange, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
+  const activeTripIdRef = useRef<string | null>(null);
   const [items, setItems] = useState<TripLibraryItem[]>([]);
+  const itemsRef = useRef<TripLibraryItem[]>([]);
   const [cloudDeleteCapabilities, setCloudDeleteCapabilities] = useState<Map<string, boolean>>(() => new Map());
   const [cloudListError, setCloudListError] = useState<string | null>(null);
   const [cloudListRetrying, setCloudListRetrying] = useState(false);
@@ -68,6 +68,10 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   });
   const [expandedTrips, setExpandedTrips] = useState<Record<string, boolean>>({});
 
+  useEffect(() => {
+    activeTripIdRef.current = activeTripId;
+  }, [activeTripId]);
+
   const loadCloudTrips = useCallback(async () => {
     if (!accessToken || cloudListLoadingRef.current) return;
     cloudListLoadingRef.current = true;
@@ -75,11 +79,21 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     try {
       const cloudItems = await listAccessibleTrips(accessToken);
       setCloudDeleteCapabilities(new Map(cloudItems.map((item) => [item.id, item.canDelete === true])));
-      setItems((current) => {
-        const mergedItems = mergeTripLibraryItems(current, cloudItems);
-        if (cloudItems.length) saveTripLibrary(mergedItems, storageScope);
-        return mergedItems;
-      });
+      const mergedItems = mergeTripLibraryItems(itemsRef.current, cloudItems);
+      itemsRef.current = mergedItems;
+      setItems(mergedItems);
+      if (cloudItems.length) saveTripLibrary(mergedItems, storageScope);
+      // A cloud refresh must not steal the user's current selection. The only
+      // time discovery chooses an active trip is when no selection exists yet.
+      const currentActiveTripId = activeTripIdRef.current;
+      const selectedTripId = currentActiveTripId && mergedItems.some((item) => item.id === currentActiveTripId)
+        ? currentActiveTripId
+        : selectTripFromLibrary(mergedItems, new URLSearchParams(window.location.search).get("trip")).selectedTripId;
+      if (selectedTripId !== currentActiveTripId) {
+        activeTripIdRef.current = selectedTripId;
+        setActiveTripId(selectedTripId);
+        onActiveTripChange(selectedTripId);
+      }
       setCloudListError(null);
     } catch {
       // Keep the current local/merged list and selection untouched.
@@ -89,13 +103,17 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
       cloudListLoadingRef.current = false;
       setCloudListRetrying(false);
     }
-  }, [accessToken, storageScope]);
+  }, [accessToken, onActiveTripChange, storageScope]);
 
   useEffect(() => {
     const markRemoteTrip = (event: Event) => {
       const tripId = (event as CustomEvent<string>).detail;
       if (typeof tripId !== "string") return;
-      setItems((current) => current.map((item) => item.id === tripId ? { ...item, cloudBacked: true, canDelete: undefined } : item));
+      setItems((current) => {
+        const next = current.map((item) => item.id === tripId ? { ...item, cloudBacked: true, canDelete: undefined } : item);
+        itemsRef.current = next;
+        return next;
+      });
     };
     window.addEventListener("tuyu-tripremote", markRemoteTrip);
     return () => window.removeEventListener("tuyu-tripremote", markRemoteTrip);
@@ -111,16 +129,21 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     const addCreatedTrip = (event: Event) => {
       const item = (event as CustomEvent<TripLibraryItem>).detail;
       if (!item || typeof item.id !== "string") return;
-      setItems((current) => current.some((trip) => trip.id === item.id) ? current : [...current, item]);
+      setItems((current) => {
+        const next = current.some((trip) => trip.id === item.id) ? current : [...current, item];
+        itemsRef.current = next;
+        return next;
+      });
       setActiveTripId(item.id);
+      onActiveTripChange(item.id);
       setHasPersistedLibrary(true);
     };
     window.addEventListener("tuyu-tripcreated", addCreatedTrip);
     return () => window.removeEventListener("tuyu-tripcreated", addCreatedTrip);
-  }, []);
+  }, [onActiveTripChange]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!browserReady) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
       const storedItems = loadTripLibrary(storageScope);
@@ -129,19 +152,10 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
         if (cancelled) return;
         const loadedItems = sortTripLibraryItems(libraryItems);
         const requestedId = new URLSearchParams(window.location.search).get("trip");
-        const { selectedTripId, needsUrlCorrection } = selectTripFromLibrary(libraryItems, requestedId);
+        const { selectedTripId } = selectTripFromLibrary(libraryItems, requestedId);
         setActiveTripId(selectedTripId);
-        // Hydration restores local state first. Only a missing or stale URL is
-        // corrected; a valid URL never emits a synthetic navigation event.
-        if (needsUrlCorrection) {
-          const url = new URL(window.location.href);
-          if (selectedTripId) url.searchParams.set("trip", selectedTripId);
-          else {
-            url.searchParams.delete("trip");
-            url.searchParams.delete("day");
-          }
-          if (writeHistoryIfChanged("replace", url)) window.dispatchEvent(new Event("tuyu-tripchange"));
-        }
+        onActiveTripChange(selectedTripId);
+        itemsRef.current = loadedItems;
         setItems(loadedItems);
         setHasPersistedLibrary(isPersisted);
         setLibraryScope(storageScope);
@@ -160,7 +174,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
       void loadCloudTrips();
     }, 0);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [accessToken, authReady, hydrated, loadCloudTrips, storageScope]);
+  }, [accessToken, authReady, browserReady, loadCloudTrips, onActiveTripChange, storageScope]);
 
   const retryCloudList = () => {
     if (!accessToken || cloudListRetrying) return;
@@ -168,23 +182,27 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
   };
 
   useEffect(() => {
-    if (!hydrated || !libraryLoaded || !hasPersistedLibrary || libraryScope !== storageScope || !activeTripId) return;
+    if (!browserReady || !libraryLoaded || !hasPersistedLibrary || libraryScope !== storageScope || !activeTripId) return;
     const timer = window.setTimeout(() => setItems((current) => {
       const currentItem = { id: activeTripId, title: currentDetails.title, startDate: currentDetails.startDate, endDate: currentDetails.endDate, status: currentDetails.status };
       const next = current.some((item) => item.id === activeTripId)
         ? current.map((item) => item.id === activeTripId ? { ...item, ...currentItem } : item)
         : [...current, currentItem];
       if (next.length !== current.length || next.some((item, index) => item !== current[index])) saveTripLibrary(next, storageScope);
+      itemsRef.current = next;
       return next;
     }), 0);
     return () => window.clearTimeout(timer);
-  }, [activeTripId, currentDetails.endDate, currentDetails.startDate, currentDetails.status, currentDetails.title, hasPersistedLibrary, hydrated, libraryLoaded, libraryScope, storageScope]);
+  }, [activeTripId, browserReady, currentDetails.endDate, currentDetails.startDate, currentDetails.status, currentDetails.title, hasPersistedLibrary, libraryLoaded, libraryScope, storageScope]);
 
   const openTrip = (tripId: string, day = 1) => {
     if (tripId === activeTripId) {
       const url = new URL(window.location.href);
+      // Hydration may restore an active trip without changing the URL. This is
+      // the first user navigation, so make the resulting deep link explicit.
+      url.searchParams.set("trip", tripId);
       url.searchParams.set("day", String(day));
-      writeHistoryIfChanged("replace", url);
+      writeHistoryIfChanged("replace", url, "select-day");
       onSelectDay(day);
       return;
     }
@@ -192,7 +210,9 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     url.searchParams.set("trip", tripId);
     url.searchParams.set("day", String(day));
     sessionStorage.setItem("tuyu-scroll-position", String(window.scrollY));
-    if (writeHistoryIfChanged("push", url)) window.dispatchEvent(new Event("tuyu-tripchange"));
+    if (writeHistoryIfChanged("push", url, "select-trip")) window.dispatchEvent(new Event("tuyu-tripchange"));
+    setActiveTripId(tripId);
+    onActiveTripChange(tripId);
   };
 
   const createTrip = () => {
@@ -212,6 +232,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     saveTripDetails(details, id, storageScope);
     saveTripLibrary(nextItems, storageScope);
     setHasPersistedLibrary(true);
+    itemsRef.current = nextItems;
     setItems(nextItems);
     setCreateOpen(false);
     setDraft(defaultTripDraft());
@@ -283,15 +304,17 @@ export function TripLibrary({ accessToken, activeDay, authReady, collapsed = fal
     const nextItems = items.filter((item) => item.id !== tripId);
     removeTripStorage(tripId, storageScope);
     saveTripLibrary(nextItems, storageScope);
+    itemsRef.current = nextItems;
     setItems(nextItems);
     if (tripId === activeTripId) {
       if (nextItems[0]) openTrip(nextItems[0].id);
       else {
         setActiveTripId(null);
+        onActiveTripChange(null);
         const url = new URL(window.location.href);
         url.searchParams.delete("trip");
         url.searchParams.delete("day");
-        if (writeHistoryIfChanged("replace", url)) window.dispatchEvent(new Event("tuyu-tripchange"));
+        if (writeHistoryIfChanged("replace", url, "delete-last-trip")) window.dispatchEvent(new Event("tuyu-tripchange"));
       }
     }
     setDeletingTripId(null);

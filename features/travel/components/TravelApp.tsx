@@ -1,32 +1,15 @@
 "use client";
 
 import { ConfirmDialogProvider } from "../../shared/components/ConfirmDialog";
-import { useSyncExternalStore } from "react";
 import { TravelAppContent } from "./TravelAppContent";
-import { useClientHydrated } from "../../shared/hooks/useClientHydrated";
-
-const subscribeToTripLocation = (onStoreChange: () => void) => {
-  window.addEventListener("popstate", onStoreChange);
-  window.addEventListener("tuyu-tripchange", onStoreChange);
-  return () => {
-    window.removeEventListener("popstate", onStoreChange);
-    window.removeEventListener("tuyu-tripchange", onStoreChange);
-  };
-};
-const getTripLocation = () => window.location.search;
-const getServerTripLocation = () => "";
+import { useClientMounted } from "../../shared/hooks/useClientMounted";
 
 export function TravelApp() {
-  const hydrated = useClientHydrated();
-  const tripLocation = useSyncExternalStore(
-    subscribeToTripLocation,
-    getTripLocation,
-    getServerTripLocation,
-  );
+  const mounted = useClientMounted();
   return (
     <ConfirmDialogProvider><TravelAppContent
-      key={`${hydrated ? "hydrated" : "server"}:${tripLocation}`}
-      loadPersistedState={hydrated}
+      key={mounted ? "mounted" : "bootstrap"}
+      loadPersistedState={mounted}
     /></ConfirmDialogProvider>
   );
 }

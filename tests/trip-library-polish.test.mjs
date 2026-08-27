@@ -34,7 +34,9 @@ test("空旅行库不把杭州 fixture 当成真实旅行，排序不会改变�
   const library = await readFile(new URL("features/trip/components/TripLibrary.tsx", root), "utf8");
   assert.match(library, /还没有旅行，创建你的第一段旅程吧。/);
   assert.match(library, /const loadedItems = sortTripLibraryItems\(libraryItems\);/);
-  assert.match(library, /const mergedItems = mergeTripLibraryItems\(current, cloudItems\);/);
+  assert.match(library, /const mergedItems = mergeTripLibraryItems\(itemsRef\.current, cloudItems\);/);
   assert.match(library, /const retryCloudList[\s\S]*?void loadCloudTrips\(\);/);
-  assert.doesNotMatch(library.slice(library.indexOf("const loadCloudTrips"), library.indexOf("useEffect(() => {", library.indexOf("const loadCloudTrips"))), /setActiveTripId|replaceState|tuyu-tripchange/);
+  const cloudLoader = library.slice(library.indexOf("const loadCloudTrips"), library.indexOf("useEffect(() => {", library.indexOf("const loadCloudTrips")));
+  assert.match(cloudLoader, /currentActiveTripId && mergedItems\.some/);
+  assert.doesNotMatch(cloudLoader, /replaceState|tuyu-tripchange/);
 });

@@ -76,6 +76,6 @@ test("first-trip activation is auth-only and keeps guest persistence local", asy
   assert.match(controller, /persistLocal: !isAuthenticated \|\| hasPersistedTrip \|\| Boolean\(activeRealTripId\)/);
   assert.match(controller, /onAddPlan: \(\) => \{ if \(ensureActiveTrip\(\)\) addPlan\(\); \}/);
   assert.match(controller, /addItineraryItems: \(items: ItineraryItem\[\]\) => \{ if \(ensureActiveTrip\(\)\) addItineraryItems\(items\); \}/);
-  assert.match(controller, /tripId !== DEFAULT_TRIP_ID/);
+  assert.match(controller, /bootstrapTripId !== DEFAULT_TRIP_ID/);
   assert.match(library, /tuyu-tripcreated/);
 });

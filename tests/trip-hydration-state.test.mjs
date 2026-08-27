@@ -8,9 +8,11 @@ test("server 与首次 client render 都从 neutral hydration state 开始", asy
     readFile(new URL("../features/trip/components/TripLibrary.tsx", import.meta.url), "utf8"),
     readFile(new URL("../features/trip/hooks/useTripWorkspaceController.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(app, /const hydrated = useClientHydrated\(\);/);
-  assert.match(library, /const hydrated = useClientHydrated\(\);/);
+  assert.match(app, /const mounted = useClientMounted\(\);/);
+  assert.match(library, /browserReady/);
   assert.match(controller, /const hasTripInUrl = loadPersistedState && typeof window !== "undefined"/);
-  assert.doesNotMatch(app, /getClientHydrationState/);
-  assert.doesNotMatch(library, /getClientHydrationState/);
+  assert.doesNotMatch(app, /useSyncExternalStore/);
+  assert.doesNotMatch(library, /useClientHydrated/);
+  const hydrationBody = library.slice(library.indexOf("const applyItems"), library.indexOf("if (!authReady", library.indexOf("const applyItems")));
+  assert.doesNotMatch(hydrationBody, /writeHistoryIfChanged|tuyu-tripchange|replaceState|pushState/);
 });

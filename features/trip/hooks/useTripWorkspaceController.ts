@@ -52,22 +52,30 @@ export function useTripWorkspaceController({
   setQuestion,
   storageScope,
 }: Options) {
-  const { initialDetails, initialTrip, tripId } = useTripBootstrap(loadPersistedState, storageScope);
+  const { initialDetails, initialTrip, tripId: bootstrapTripId } = useTripBootstrap(loadPersistedState, storageScope);
   const isAuthenticated = authReady && Boolean(accessToken);
   // TravelApp deliberately renders one server-equivalent pass before it reads
   // browser persistence. Keep URL selection behind that same gate so a
   // bookmarked trip cannot turn the first client render into a different
   // workspace from the server HTML.
   const hasTripInUrl = loadPersistedState && typeof window !== "undefined" && Boolean(new URLSearchParams(window.location.search).get("trip"));
-  const requiresMembershipResolution = Boolean(accessToken && hasTripInUrl && tripId !== DEFAULT_TRIP_ID);
-  const [activatedTripId, setActivatedTripId] = useState<string | null>(null);
+  const requiresMembershipResolution = Boolean(accessToken && hasTripInUrl && bootstrapTripId !== DEFAULT_TRIP_ID);
+  // undefined means the library has not restored yet; null means it restored
+  // an empty library. This prevents a stale URL from reclaiming active state.
+  const [activatedTripId, setActivatedTripId] = useState<string | null | undefined>(undefined);
   const [activationError, setActivationError] = useState<string | null>(null);
   const [canEditTrip, setCanEditTrip] = useState(() => !requiresMembershipResolution);
   const [canManageMembers, setCanManageMembers] = useState(() => !requiresMembershipResolution);
   const [canDeleteTrip, setCanDeleteTrip] = useState(() => !requiresMembershipResolution);
   const [capabilityTripId, setCapabilityTripId] = useState<string | null>(null);
   const [permissionStatus, setPermissionStatus] = useState<"loading" | "ready" | "error">("ready");
-  const activeRealTripId = activatedTripId || (hasTripInUrl && tripId !== DEFAULT_TRIP_ID ? tripId : null);
+  // Controller state is the workspace source of truth after hydration. The
+  // URL supplies only the initial deep-link input and user navigation output.
+  const activeRealTripId = activatedTripId !== undefined
+    ? activatedTripId
+    : hasTripInUrl && bootstrapTripId !== DEFAULT_TRIP_ID ? bootstrapTripId : null;
+  const activeTripId = activeRealTripId || bootstrapTripId;
+  const onActiveTripChange = useCallback((tripId: string | null) => setActivatedTripId(tripId), []);
   const membershipPending = Boolean(accessToken && activeRealTripId) && capabilityTripId !== activeRealTripId;
   const safeCanEditTrip = membershipPending ? false : canEditTrip;
   const safeCanManageMembers = membershipPending ? false : canManageMembers;
@@ -75,7 +83,7 @@ export function useTripWorkspaceController({
   const [hydratedStorageScope, setHydratedStorageScope] = useState(storageScope);
   // The default workspace is only a presentation fallback. It must never become
   // a persisted guest trip simply because the library is empty.
-  const hasPersistedTripInScope = useCallback(() => hasStoredTripSnapshot(tripId, storageScope) || loadTripLibrary(storageScope).some((trip) => trip.id === tripId), [storageScope, tripId]);
+  const hasPersistedTripInScope = useCallback(() => hasStoredTripSnapshot(activeTripId, storageScope) || loadTripLibrary(storageScope).some((trip) => trip.id === activeTripId), [activeTripId, storageScope]);
   const [hasPersistedTrip, setHasPersistedTrip] = useState(hasPersistedTripInScope);
   const markRemoteTripLoaded = useCallback(() => setHasPersistedTrip(true), []);
   const [tripDetails, setTripDetails] = useState(initialDetails);
@@ -118,7 +126,7 @@ export function useTripWorkspaceController({
     setHasPersistedTrip(true);
     const url = new URL(window.location.href);
     url.searchParams.set("trip", id);
-    writeHistoryIfChanged("replace", url);
+    writeHistoryIfChanged("replace", url, "create-first-trip");
     window.dispatchEvent(new CustomEvent("tuyu-tripcreated", { detail: item }));
     return true;
   }, [activeRealTripId, budgetItems, expenses, isAuthenticated, plans, safeCanEditTrip, storageScope, tripDetails]);
@@ -127,16 +135,16 @@ export function useTripWorkspaceController({
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
-      const trip = loadStoredTrip(getDefaultStoredTrip(), tripId, storageScope);
+      const trip = loadStoredTrip(getDefaultStoredTrip(), activeTripId, storageScope);
       setExpenses(trip.expenses);
       setBudgetItems(trip.budgetItems);
       setPlans(trip.plans);
-      setTripDetails(loadTripDetails(defaultTripDetails, tripId, storageScope));
+      setTripDetails(loadTripDetails(defaultTripDetails, activeTripId, storageScope));
       setHasPersistedTrip(hasPersistedTripInScope());
       setHydratedStorageScope(storageScope);
     });
     return () => { cancelled = true; };
-  }, [hasPersistedTripInScope, loadPersistedState, storageScope, tripId]);
+  }, [activeTripId, hasPersistedTripInScope, loadPersistedState, storageScope]);
   const tripDestination = getTripDestination(tripDetails.title);
   const planMenuRef = useRef<HTMLDivElement>(null);
   const timelineListRef = useRef<HTMLDivElement>(null);
@@ -216,7 +224,7 @@ export function useTripWorkspaceController({
     setExpenses,
     setPlans,
     storageScope,
-    tripId: activeRealTripId || tripId,
+    tripId: activeTripId,
   });
   const {
     addExpenseItems,
@@ -302,7 +310,7 @@ export function useTripWorkspaceController({
     onStatusChange: updateTripDetails,
     setShareStatus,
     setShared,
-    tripId: activeRealTripId || tripId,
+    tripId: activeTripId,
   });
   const { saveInlinePlan } = useInlinePlanEditor({
     announceSave,
@@ -380,8 +388,10 @@ export function useTripWorkspaceController({
     canEditTrip: safeCanEditTrip,
     canManageMembers: safeCanManageMembers,
     canDeleteTrip: safeCanDeleteTrip,
+    browserReady: loadPersistedState,
+    onActiveTripChange,
     workspaceEmpty: hydratedStorageScope === storageScope && !hasPersistedTrip && !activeRealTripId,
-    tripId: activeRealTripId || tripId,
+    tripId: activeTripId,
     permissionStatus,
     budgetItems,
     coverInputRef,

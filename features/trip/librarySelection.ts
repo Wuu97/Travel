@@ -5,5 +5,5 @@ export function selectTripFromLibrary(items: TripLibraryItem[], requestedTripId:
   const selectedTripId = requestedTripId && items.some((item) => item.id === requestedTripId)
     ? requestedTripId
     : items[0]?.id || null;
-  return { selectedTripId, needsUrlCorrection: selectedTripId !== requestedTripId };
+  return { selectedTripId };
 }

@@ -10,7 +10,7 @@ test("shared trips stay fail-safe until current membership and cloud metadata ar
     readFile(new URL("features/trip/components/TripLibrary.tsx", root), "utf8"),
   ]);
 
-  assert.match(controller, /const requiresMembershipResolution = Boolean\(accessToken && hasTripInUrl && tripId !== DEFAULT_TRIP_ID\)/);
+  assert.match(controller, /const requiresMembershipResolution = Boolean\(accessToken && hasTripInUrl && bootstrapTripId !== DEFAULT_TRIP_ID\)/);
   assert.equal((controller.match(/useState\(\(\) => !requiresMembershipResolution\)/g) ?? []).length, 3);
   assert.match(controller, /const membershipPending = Boolean\(accessToken && activeRealTripId\) && capabilityTripId !== activeRealTripId/);
   assert.match(controller, /const safeCanEditTrip = membershipPending \? false : canEditTrip/);
