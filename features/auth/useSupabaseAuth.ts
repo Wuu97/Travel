@@ -1,7 +1,7 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "./supabase";
 
 export type SignUpResult =
@@ -10,28 +10,45 @@ export type SignUpResult =
   | { status: "existing-unverified" }
   | { status: "error"; message: string };
 
+type AuthStatus = "initializing" | "authenticated" | "unauthenticated";
+
 export function useSupabaseAuth() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [ready, setReady] = useState(() => !isSupabaseConfigured());
+  const [status, setStatus] = useState<AuthStatus>(() => isSupabaseConfigured() ? "initializing" : "unauthenticated");
   const [user, setUser] = useState<User | null>(null);
+  const initialSessionResolved = useRef(!isSupabaseConfigured());
 
   useEffect(() => {
     const client = getSupabaseBrowserClient();
     if (!client) return;
 
     let active = true;
+    const applySession = (session: { access_token: string; user: User } | null) => {
+      setAccessToken(session?.access_token ?? null);
+      setUser(session?.user ?? null);
+      setStatus(session ? "authenticated" : "unauthenticated");
+    };
+    const { data } = client.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      // INITIAL_SESSION is Supabase's authoritative local-session restoration
+      // event. Other events must not make the first render appear resolved.
+      if (event === "INITIAL_SESSION") {
+        initialSessionResolved.current = true;
+        applySession(session);
+        return;
+      }
+      if (initialSessionResolved.current) applySession(session);
+    });
     void client.auth.getSession().then(({ data, error: sessionError }) => {
       if (!active) return;
       if (sessionError) setError(sessionError.message);
-      setAccessToken(data.session?.access_token ?? null);
-      setUser(data.session?.user ?? null);
-      setReady(true);
-    });
-    const { data } = client.auth.onAuthStateChange((_event, session) => {
-      setAccessToken(session?.access_token ?? null);
-      setUser(session?.user ?? null);
-      setReady(true);
+      // Fallback for clients that do not emit INITIAL_SESSION. A normal auth
+      // event is deliberately not allowed to resolve initialization early.
+      if (!initialSessionResolved.current) {
+        initialSessionResolved.current = true;
+        applySession(data.session);
+      }
     });
 
     return () => {
@@ -126,5 +143,5 @@ export function useSupabaseAuth() {
 
   const clearError = () => setError(null);
 
-  return { accessToken, clearError, configured: isSupabaseConfigured(), error, ready, requestPhoneOtp, resendSignupEmail, signInWithPassword, signOut, signUpWithPassword, user, verifyPhoneOtp };
+  return { accessToken, authStatus: status, clearError, configured: isSupabaseConfigured(), error, ready: status !== "initializing", requestPhoneOtp, resendSignupEmail, signInWithPassword, signOut, signUpWithPassword, user, verifyPhoneOtp };
 }
