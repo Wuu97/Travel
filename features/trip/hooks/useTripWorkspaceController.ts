@@ -78,6 +78,7 @@ export function useTripWorkspaceController({
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
   const [lastImportBatch, setLastImportBatch] = useState<{ batchId: string; importedAt: number; itineraryItemIds: string[]; budgetItemIds: string[] } | null>(null);
+  const [undoImportSuccess, setUndoImportSuccess] = useState(false);
   const migratedUserRef = useRef<string | null>(null);
   useEffect(() => {
     if (!accessToken || storageScope === "guest" || migratedUserRef.current === storageScope) return;
@@ -221,13 +222,14 @@ export function useTripWorkspaceController({
   } = useTripImports({
     budgetItems,
     expenses,
-    onImported: (itineraryItemIds, budgetItemIds) => setLastImportBatch({ batchId: crypto.randomUUID(), importedAt: Date.now(), itineraryItemIds, budgetItemIds }),
+    onImported: (itineraryItemIds, budgetItemIds) => { setUndoImportSuccess(false); setLastImportBatch({ batchId: crypto.randomUUID(), importedAt: Date.now(), itineraryItemIds, budgetItemIds }); },
     plans,
     setBudgetItems,
     setExpenses,
     setPlans,
   });
-  const undoLastImport = () => { if (!safeCanEditTrip || !lastImportBatch) return; setPlans((current) => current.filter((item) => !lastImportBatch.itineraryItemIds.includes(item.id))); setBudgetItems((current) => current.filter((item) => !lastImportBatch.budgetItemIds.includes(item.id))); setLastImportBatch(null); };
+  const undoLastImport = () => { if (!safeCanEditTrip || !lastImportBatch) return; setPlans((current) => current.filter((item) => !lastImportBatch.itineraryItemIds.includes(item.id))); setBudgetItems((current) => current.filter((item) => !lastImportBatch.budgetItemIds.includes(item.id))); setLastImportBatch(null); setUndoImportSuccess(true); };
+  useEffect(() => { if (!undoImportSuccess) return; const timer = window.setTimeout(() => setUndoImportSuccess(false), 3_000); return () => window.clearTimeout(timer); }, [undoImportSuccess]);
   const { selectedImports, toggleImport, toggleImports } = useTripImportSelection();
   const {
     addPlan,
@@ -473,6 +475,7 @@ export function useTripWorkspaceController({
     workspaceProps,
     importContext,
     importUndo: lastImportBatch ? { batch: lastImportBatch, undo: undoLastImport } : null,
+    undoImportSuccess,
     travelContext: tripDestination ? {
       city: tripDestination,
       destination: tripDestination,

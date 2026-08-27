@@ -13,5 +13,5 @@ test("混合导入选中项只通过一次 batch 回调提交两类项目", asyn
   assert.match(panel, /onAddImportBatch\(selectedItineraries, selectedBudget\)/);
   assert.match(panel, /selectedItineraries\.length > 0 && !hasMixedSelection/);
   assert.match(panel, /selectedBudget\.length > 0 && !hasMixedSelection/);
-  assert.match(imports, /recordBatch\(addedPlans\.map\(\(item\) => item\.id\), addedBudget\.map\(\(item\) => item\.id\)\);/);
+  assert.match(imports, /onImported\(result\.batch\.itineraryItemIds, result\.batch\.budgetItemIds\);/);
 });
