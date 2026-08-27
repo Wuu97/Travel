@@ -8,7 +8,6 @@ export function TravelApp() {
   const mounted = useClientMounted();
   return (
     <ConfirmDialogProvider><TravelAppContent
-      key={mounted ? "mounted" : "bootstrap"}
       loadPersistedState={mounted}
     /></ConfirmDialogProvider>
   );

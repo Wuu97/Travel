@@ -52,7 +52,7 @@ export function useTripWorkspaceController({
   setQuestion,
   storageScope,
 }: Options) {
-  const { initialDetails, initialTrip, tripId: bootstrapTripId } = useTripBootstrap(loadPersistedState, storageScope);
+  const { initialDetails, initialTrip, tripId: bootstrapTripId } = useTripBootstrap();
   const isAuthenticated = authReady && Boolean(accessToken);
   // TravelApp deliberately renders one server-equivalent pass before it reads
   // browser persistence. Keep URL selection behind that same gate so a
@@ -84,7 +84,9 @@ export function useTripWorkspaceController({
   // The default workspace is only a presentation fallback. It must never become
   // a persisted guest trip simply because the library is empty.
   const hasPersistedTripInScope = useCallback(() => hasStoredTripSnapshot(activeTripId, storageScope) || loadTripLibrary(storageScope).some((trip) => trip.id === activeTripId), [activeTripId, storageScope]);
-  const [hasPersistedTrip, setHasPersistedTrip] = useState(hasPersistedTripInScope);
+  // Reading local storage here would make the server and first browser render
+  // disagree. The persistence effect below resolves this after mounting.
+  const [hasPersistedTrip, setHasPersistedTrip] = useState(false);
   const markRemoteTripLoaded = useCallback(() => setHasPersistedTrip(true), []);
   const [tripDetails, setTripDetails] = useState(initialDetails);
   const [expenses, setExpenses] = useState<LedgerItem[]>(initialTrip.expenses);
