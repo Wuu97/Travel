@@ -3,7 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { TripWorkspaceProps } from "../components/TripWorkspace";
 import { defaultTripDetails, getDefaultStoredTrip } from "../data";
 import type { ExpenseItem, ItineraryItem, LedgerItem, TripLibraryItem } from "../model";
-import { hasStoredTripSnapshot, loadStoredTrip, loadTripDetails, loadTripLibrary, migrateGuestTripLibrary, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
+import { hasStoredTripSnapshot, loadStoredTrip, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, migrateGuestTripLibrary, saveTrip, saveTripDetails, saveTripLibrary, sortTripLibraryItems } from "../storage";
 import { DEFAULT_TRIP_ID } from "../tripId";
 import { createId } from "../../shared/utils/createId";
 import { syncExpenseRelationTitle } from "../expenseRelations";
@@ -18,7 +18,8 @@ import { useTripImportSelection } from "./useTripImportSelection";
 import { useTripImports } from "./useTripImports";
 import { useTripLifecycle } from "./useTripLifecycle";
 import { useTripPersistence } from "./useTripPersistence";
-import { listTripMembers } from "../api";
+import { listAccessibleTrips, listTripMembers } from "../api";
+import { selectTripFromLibrary } from "../librarySelection";
 import { useTripPlanActions } from "./useTripPlanActions";
 import { useTripSummary } from "./useTripSummary";
 import { useTripWorkspaceView } from "./useTripWorkspaceView";
@@ -26,6 +27,7 @@ import { useWorkspaceOverlays } from "./useWorkspaceOverlays";
 import { writeHistoryIfChanged } from "../../navigation/history";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
+type LibraryCommit = { scope: string; items: TripLibraryItem[]; cloudDeleteCapabilities: Map<string, boolean>; error: string | null };
 type Options = {
   accessToken: string | null;
   authReady: boolean;
@@ -63,6 +65,7 @@ export function useTripWorkspaceController({
   // undefined means the library has not restored yet; null means it restored
   // an empty library. This prevents a stale URL from reclaiming active state.
   const [activatedTripId, setActivatedTripId] = useState<string | null | undefined>(undefined);
+  const [libraryCommit, setLibraryCommit] = useState<LibraryCommit | null>(null);
   const [activationError, setActivationError] = useState<string | null>(null);
   const [canEditTrip, setCanEditTrip] = useState(() => !requiresMembershipResolution);
   const [canManageMembers, setCanManageMembers] = useState(() => !requiresMembershipResolution);
@@ -77,6 +80,12 @@ export function useTripWorkspaceController({
   const activeTripId = activeRealTripId || bootstrapTripId;
   const onActiveTripChange = useCallback((tripId: string | null) => setActivatedTripId(tripId), []);
   const membershipPending = Boolean(accessToken && activeRealTripId) && capabilityTripId !== activeRealTripId;
+  // A trip switch changes activeRealTripId during render, before the
+  // membership effect can set its state to loading. Derive that transition
+  // synchronously so a stale "ready" value cannot be rendered as readonly.
+  const effectivePermissionStatus = permissionStatus === "error"
+    ? "error"
+    : membershipPending ? "loading" : permissionStatus;
   const safeCanEditTrip = membershipPending ? false : canEditTrip;
   const safeCanManageMembers = membershipPending ? false : canManageMembers;
   const safeCanDeleteTrip = membershipPending ? false : canDeleteTrip;
@@ -84,7 +93,8 @@ export function useTripWorkspaceController({
   // particular, "guest" must not count as ready while Supabase restores a
   // signed-in session and may switch the scope to that user.
   const [hydratedStorageScope, setHydratedStorageScope] = useState<string | null>(null);
-  const persistenceReady = loadPersistedState && authReady && hydratedStorageScope === storageScope;
+  const libraryReady = libraryCommit?.scope === storageScope;
+  const persistenceReady = loadPersistedState && authReady && libraryReady && hydratedStorageScope === storageScope;
   // The default workspace is only a presentation fallback. It must never become
   // a persisted guest trip simply because the library is empty.
   const hasPersistedTripInScope = useCallback(() => hasStoredTripSnapshot(activeTripId, storageScope) || loadTripLibrary(storageScope).some((trip) => trip.id === activeTripId), [activeTripId, storageScope]);
@@ -99,6 +109,47 @@ export function useTripWorkspaceController({
   const [lastImportBatch, setLastImportBatch] = useState<{ batchId: string; importedAt: number; itineraryItemIds: string[]; budgetItemIds: string[] } | null>(null);
   const [undoImportSuccess, setUndoImportSuccess] = useState(false);
   const migratedUserRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!loadPersistedState || !authReady) return;
+    let cancelled = false;
+    void (async () => {
+      // This is the only initial library commit. The sidebar and workspace
+      // intentionally share it instead of independently restoring local and
+      // cloud sources.
+      const storedLibrary = loadTripLibrary(storageScope);
+      // Older scopes can contain a saved default snapshot but no library
+      // index. Treat that snapshot as one library item so the sidebar and
+      // workspace never disagree about whether a trip exists.
+      const localItems = storedLibrary.length || !hasStoredTripSnapshot(bootstrapTripId, storageScope)
+        ? storedLibrary
+        : [{ id: bootstrapTripId, title: initialDetails.title, startDate: initialDetails.startDate, endDate: initialDetails.endDate, status: initialDetails.status }];
+      let finalItems = localItems;
+      let cloudDeleteCapabilities = new Map<string, boolean>();
+      let error: string | null = null;
+      if (accessToken) {
+        try {
+          const cloudItems = await listAccessibleTrips(accessToken);
+          if (cancelled) return;
+          cloudDeleteCapabilities = new Map(cloudItems.map((item) => [item.id, item.canDelete === true]));
+          finalItems = mergeTripLibraryItems(localItems, cloudItems);
+          if (cloudItems.length) saveTripLibrary(finalItems, storageScope);
+        } catch {
+          error = "云端旅行暂时无法加载，当前显示本地数据。";
+        }
+      }
+      if (cancelled) return;
+      finalItems = sortTripLibraryItems(finalItems);
+      const requestedTripId = new URLSearchParams(window.location.search).get("trip");
+      const localSelection = selectTripFromLibrary(localItems, requestedTripId).selectedTripId;
+      const selectedTripId = localSelection && finalItems.some((item) => item.id === localSelection)
+        ? localSelection
+        : selectTripFromLibrary(finalItems, requestedTripId).selectedTripId;
+      setLibraryCommit({ scope: storageScope, items: finalItems, cloudDeleteCapabilities, error });
+      setActivatedTripId(selectedTripId);
+    })();
+    return () => { cancelled = true; };
+  }, [accessToken, authReady, bootstrapTripId, initialDetails.endDate, initialDetails.startDate, initialDetails.status, initialDetails.title, loadPersistedState, storageScope]);
   useEffect(() => {
     if (!accessToken || storageScope === "guest" || migratedUserRef.current === storageScope) return;
     const result = migrateGuestTripLibrary(storageScope);
@@ -138,6 +189,9 @@ export function useTripWorkspaceController({
   }, [activeRealTripId, budgetItems, expenses, isAuthenticated, plans, safeCanEditTrip, storageScope, tripDetails]);
   useEffect(() => {
     if (!loadPersistedState || !authReady) return;
+    // TripLibrary owns the unified local/cloud collection commit. Do not load
+    // the neutral fallback while that commit has not selected a real trip.
+    if (activatedTripId === undefined) return;
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
@@ -150,7 +204,7 @@ export function useTripWorkspaceController({
       setHydratedStorageScope(storageScope);
     });
     return () => { cancelled = true; };
-  }, [activeTripId, authReady, hasPersistedTripInScope, loadPersistedState, storageScope]);
+  }, [activatedTripId, activeTripId, authReady, hasPersistedTripInScope, loadPersistedState, storageScope]);
   const tripDestination = getTripDestination(tripDetails.title);
   const planMenuRef = useRef<HTMLDivElement>(null);
   const timelineListRef = useRef<HTMLDivElement>(null);
@@ -305,6 +359,21 @@ export function useTripWorkspaceController({
       activeDay,
       announceSave,
       inlineTitle: inlineTripTitle,
+      onMetadataSaved: (patch) => {
+        if (patch.title === undefined && patch.startDate === undefined && patch.endDate === undefined && patch.status === undefined) return;
+        setLibraryCommit((current) => {
+          if (!current || current.scope !== storageScope) return current;
+          const items = current.items.map((item) => item.id === activeTripId ? {
+            ...item,
+            ...(patch.title !== undefined ? { title: patch.title } : {}),
+            ...(patch.startDate !== undefined ? { startDate: patch.startDate } : {}),
+            ...(patch.endDate !== undefined ? { endDate: patch.endDate } : {}),
+            ...(patch.status !== undefined ? { status: patch.status } : {}),
+          } : item);
+          saveTripLibrary(items, storageScope);
+          return { ...current, items };
+        });
+      },
       setActiveDay,
       setDetails: setTripDetails,
       setInlineTitle: setInlineTripTitle,
@@ -394,12 +463,16 @@ export function useTripWorkspaceController({
     canEditTrip: safeCanEditTrip,
     canManageMembers: safeCanManageMembers,
     canDeleteTrip: safeCanDeleteTrip,
-    browserReady: persistenceReady,
+    browserReady: loadPersistedState && authReady,
+    libraryItems: libraryCommit?.items || [],
+    libraryCloudDeleteCapabilities: libraryCommit?.cloudDeleteCapabilities || new Map(),
+    libraryError: libraryCommit?.error || null,
+    libraryReady,
     persistenceReady,
     onActiveTripChange,
     workspaceEmpty,
     tripId: activeTripId,
-    permissionStatus,
+    permissionStatus: effectivePermissionStatus,
     budgetItems,
     coverInputRef,
     days: tripDays,

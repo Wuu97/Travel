@@ -4,6 +4,20 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 let browserClient: SupabaseClient | null = null;
+export const authDisplayHintCookie = "travel-auth-display-hint";
+
+/**
+ * This cookie deliberately contains only the already-visible account label.  It
+ * is a first-paint presentation hint, never an authorization credential.
+ */
+export function saveAuthDisplayHint(label: string | null) {
+  if (typeof document === "undefined") return;
+  if (!label) {
+    document.cookie = `${authDisplayHintCookie}=; Path=/; Max-Age=0; SameSite=Lax`;
+    return;
+  }
+  document.cookie = `${authDisplayHintCookie}=${encodeURIComponent(label)}; Path=/; Max-Age=604800; SameSite=Lax`;
+}
 
 export function isSupabaseConfigured() {
   return Boolean(supabaseUrl && supabaseKey);

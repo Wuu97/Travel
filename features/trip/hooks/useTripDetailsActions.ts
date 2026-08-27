@@ -3,10 +3,10 @@ import { readTripCover } from "../cover";
 import type { ItineraryItem, TripDetails } from "../model";
 import { getTripDays, movePlansOutsideTripToPending } from "../utils";
 
-type Options = { activeDay: number; announceSave: () => void; inlineTitle: string | null; setActiveDay: (day: number) => void; setDetails: Dispatch<SetStateAction<TripDetails>>; setInlineTitle: (value: string | null) => void; setPlans: Dispatch<SetStateAction<ItineraryItem[]>> };
+type Options = { activeDay: number; announceSave: () => void; inlineTitle: string | null; onMetadataSaved?: (patch: Partial<TripDetails>) => void; setActiveDay: (day: number) => void; setDetails: Dispatch<SetStateAction<TripDetails>>; setInlineTitle: (value: string | null) => void; setPlans: Dispatch<SetStateAction<ItineraryItem[]>> };
 
 /** Coordinates editable trip metadata and keeps the selected day valid after date changes. */
-export function useTripDetailsActions({ activeDay, announceSave, inlineTitle, setActiveDay, setDetails, setInlineTitle, setPlans }: Options) {
+export function useTripDetailsActions({ activeDay, announceSave, inlineTitle, onMetadataSaved, setActiveDay, setDetails, setInlineTitle, setPlans }: Options) {
   const updateTripDetails = (patch: Partial<TripDetails>) => {
     setDetails((current) => {
       const next = { ...current, ...patch };
@@ -18,6 +18,7 @@ export function useTripDetailsActions({ activeDay, announceSave, inlineTitle, se
       }
       return next;
     });
+    onMetadataSaved?.(patch);
     announceSave();
   };
   const saveInlineTitle = () => {

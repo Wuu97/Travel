@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { defaultTripDetails } from "../data";
 import type { ItineraryItem, TripDetails, TripLibraryItem } from "../model";
-import { hasStoredTripLibrary, loadTripDetails, loadTripLibrary, mergeTripLibraryItems, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary, sortTripLibraryItems } from "../storage";
+import { loadTripDetails, mergeTripLibraryItems, removeTripStorage, saveTrip, saveTripDetails, saveTripLibrary, sortTripLibraryItems } from "../storage";
 import { deleteSharedTrip, listAccessibleTrips } from "../api";
 import { createId } from "../../shared/utils/createId";
 import { getTripDays } from "../utils";
@@ -30,8 +30,7 @@ const defaultTripDraft = (): TripDraft => ({
 
 type Props = {
   accessToken: string | null;
-  authReady: boolean;
-  browserReady: boolean;
+  activeTripId: string;
   activeDay: number;
   collapsed?: boolean;
   currentDetails: TripDetails;
@@ -41,21 +40,23 @@ type Props = {
   onMovePlan: (id: string, day: number) => void;
   onSelectDay: (day: number) => void;
   storageScope: string;
+  workspaceReady: boolean;
+  initialItems: TripLibraryItem[];
+  cloudDeleteCapabilities: Map<string, boolean>;
+  initialError: string | null;
+  libraryReady: boolean;
 };
 
-export function TripLibrary({ accessToken, activeDay, authReady, browserReady, collapsed = false, currentDetails, onActiveTripChange, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope }: Props) {
-  const [activeTripId, setActiveTripId] = useState<string | null>(null);
-  const activeTripIdRef = useRef<string | null>(null);
+export function TripLibrary({ accessToken, activeDay, activeTripId: committedActiveTripId, cloudDeleteCapabilities: initialCloudDeleteCapabilities, collapsed = false, currentDetails, initialError, initialItems, libraryReady: committedLibraryReady, onActiveTripChange, onCollapsedChange, onMovePlan, onSelectDay, plans, storageScope, workspaceReady }: Props) {
   const [items, setItems] = useState<TripLibraryItem[]>([]);
   const itemsRef = useRef<TripLibraryItem[]>([]);
-  const [cloudDeleteCapabilities, setCloudDeleteCapabilities] = useState<Map<string, boolean>>(() => new Map());
+  const [cloudDeleteCapabilities, setCloudDeleteCapabilities] = useState<Map<string, boolean>>(() => initialCloudDeleteCapabilities);
   const [cloudListError, setCloudListError] = useState<string | null>(null);
   const [cloudListRetrying, setCloudListRetrying] = useState(false);
   const cloudListLoadingRef = useRef(false);
   const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
-  const [libraryScope, setLibraryScope] = useState(storageScope);
   const [hasPersistedLibrary, setHasPersistedLibrary] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [draft, setDraft] = useState<TripDraft>(defaultTripDraft);
@@ -69,8 +70,16 @@ export function TripLibrary({ accessToken, activeDay, authReady, browserReady, c
   const [expandedTrips, setExpandedTrips] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    activeTripIdRef.current = activeTripId;
-  }, [activeTripId]);
+    if (!committedLibraryReady) return;
+    queueMicrotask(() => {
+      itemsRef.current = initialItems;
+      setItems(initialItems);
+      setCloudDeleteCapabilities(initialCloudDeleteCapabilities);
+      setCloudListError(initialError);
+      setHasPersistedLibrary(initialItems.length > 0);
+      setLibraryLoaded(true);
+    });
+  }, [committedActiveTripId, committedLibraryReady, initialCloudDeleteCapabilities, initialError, initialItems, storageScope]);
 
   const loadCloudTrips = useCallback(async () => {
     if (!accessToken || cloudListLoadingRef.current) return;
@@ -85,13 +94,11 @@ export function TripLibrary({ accessToken, activeDay, authReady, browserReady, c
       if (cloudItems.length) saveTripLibrary(mergedItems, storageScope);
       // A cloud refresh must not steal the user's current selection. The only
       // time discovery chooses an active trip is when no selection exists yet.
-      const currentActiveTripId = activeTripIdRef.current;
+      const currentActiveTripId = committedActiveTripId;
       const selectedTripId = currentActiveTripId && mergedItems.some((item) => item.id === currentActiveTripId)
         ? currentActiveTripId
         : selectTripFromLibrary(mergedItems, new URLSearchParams(window.location.search).get("trip")).selectedTripId;
       if (selectedTripId !== currentActiveTripId) {
-        activeTripIdRef.current = selectedTripId;
-        setActiveTripId(selectedTripId);
         onActiveTripChange(selectedTripId);
       }
       setCloudListError(null);
@@ -103,7 +110,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, browserReady, c
       cloudListLoadingRef.current = false;
       setCloudListRetrying(false);
     }
-  }, [accessToken, onActiveTripChange, storageScope]);
+  }, [accessToken, committedActiveTripId, onActiveTripChange, storageScope]);
 
   useEffect(() => {
     const markRemoteTrip = (event: Event) => {
@@ -134,7 +141,6 @@ export function TripLibrary({ accessToken, activeDay, authReady, browserReady, c
         itemsRef.current = next;
         return next;
       });
-      setActiveTripId(item.id);
       onActiveTripChange(item.id);
       setHasPersistedLibrary(true);
     };
@@ -142,62 +148,13 @@ export function TripLibrary({ accessToken, activeDay, authReady, browserReady, c
     return () => window.removeEventListener("tuyu-tripcreated", addCreatedTrip);
   }, [onActiveTripChange]);
 
-  useEffect(() => {
-    if (!browserReady) return;
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
-      const storedItems = loadTripLibrary(storageScope);
-      const persisted = hasStoredTripLibrary(storageScope);
-      const applyItems = (libraryItems: TripLibraryItem[], isPersisted: boolean) => {
-        if (cancelled) return;
-        const loadedItems = sortTripLibraryItems(libraryItems);
-        const requestedId = new URLSearchParams(window.location.search).get("trip");
-        const { selectedTripId } = selectTripFromLibrary(libraryItems, requestedId);
-        setActiveTripId(selectedTripId);
-        onActiveTripChange(selectedTripId);
-        itemsRef.current = loadedItems;
-        setItems(loadedItems);
-        setHasPersistedLibrary(isPersisted);
-        setLibraryScope(storageScope);
-        setLibraryLoaded(true);
-      };
-      if (!authReady || !accessToken) {
-        setCloudDeleteCapabilities(new Map());
-        setCloudListError(null);
-        setCloudListRetrying(false);
-        applyItems(storedItems, persisted);
-        return;
-      }
-      // The local scoped library is immediately available even while the cloud
-      // discovery request is pending or unavailable.
-      applyItems(storedItems, persisted);
-      void loadCloudTrips();
-    });
-    return () => { cancelled = true; };
-  }, [accessToken, authReady, browserReady, loadCloudTrips, onActiveTripChange, storageScope]);
-
   const retryCloudList = () => {
     if (!accessToken || cloudListRetrying) return;
     void loadCloudTrips();
   };
 
-  useEffect(() => {
-    if (!browserReady || !libraryLoaded || !hasPersistedLibrary || libraryScope !== storageScope || !activeTripId) return;
-    const timer = window.setTimeout(() => setItems((current) => {
-      const currentItem = { id: activeTripId, title: currentDetails.title, startDate: currentDetails.startDate, endDate: currentDetails.endDate, status: currentDetails.status };
-      const next = current.some((item) => item.id === activeTripId)
-        ? current.map((item) => item.id === activeTripId ? { ...item, ...currentItem } : item)
-        : [...current, currentItem];
-      if (next.length !== current.length || next.some((item, index) => item !== current[index])) saveTripLibrary(next, storageScope);
-      itemsRef.current = next;
-      return next;
-    }), 0);
-    return () => window.clearTimeout(timer);
-  }, [activeTripId, browserReady, currentDetails.endDate, currentDetails.startDate, currentDetails.status, currentDetails.title, hasPersistedLibrary, libraryLoaded, libraryScope, storageScope]);
-
   const openTrip = (tripId: string, day = 1) => {
-    if (tripId === activeTripId) {
+    if (tripId === committedActiveTripId) {
       const url = new URL(window.location.href);
       // Hydration may restore an active trip without changing the URL. This is
       // the first user navigation, so make the resulting deep link explicit.
@@ -212,7 +169,6 @@ export function TripLibrary({ accessToken, activeDay, authReady, browserReady, c
     url.searchParams.set("day", String(day));
     sessionStorage.setItem("tuyu-scroll-position", String(window.scrollY));
     if (writeHistoryIfChanged("push", url, "select-trip")) window.dispatchEvent(new Event("tuyu-tripchange"));
-    setActiveTripId(tripId);
     onActiveTripChange(tripId);
   };
 
@@ -307,10 +263,9 @@ export function TripLibrary({ accessToken, activeDay, authReady, browserReady, c
     saveTripLibrary(nextItems, storageScope);
     itemsRef.current = nextItems;
     setItems(nextItems);
-    if (tripId === activeTripId) {
+    if (tripId === committedActiveTripId) {
       if (nextItems[0]) openTrip(nextItems[0].id);
       else {
-        setActiveTripId(null);
         onActiveTripChange(null);
         const url = new URL(window.location.href);
         url.searchParams.delete("trip");
@@ -327,21 +282,27 @@ export function TripLibrary({ accessToken, activeDay, authReady, browserReady, c
     { label: "已结束", status: "已结束" },
   ];
 
-  return <section className={`trip-library trip-sidebar ${collapsed ? "is-collapsed" : ""}`} aria-label="全部行程">
+  const showLibrary = libraryLoaded && workspaceReady;
+
+  return <section className={`trip-library trip-sidebar ${collapsed ? "is-collapsed" : ""}`} aria-busy={!showLibrary} aria-label="全部行程">
     <SidebarHeader action={<button aria-label="新建行程" className="sidebar-header-action" title="新建行程" type="button" onClick={() => setCreateOpen(true)}>＋ 新建</button>} className="trip-sidebar-heading" collapseButton={<SidebarCollapseButton className="sidebar-header-collapse" collapseLabel="收起行程侧栏" collapsed={collapsed} expandLabel="展开行程侧栏" onToggle={() => onCollapsedChange?.(!collapsed)} />} title="全部行程" />
     <div className="trip-sidebar-groups">
+      {!showLibrary ? null : <>
       {cloudListError && <p className="sync-error" role="status">{cloudListError}<button type="button" disabled={cloudListRetrying} onClick={retryCloudList}>{cloudListRetrying ? "正在重试" : "重试"}</button></p>}
       {deleteError && <p className="sync-error" role="status">{deleteError}</p>}
       {libraryLoaded && !items.length && <p className="trip-library-empty" role="status">还没有旅行，创建你的第一段旅程吧。</p>}
       {groups.map(({ label, status }) => {
-        const groupItems = items.filter((item) => (item.id === activeTripId ? currentDetails.status : item.status || "筹备中") === status);
+        // A library group is defined by the committed library item only.  The
+        // workspace details hydrate on a different schedule; using their
+        // transient fallback here made the active trip jump between groups.
+        const groupItems = items.filter((item) => (item.status || "筹备中") === status);
         const isOpen = openGroups[status];
         const icon = status === "进行中" ? "calendar" : status === "筹备中" ? "clock" : "check";
         return <section className="trip-sidebar-group" key={status}>
           <button className={`trip-sidebar-group-toggle${isOpen ? " is-open" : ""}`} type="button" aria-expanded={isOpen} onClick={() => setOpenGroups((current) => ({ ...current, [status]: !current[status] }))}><TripSidebarIcon name={icon} /><b>{label}</b><small>{groupItems.length}</small><svg aria-hidden="true" className="sidebar-chevron" viewBox="0 0 12 12"><path d="m1 3 5 6 5-6" /></svg></button>
           {isOpen && <div className="trip-library-list">
             {groupItems.map((item) => {
-              const isActive = item.id === activeTripId;
+              const isActive = item.id === committedActiveTripId;
               const details = isActive ? currentDetails : loadTripDetails(defaultTripDetails, item.id, storageScope);
               const days = getTripDays(details.startDate, details.endDate);
               const isExpanded = expandedTrips[item.id] ?? isActive;
@@ -363,7 +324,7 @@ export function TripLibrary({ accessToken, activeDay, authReady, browserReady, c
             })}
           </div>}
         </section>;
-      })}
+      })}</>}
     </div>
     {createOpen && <div aria-modal="true" className="edit-plan-backdrop" role="dialog" aria-labelledby="create-trip-title">
       <button className="edit-plan-dismiss" type="button" aria-label="关闭新建行程" onClick={closeCreateTrip} />

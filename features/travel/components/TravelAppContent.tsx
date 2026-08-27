@@ -16,7 +16,7 @@ import { TripCapabilitiesContext } from "../../trip/components/TripCapabilities"
 import { useTripWorkspaceController } from "../../trip/hooks/useTripWorkspaceController";
 import { useEffect } from "react";
 
-export function TravelAppContent({ loadPersistedState }: { loadPersistedState: boolean }) {
+export function TravelAppContent({ initialAccountLabel, loadPersistedState }: { initialAccountLabel?: string | null; loadPersistedState: boolean }) {
   const auth = useSupabaseAuth();
   const storageScope = auth.user?.id || "guest";
   const { active, from, notice, search, setActive, setFrom, setNotice, setTo, to } = useTravelSearch();
@@ -52,7 +52,7 @@ export function TravelAppContent({ loadPersistedState }: { loadPersistedState: b
   return (
     <main>
       <TravelDiscoverySections
-        accountLabel={auth.user?.email || auth.user?.phone || null}
+        accountLabel={auth.user?.email || auth.user?.phone || initialAccountLabel || null}
         accessToken={auth.accessToken}
         authReady={auth.ready}
         active={active}

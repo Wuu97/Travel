@@ -14,6 +14,9 @@ type QuickNavigationProps = {
 
 export function QuickNavigation({ accountLabel, accessToken = null, authReady, onNavigate, onSignOut }: QuickNavigationProps) {
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  // A server-provided display hint preserves the account control's first-paint
+  // shape. It has no authority and its actions stay inert until auth resolves.
+  const showAccountControl = Boolean(accountLabel);
 
   return (
     <>
@@ -77,26 +80,31 @@ export function QuickNavigation({ accountLabel, accessToken = null, authReady, o
           </a>
         </div>
         <div className="nav-auth-slot">
-        {!authReady ? <div className="nav-auth-placeholder" aria-hidden="true" /> : accountLabel ? (
+        {showAccountControl ? (
           <div className="account-menu">
-            <span title={accountLabel}>{accountLabel}</span>
+            <span title={accountLabel || undefined}>{accountLabel}</span>
             <button
               aria-expanded={preferencesOpen}
               aria-controls="travel-preferences-panel"
               className="login"
               type="button"
-              onClick={() => setPreferencesOpen((open) => !open)}
+              aria-disabled={!authReady}
+              onClick={() => {
+                if (authReady) setPreferencesOpen((open) => !open);
+              }}
             >
               旅行偏好
             </button>
-            <button className="login" type="button" onClick={onSignOut}>退出</button>
+            <button aria-disabled={!authReady} className="login" type="button" onClick={() => {
+              if (authReady) onSignOut?.();
+            }}>退出</button>
             {preferencesOpen ? (
               <div className="account-memory-panel" id="travel-preferences-panel">
                 <MemoryList accessToken={accessToken} />
               </div>
             ) : null}
           </div>
-        ) : (
+        ) : !authReady ? <div className="nav-auth-placeholder" aria-hidden="true"><span /><span /><span /></div> : (
           <button className="login" type="button" onClick={() => window.dispatchEvent(new Event("travel:open-auth"))}>登录 / 注册</button>
         )}
         </div>
