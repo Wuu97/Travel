@@ -21,7 +21,7 @@ test("AI import controls respect TripCapabilitiesContext without affecting respo
 
   assert.match(panel, /当前旅行为只读，无法导入到行程或账本。/);
   assert.equal((panel.match(/disabled=\{added \|\| !canEditTrip\}/g) ?? []).length, 4);
-  assert.equal((panel.match(/disabled=\{!canEditTrip\}/g) ?? []).length, 3);
+  assert.equal((panel.match(/disabled=\{!canEditTrip\}/g) ?? []).length, 4);
   assert.match(panel, /onToggleMany\(expenseItems\.map/);
 
   assert.match(richContent, /disabled=\{added \|\| !canEditTrip\}/);

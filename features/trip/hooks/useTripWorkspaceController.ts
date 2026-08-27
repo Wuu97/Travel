@@ -3,7 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { TripWorkspaceProps } from "../components/TripWorkspace";
 import { defaultTripDetails, getDefaultStoredTrip } from "../data";
 import type { ExpenseItem, ItineraryItem, LedgerItem, TripLibraryItem } from "../model";
-import { hasStoredTripSnapshot, loadStoredTrip, loadTripDetails, loadTripLibrary, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
+import { hasStoredTripSnapshot, loadStoredTrip, loadTripDetails, loadTripLibrary, migrateGuestTripLibrary, saveTrip, saveTripDetails, saveTripLibrary } from "../storage";
 import { DEFAULT_TRIP_ID } from "../tripId";
 import { createId } from "../../shared/utils/createId";
 import { syncExpenseRelationTitle } from "../expenseRelations";
@@ -78,6 +78,12 @@ export function useTripWorkspaceController({
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
   const [lastImportBatch, setLastImportBatch] = useState<{ batchId: string; importedAt: number; itineraryItemIds: string[]; budgetItemIds: string[] } | null>(null);
+  const migratedUserRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!accessToken || storageScope === "guest" || migratedUserRef.current === storageScope) return;
+    try { migrateGuestTripLibrary(storageScope); migratedUserRef.current = storageScope; }
+    catch { queueMicrotask(() => setActivationError("旅行迁移失败，游客数据已保留。请稍后重试。")); }
+  }, [accessToken, storageScope]);
   useEffect(() => {
     if (!accessToken || !activeRealTripId) { queueMicrotask(() => { setCanEditTrip(true); setCanManageMembers(true); setCanDeleteTrip(true); setCapabilityTripId(null); setPermissionStatus("ready"); }); return; }
     queueMicrotask(() => { setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setCapabilityTripId(null); setPermissionStatus("loading"); });

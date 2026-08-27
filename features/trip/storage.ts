@@ -150,6 +150,43 @@ export function removeTripStorage(tripId: string, userId?: LocalStorageScope) {
   localStorage.removeItem(getTripDetailsStorageKey(tripId, userId));
 }
 
+/** Moves only persisted guest trips into a signed-in user's isolated scope. */
+export function migrateGuestTripLibrary(userId: string) {
+  if (typeof window === "undefined" || !userId || userId === "guest") return { migratedIds: [] as string[] };
+  const guestItems = loadTripLibrary("guest");
+  const userItems = loadTripLibrary(userId);
+  const userIds = new Set(userItems.map((item) => item.id));
+  const migratedIds: string[] = [];
+  const migratedItems: TripLibraryItem[] = [];
+  for (const item of guestItems) {
+    if (item.id === "hangzhou-summer-trip" || userIds.has(item.id) || !hasStoredTripSnapshot(item.id, "guest")) continue;
+    const snapshotKey = getTripSnapshotStorageKey(item.id, "guest");
+    const detailsKey = getTripDetailsStorageKey(item.id, "guest");
+    const snapshot = localStorage.getItem(snapshotKey);
+    const details = localStorage.getItem(detailsKey);
+    if (!snapshot) continue;
+    try {
+      localStorage.setItem(getTripSnapshotStorageKey(item.id, userId), snapshot);
+      if (details) localStorage.setItem(getTripDetailsStorageKey(item.id, userId), details);
+      migratedIds.push(item.id);
+      migratedItems.push(item);
+    } catch {
+      // Keep guest source untouched if any destination write fails.
+      continue;
+    }
+  }
+  if (!migratedIds.length) return { migratedIds };
+  try {
+    saveTripLibrary(mergeTripLibraryItems(userItems, migratedItems), userId);
+    const remaining = guestItems.filter((item) => !migratedIds.includes(item.id));
+    saveTripLibrary(remaining, "guest");
+    migratedIds.forEach((id) => removeTripStorage(id, "guest"));
+    return { migratedIds };
+  } catch {
+    return { migratedIds: [] as string[] };
+  }
+}
+
 export function clearTripStorage(tripId?: string, userId?: LocalStorageScope) {
   if (tripId) {
     removeTripStorage(tripId, userId);
