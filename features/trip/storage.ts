@@ -43,6 +43,7 @@ export function loadStoredTrip(fallback: StoredTrip, tripId?: string, userId?: L
     const storedValue = localStorage.getItem(key) || "{}";
     const data = JSON.parse(storedValue) as Partial<StoredTrip>;
     return {
+      totalBudget: typeof data.totalBudget === "number" && Number.isFinite(data.totalBudget) && data.totalBudget >= 0 ? data.totalBudget : null,
       expenses: Array.isArray(data.expenses) ? data.expenses.map((item) => normalizeTripExpense(item as Record<string, unknown>, "actual")).filter((item): item is StoredTrip["expenses"][number] => item !== null) : fallback.expenses,
       budgetItems: Array.isArray(data.budgetItems) ? data.budgetItems.map((item) => normalizeTripExpense(item as Record<string, unknown>, "estimated")).filter((item): item is StoredTrip["budgetItems"][number] => item !== null) : fallback.budgetItems,
       plans: Array.isArray(data.plans)

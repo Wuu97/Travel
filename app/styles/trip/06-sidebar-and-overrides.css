@@ -341,15 +341,39 @@
 
 .place-facts span+span{border-left:1px solid #d7e3db;padding-left:8px}
 
+/* A place's reference facts belong to the title line; a genuine note remains
+   the optional secondary line below it. */
+#workspace .timeline article.itinerary-card .plan-title-row{display:flex;align-items:center;min-height:28px;gap:4px 9px;min-width:0}
+#workspace .timeline article.itinerary-card .plan-title-row h4{flex:0 1 auto;min-width:0;margin:0!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#workspace .timeline article.itinerary-card .inline-plan-input,#workspace .timeline article.itinerary-card .inline-plan-note{box-sizing:border-box;min-height:28px;border:1px solid #a8bcb0;border-radius:var(--radius-sm);box-shadow:none;outline:0;padding:3px 5px;line-height:20px}
+#workspace .timeline article.itinerary-card .plan-title-row .inline-plan-input{height:28px;max-width:100%;margin:0}
+#workspace .timeline article.itinerary-card .inline-plan-input:focus,#workspace .timeline article.itinerary-card .inline-plan-note:focus,#workspace .timeline article.itinerary-card .inline-plan-input:focus-visible,#workspace .timeline article.itinerary-card .inline-plan-note:focus-visible{border-color:#d88760;box-shadow:none;outline:0}
+#workspace .timeline article.itinerary-card .plan-title-row .place-facts{flex:0 1 auto;min-width:0;margin:0;overflow:hidden;white-space:nowrap}
+#workspace .timeline article.itinerary-card .plan-title-row .place-facts span{display:inline}
+#workspace .timeline article.itinerary-card .plan-title-row .place-facts span+span{padding-left:7px}
+#workspace .timeline article.itinerary-card .plan-content>p{margin:3px 0 0}
+#workspace .timeline article.itinerary-card .plan-add-note{flex:0 0 auto;border:0;background:transparent;color:#789488;font:400 var(--font-size-xs)/1.3 var(--font-ui);opacity:0;visibility:hidden;cursor:pointer;transition:opacity .15s ease,color .15s ease}
+#workspace .timeline article.itinerary-card:hover .plan-add-note,#workspace .timeline article.itinerary-card:focus-within .plan-add-note{opacity:1;visibility:visible}
+#workspace .timeline article.itinerary-card .plan-add-note:hover,#workspace .timeline article.itinerary-card .plan-add-note:focus-visible{color:var(--color-text-action);outline:0}
+#workspace .timeline article.itinerary-card>.type-tag.inline-type-select{height:22px;line-height:18px;padding-top:1px;padding-bottom:1px}
 
 
 
 
-.inline-time-input{grid-column:1;grid-row:1;width:54px;align-self:start;border:1px solid #91aa9b;border-radius:var(--radius-sm);background:var(--color-surface);color:#31584a;font:700 12px/1.5 var(--font-ui);padding:1px 4px;outline:0}
+
+.inline-time-editor{grid-column:1;grid-row:1;align-self:center;position:relative;box-sizing:border-box;width:54px;height:28px;margin:0;border:1px solid #a8bcb0;border-radius:var(--radius-sm);background:var(--color-surface);color:#31584a;font:700 12px/20px var(--font-ui);padding:3px 4px}
+.inline-time-fields{display:flex;align-items:center;height:20px}
+.inline-time-editor input{box-sizing:border-box;min-width:0;width:18px;height:20px;margin:0;border:0;background:transparent;color:inherit;font:inherit;line-height:20px;padding:0;text-align:center;outline:0}
+.inline-time-editor input::placeholder{color:#9caaa2;opacity:1}
+.inline-time-fields>span{width:6px;text-align:center}
+#workspace .timeline article.itinerary-card .inline-time-editor:focus-within{border-color:#d88760;box-shadow:none;outline:0}
+#workspace .timeline article.itinerary-card .inline-time-editor.is-invalid{border-color:#d88760}
+.inline-time-error{position:absolute;top:calc(100% + 3px);left:0;z-index:2;min-width:max-content;color:#b9694d;font:400 10px/1.2 var(--font-ui);white-space:nowrap}
 
 
 
 .inline-type-select{appearance:none;border:0;outline:0;cursor:pointer}
+#workspace .timeline article.itinerary-card>.type-tag.inline-type-select:focus,#workspace .timeline article.itinerary-card>.type-tag.inline-type-select:focus-visible{outline:0;box-shadow:none;background:var(--type-tint)}
 
 
 
@@ -451,7 +475,8 @@
 
 
 
-.avatar-group-trigger{width:94px;flex:0 0 94px;justify-content:flex-start}
+.member-control{gap:0}
+.avatars .avatar-group-trigger{width:auto;flex:0 0 auto;justify-content:flex-start;margin-left:0;border:0;background:transparent}
 
 
 
@@ -463,7 +488,10 @@
 
 
 
-.avatar-group-trigger em{display:grid;place-items:center;flex:0 0 26px!important;width:26px!important;height:26px!important;margin-left:4px!important;font-size:var(--font-size-title)!important;line-height:1}
+.avatars .member-overflow-count{display:grid;place-items:center;flex:0 0 23px;width:23px;height:23px;margin-left:-4px;border:2px solid var(--color-surface);border-radius:var(--radius-pill);background:#edf4ef;color:#5c7b6d;font:500 9px/1 var(--font-ui);font-style:normal}
+.avatars .add-member-avatar{display:grid;place-items:center;flex:0 0 20px;width:20px;height:20px;margin:0 0 0 9px;padding:0;border:1px solid #b7cabe;border-radius:var(--radius-pill);background:var(--color-surface);color:#356b50;font:400 13px/1 var(--font-ui);cursor:pointer}
+.avatars .add-member-avatar:hover:not(:disabled),.avatars .add-member-avatar:focus-visible:not(:disabled){border-color:#73a388;background:#edf6ef;outline:0}
+.avatars .add-member-avatar:disabled{cursor:default;opacity:.55}
 
 /* ========================================
    Core business cards
@@ -497,6 +525,8 @@
 #workspace .budget-summary{border:1px solid var(--color-border-soft);border-radius:var(--radius-md);background:var(--color-surface-soft);padding:16px 18px;gap:28px}
 
 #workspace .budget-summary strong{font-family:var(--font-display);font-size:26px;color:var(--color-text-heading)}
+#workspace .budget-summary input{display:block;box-sizing:border-box;width:118px;height:32px;margin:4px 0;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text-heading);font:500 var(--font-size-lg)/1 var(--font-display);padding:4px 7px}
+#workspace .budget-summary input:focus{border-color:var(--color-brand);box-shadow:none;outline:0}
 
 #workspace .expense-list,#workspace .budget-side{border-color:var(--color-border-soft);border-radius:var(--radius-md);padding:14px}
 
@@ -507,6 +537,11 @@
 #workspace .expense-list p{color:var(--color-text-muted)}
 
 #workspace .expense-list strong{color:var(--color-text-heading)}
+#workspace .expense-list article .expense-actions{display:flex;flex:0 0 48px;gap:2px;justify-content:flex-end}
+#workspace .expense-list article .expense-actions button{display:grid;place-items:center;width:23px;height:23px;padding:0;border:0;background:transparent;color:var(--color-text-muted);font:inherit;opacity:0;visibility:hidden}
+#workspace .expense-list article:hover .expense-actions button,#workspace .expense-list article:focus-within .expense-actions button{opacity:1;visibility:visible}
+#workspace .expense-list article .expense-actions .expense-edit:hover,#workspace .expense-list article .expense-actions .expense-edit:focus-visible{color:var(--color-text-action);outline:0}
+#workspace .expense-list article .expense-actions .expense-remove:hover,#workspace .expense-list article .expense-actions .expense-remove:focus-visible{color:var(--color-danger);outline:0}
 
 @media(max-width:760px){#workspace .trip-workspace-panel>.trip-head{padding:12px!important}
 
@@ -566,3 +601,84 @@
 
 /* Responsive */
 @media(max-width:760px){#workspace .trip-sidebar .trip-library-item .trip-library-delete{opacity:1!important;visibility:visible!important}}
+
+/* Ledger layout: information-led cards rather than equal-height dashboard panels. */
+#workspace .budget-board{height:auto!important;overflow:visible!important;padding:18px 20px!important}
+#workspace .budget-summary{display:block!important;border:0!important;background:var(--color-surface-soft)!important;padding:13px 18px!important}
+#workspace .budget-summary-heading{display:flex;align-items:center;gap:22px;color:var(--color-text-heading)}
+#workspace .budget-summary-heading>b{flex:0 0 auto;font-size:var(--font-size-sm)}
+#workspace .budget-add{margin:0!important;padding:8px 12px!important;font-size:var(--font-size-sm)!important}
+#workspace .budget-summary-metrics{display:grid;flex:1;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+#workspace .budget-summary-metrics>div{min-width:0}
+#workspace .budget-summary-metrics span,#workspace .budget-summary-metrics small{display:block;color:var(--color-text-muted);font-size:var(--font-size-xs)}
+#workspace .budget-summary-metrics p{display:flex;align-items:baseline;gap:5px;margin:2px 0 0;white-space:nowrap}
+#workspace .budget-summary-metrics strong{display:inline;margin:0;font-family:var(--font-display);font-size:19px;font-weight:500;color:var(--color-text-heading)}
+#workspace .budget-set,#workspace .budget-clear{margin:0;padding:0;border:0;background:transparent;color:var(--color-text-link);font:400 var(--font-size-xs)/1.4 var(--font-ui);cursor:pointer}
+#workspace .budget-summary-metrics input{box-sizing:border-box;width:90px;height:25px;margin:0;padding:3px 5px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);font:500 var(--font-size-sm)/1 var(--font-ui)}
+#workspace .budget-progress{margin-top:9px}
+#workspace .budget-progress i{display:block;height:5px;overflow:hidden;border-radius:var(--radius-pill);background:var(--color-border-soft)}
+#workspace .budget-progress i>b{display:block;height:100%;border-radius:inherit;background:var(--color-brand)}
+#workspace .budget-progress small{display:block;margin-top:5px;color:var(--color-text-muted);font-size:var(--font-size-xs)}
+#workspace .budget-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:16px 0}
+#workspace .budget-toolbar>input{flex:0 1 228px}
+#workspace .budget-toolbar>input,#workspace .budget-toolbar select,#workspace .budget-date-range{box-sizing:border-box;height:34px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text-secondary);font:400 var(--font-size-sm)/1 var(--font-ui);padding:0 9px}
+#workspace .budget-toolbar select{min-width:100px}
+#workspace .budget-date-range{display:inline-flex;align-items:center;gap:5px;padding:0 7px}
+#workspace .budget-date-range input{width:96px;border:0;background:transparent;color:inherit;font:inherit;outline:0}
+#workspace .budget-export{height:34px;margin-left:auto;padding:0 11px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text-secondary);font:400 var(--font-size-sm)/1 var(--font-ui);cursor:pointer}
+#workspace .budget-export:disabled{cursor:not-allowed}
+#workspace .budget-grid{display:grid!important;grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr)!important;align-items:start;gap:16px!important;margin-top:0!important}
+#workspace .budget-aside{display:grid;gap:12px;align-items:start}
+#workspace .expense-list,#workspace .budget-side{height:auto!important;min-height:0!important;overflow:visible!important;background:var(--color-surface)}
+#workspace .expense-list article{min-height:0;padding:9px 0!important}
+#workspace .expense-list article>i{width:24px!important;height:24px!important;font-size:var(--font-size-xs)}
+#workspace .expense-list h4{font-size:var(--font-size-sm)!important}
+#workspace .expense-list p{font-size:10px!important}
+#workspace .expense-distribution{padding:14px!important}
+#workspace .distribution-content{display:grid;grid-template-columns:100px minmax(0,1fr);align-items:center;gap:13px;margin-top:8px}
+#workspace .expense-distribution .donut{width:88px;height:88px;margin:0 auto}
+#workspace .expense-distribution .donut span{font-size:var(--font-size-base)}
+#workspace .expense-distribution .donut small{display:block;font-size:10px;color:var(--color-text-muted)}
+#workspace .distribution-list{display:grid;gap:7px}
+#workspace .distribution-list p{display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:8px;row-gap:2px;margin:0!important;color:var(--color-text-secondary)!important;font-size:var(--font-size-xs)!important}
+#workspace .distribution-list p>strong{font-weight:500;color:var(--color-text-heading)}
+#workspace .distribution-list p>em{font-style:normal;color:var(--color-text-muted)}
+#workspace .distribution-list p>small{grid-column:1 / -1;color:var(--color-text-muted);font-size:10px}
+@media(max-width:760px){#workspace .budget-summary-metrics{grid-template-columns:1fr 1fr;gap:12px}#workspace .budget-toolbar>input{flex-basis:100%}#workspace .budget-date-range{order:3}#workspace .budget-export{margin-left:0}#workspace .budget-grid{grid-template-columns:1fr!important}#workspace .distribution-content{grid-template-columns:92px minmax(0,1fr)}}
+
+/* The workbench, rather than an individual tab, owns the desktop viewport floor.
+   This keeps the guide and ledger frame stable while letting either board grow
+   naturally when its content exceeds the available space. */
+@media(min-width:761px){
+#workspace .trip-workbench{min-height:max(620px,calc(100dvh - 160px))!important}
+#workspace .trip-workbench-main{display:flex!important;flex-direction:column!important}
+#workspace .trip-workbench-main>.shell{display:flex!important;flex:1 1 auto!important;min-height:0!important;flex-direction:column!important}
+#workspace .trip-workspace-panel{display:flex!important;flex:1 1 auto!important;min-height:0!important;flex-direction:column!important}
+}
+
+/* Guide and ledger meet at the same single header divider; neither tab owns a
+   second frame around its content. */
+#workspace .trip-workspace-panel>.trip-head{border:0!important;border-bottom:1px solid #e1e7e0!important;border-radius:0!important}
+#workspace .trip-workspace-panel>.budget-board{border:0!important;border-radius:0!important}
+
+/* Quick expense entry is an operation layer anchored to its trigger, not ledger content. */
+#workspace .budget-add-wrap{position:relative;flex:0 0 auto}
+#workspace .expense-entry-popover{position:absolute;z-index:40;top:calc(100% + 8px);right:0;box-sizing:border-box;width:min(390px,calc(100vw - 48px));max-height:calc(100dvh - 96px);overflow:auto;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:0 12px 28px #1d342f1c}
+#workspace .expense-form{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;margin:0!important;padding:14px!important;border:0!important;border-radius:inherit!important;background:var(--color-surface-soft)!important}
+#workspace .expense-form-heading{display:flex;align-items:center;color:var(--color-text-heading)}
+#workspace .expense-form-heading b{font-size:var(--font-size-sm)}
+#workspace .expense-form .expense-field{display:grid;gap:5px;min-width:0;color:var(--color-text-secondary);font-size:var(--font-size-xs)}
+#workspace .expense-form .expense-field>span em{color:var(--color-brand);font-style:normal}
+#workspace .expense-form .expense-field input,#workspace .expense-form .expense-field select{box-sizing:border-box;width:100%;height:34px;min-width:0;margin:0;padding:0 9px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text-heading);font:400 var(--font-size-sm)/1 var(--font-ui)}
+#workspace .expense-form .expense-field-amount>div{position:relative}
+#workspace .expense-form .expense-field-amount i{position:absolute;z-index:1;top:50%;left:9px;transform:translateY(-50%);color:var(--color-text-muted);font-style:normal}
+#workspace .expense-form .expense-field-amount input{padding-left:24px}
+#workspace .expense-form-primary,#workspace .expense-form-advanced{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#workspace .expense-form .expense-more{justify-self:start;margin:0!important;padding:0!important;border:0!important;background:transparent!important;color:var(--color-text-link)!important;font:400 var(--font-size-xs)/1.4 var(--font-ui)!important;cursor:pointer}
+#workspace .expense-form .expense-more:disabled{cursor:not-allowed}
+#workspace .expense-form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:2px}
+#workspace .expense-form .expense-cancel,#workspace .expense-form .expense-save{height:32px;margin:0!important;padding:0 12px!important;border-radius:var(--radius-sm)!important;font-size:var(--font-size-xs)!important}
+#workspace .expense-form .expense-cancel{border:1px solid var(--color-border)!important;background:var(--color-surface)!important;color:var(--color-text-secondary)!important}
+#workspace .expense-form .expense-save{border:0!important;background:var(--color-brand)!important;color:var(--color-surface)!important}
+#workspace .expense-form .expense-save:disabled{background:var(--color-border-strong)!important;color:var(--color-text-muted)!important}
+@media(max-width:760px){#workspace .expense-entry-popover{position:fixed;z-index:90;top:auto;right:0;bottom:0;left:0;width:100%;max-height:86dvh;border-right:0;border-bottom:0;border-left:0;border-radius:var(--radius-md) var(--radius-md) 0 0}#workspace .expense-form{padding:12px!important}#workspace .expense-form-primary,#workspace .expense-form-advanced{grid-template-columns:1fr}}

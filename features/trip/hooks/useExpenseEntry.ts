@@ -10,9 +10,20 @@ type Options = { amount: string; date: string; payer: string; note: string; budg
 /** Validates and records a manual actual expense. */
 export function useExpenseEntry({ amount, date, payer, note, budgetItems, editingExpense, expenses, name, occurrence, plans, relatedItineraryItemId, setAmount, setDate, setPayer, setNote, setBudgetItems, setEditingExpense, setExpenses, setName, setOccurrence, setRelatedItineraryItemId, setType, setVisible, type }: Options) {
   const { confirm } = useConfirmation();
+  const clearDraft = () => {
+    setName("");
+    setAmount("");
+    setDate("");
+    setPayer("");
+    setNote("");
+    setType("其他");
+    setOccurrence("actual");
+    setRelatedItineraryItemId("");
+    setEditingExpense(null);
+  };
   const addExpense = () => {
     const numericAmount = Number(amount);
-    if (!name.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0) return;
+    if (!name.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0 || (occurrence === "actual" && !payer.trim())) return;
     const plan = plans.find((item) => item.id === relatedItineraryItemId);
     const related = plan ? { relatedItineraryItemId: plan.id, relatedItineraryTitle: plan.title } : {};
     if (occurrence === "estimated") {
@@ -22,11 +33,11 @@ export function useExpenseEntry({ amount, date, payer, note, budgetItems, editin
       const item = createTripExpense({ id: editingExpense?.occurrence === "actual" ? editingExpense.id : createId("expense"), title: name, type, amount: numericAmount, occurrence: "actual", date, payer, note, ...related });
       setExpenses((current) => editingExpense?.occurrence === "actual" ? current.map((existing) => existing.id === item.id ? item : existing) : [item, ...current]);
     }
-    setName("");
-    setAmount("");
-    setDate(""); setPayer(""); setNote("");
-    setRelatedItineraryItemId("");
-    setEditingExpense(null);
+    clearDraft();
+    setVisible(false);
+  };
+  const cancelExpense = () => {
+    clearDraft();
     setVisible(false);
   };
   const editExpense = (id: string, itemOccurrence: "actual" | "estimated") => {
@@ -49,5 +60,5 @@ export function useExpenseEntry({ amount, date, payer, note, budgetItems, editin
     if (!await confirm({ title: "移除预计费用？", description: "这项预计费用将被永久移除。" })) return;
     setBudgetItems((current) => current.filter((item) => item.id !== id));
   };
-  return { addExpense, editExpense, removeBudgetItem, removeExpense };
+  return { addExpense, cancelExpense, editExpense, removeBudgetItem, removeExpense };
 }

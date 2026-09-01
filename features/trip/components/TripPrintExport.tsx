@@ -1,5 +1,5 @@
 import type { ExpenseItem, ItineraryItem, LedgerItem, TripDetails } from "../model";
-import { getBudgetOverview } from "../budgetRules";
+import { getBudgetVsActual } from "../budgetRules";
 import { typeColors } from "../utils";
 
 type Props = {
@@ -8,14 +8,13 @@ type Props = {
   details: TripDetails;
   expenses: LedgerItem[];
   plans: ItineraryItem[];
+  totalBudget: number | null;
 };
 
 const money = (amount: number) => `¥ ${amount.toFixed(0)}`;
 
-export function TripPrintExport({ budgetItems, days, details, expenses, plans }: Props) {
-  const { plannedTotal } = getBudgetOverview(budgetItems, expenses);
-  const actualTotal = expenses.reduce((total, item) => total + item.amount, 0);
-  const remaining = plannedTotal - actualTotal;
+export function TripPrintExport({ budgetItems, days, details, expenses, plans, totalBudget }: Props) {
+  const overview = getBudgetVsActual(totalBudget, budgetItems, expenses);
 
   return <article className="trip-print-export">
     <header>
@@ -35,7 +34,7 @@ export function TripPrintExport({ budgetItems, days, details, expenses, plans }:
     </section>
     <section className="trip-print-budget">
       <h2>预算</h2>
-      <div className="trip-print-totals"><div><span>总预算</span><strong>{money(plannedTotal)}</strong></div><div><span>已支出</span><strong>{money(actualTotal)}</strong></div><div><span>{remaining >= 0 ? "剩余可用" : "超出预算"}</span><strong>{money(Math.abs(remaining))}</strong></div></div>
+      <div className="trip-print-totals"><div><span>总预算</span><strong>{overview.totalBudget === null ? "未设置" : money(overview.totalBudget)}</strong></div><div><span>预计支出</span><strong>{money(overview.estimatedTotal)}</strong></div><div><span>已支出</span><strong>{money(overview.actualTotal)}</strong></div></div>
       <div className="trip-print-budget-lists"><div><h3>预计费用</h3>{budgetItems.length ? <ul>{budgetItems.map((item) => <li key={item.id}><span>{item.title} · {item.type}</span><strong>{money(item.amount)}</strong></li>)}</ul> : <p className="trip-print-empty">暂无预计费用</p>}</div><div><h3>实际消费</h3>{expenses.length ? <ul>{expenses.map((item) => <li key={item.id}><span>{item.title} · {item.type}{item.payer ? ` · ${item.payer} 支付` : ""}</span><strong>{money(item.amount)}</strong></li>)}</ul> : <p className="trip-print-empty">暂无实际消费</p>}</div></div>
     </section>
   </article>;

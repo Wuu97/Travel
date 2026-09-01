@@ -7,6 +7,7 @@ import { sortItineraryItems } from "../utils";
 import { writeHistoryIfChanged } from "../../navigation/history";
 
 type TripState = {
+  totalBudget: number | null;
   expenses: LedgerItem[];
   budgetItems: ExpenseItem[];
   plans: ItineraryItem[];
@@ -14,8 +15,10 @@ type TripState = {
 };
 
 export type TripSyncConflict = { localSnapshot: TripState; remoteSnapshot: TripState; remoteVersion: number | undefined };
+type RemoteBaseline = { tripId: string; accessToken: string; version: number | undefined; fingerprint: string };
 
 type TripSetters = {
+  setTotalBudget: Dispatch<SetStateAction<number | null>>;
   setExpenses: Dispatch<SetStateAction<LedgerItem[]>>;
   setBudgetItems: Dispatch<SetStateAction<ExpenseItem[]>>;
   setPlans: Dispatch<SetStateAction<ItineraryItem[]>>;
@@ -27,6 +30,7 @@ type Options = TripState & TripSetters & {
   authReady: boolean;
   enabled: boolean;
   persistLocal: boolean;
+  snapshotTripId: string | null;
   onRemoteTripLoaded: (tripId: string) => void;
   storageScope: string;
   tripId: string;
@@ -37,67 +41,64 @@ export function useTripPersistence({
   accessToken,
   authReady,
   budgetItems,
+  totalBudget,
   details,
   enabled,
   expenses,
   plans,
   persistLocal,
+  snapshotTripId,
   onRemoteTripLoaded,
   setBudgetItems,
+  setTotalBudget,
   setDetails,
   setExpenses,
   setPlans,
   storageScope,
   tripId,
 }: Options) {
-  const [syncedAccessToken, setSyncedAccessToken] = useState<string | null>(null);
-  const [version, setVersion] = useState<number | undefined>();
+  const [remoteBaseline, setRemoteBaseline] = useState<RemoteBaseline | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncRetrying, setSyncRetrying] = useState(false);
   const [conflict, setConflict] = useState<TripSyncConflict | null>(null);
   const [resolvingConflict, setResolvingConflict] = useState(false);
-  const lastSavedRef = useRef("");
   const deletingRef = useRef(false);
   const saveAbortRef = useRef<AbortController | null>(null);
   const conflictPendingRef = useRef(false);
   const failedSyncRef = useRef<{ snapshot: TripState; version: number | undefined } | null>(null);
   const detailsRef = useRef(details);
-  const snapshot = useMemo(() => ({ expenses, budgetItems, plans, details }), [budgetItems, details, expenses, plans]);
-  const snapshotRef = useRef(snapshot);
-  const versionRef = useRef(version);
+  const snapshot = useMemo(() => ({ totalBudget, expenses, budgetItems, plans, details }), [budgetItems, details, expenses, plans, totalBudget]);
+  const ownsSnapshot = snapshotTripId === tripId;
   const normalizeSnapshot = useCallback((trip: StoredTrip, fallbackDetails: TripDetails): TripState => ({
+    totalBudget: typeof trip.totalBudget === "number" && Number.isFinite(trip.totalBudget) && trip.totalBudget >= 0 ? trip.totalBudget : null,
     expenses: trip.expenses.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "actual")).filter((item): item is LedgerItem => item !== null),
     budgetItems: trip.budgetItems.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "estimated")).filter((item): item is ExpenseItem => item !== null),
     plans: sortItineraryItems(trip.plans),
     details: trip.details || fallbackDetails,
   }), []);
   const applySnapshot = useCallback((next: TripState) => {
+    setTotalBudget(next.totalBudget);
     setExpenses(next.expenses);
     setBudgetItems(next.budgetItems);
     setPlans(next.plans);
     setDetails(next.details);
-  }, [setBudgetItems, setDetails, setExpenses, setPlans]);
+  }, [setBudgetItems, setDetails, setExpenses, setPlans, setTotalBudget]);
 
   useEffect(() => {
     detailsRef.current = details;
   }, [details]);
 
   useEffect(() => {
-    snapshotRef.current = snapshot;
-    versionRef.current = version;
-  }, [snapshot, version]);
-
-  useEffect(() => {
     const onDelete = (event: Event) => {
       if ((event as CustomEvent<string>).detail !== tripId) return;
       deletingRef.current = true;
       saveAbortRef.current?.abort();
-      setSyncedAccessToken(null);
+      setRemoteBaseline(null);
     };
     const onDeleteCancelled = (event: Event) => {
       if ((event as CustomEvent<string>).detail !== tripId) return;
       deletingRef.current = false;
-      setSyncedAccessToken(accessToken);
+      setRemoteBaseline(null);
     };
     window.addEventListener("tuyu-tripdelete", onDelete);
     window.addEventListener("tuyu-tripdeletecancel", onDeleteCancelled);
@@ -108,25 +109,21 @@ export function useTripPersistence({
   }, [accessToken, tripId]);
 
   useEffect(() => {
-    if (!enabled || !persistLocal) return;
-    saveTrip({ expenses, budgetItems, plans }, tripId, storageScope);
-  }, [budgetItems, enabled, expenses, persistLocal, plans, storageScope, tripId]);
+    if (!enabled || !persistLocal || !ownsSnapshot) return;
+    saveTrip({ totalBudget, expenses, budgetItems, plans }, tripId, storageScope);
+  }, [budgetItems, enabled, expenses, ownsSnapshot, persistLocal, plans, storageScope, totalBudget, tripId]);
 
   useEffect(() => {
-    if (enabled && persistLocal) saveTripDetails(details, tripId, storageScope);
-  }, [details, enabled, persistLocal, storageScope, tripId]);
+    if (enabled && persistLocal && ownsSnapshot) saveTripDetails(details, tripId, storageScope);
+  }, [details, enabled, ownsSnapshot, persistLocal, storageScope, tripId]);
 
   useEffect(() => {
     if (!enabled || !authReady || !accessToken) return;
     let cancelled = false;
-    queueMicrotask(() => {
-      if (!cancelled) {
-        setSyncedAccessToken(null);
-        conflictPendingRef.current = false;
-        setConflict(null);
-        setResolvingConflict(false);
-      }
-    });
+    conflictPendingRef.current = false;
+    setRemoteBaseline(null);
+    setConflict(null);
+    setResolvingConflict(false);
 
     const loadCurrentTrip = async () => {
       const invite = new URLSearchParams(window.location.search).get("invite");
@@ -150,18 +147,31 @@ export function useTripPersistence({
         if (loaded.redirected) return;
         const { trip, version: loadedVersion } = loaded.result;
         if (trip) {
-          applySnapshot(normalizeSnapshot(trip, detailsRef.current));
+          const remoteSnapshot = normalizeSnapshot(trip, detailsRef.current);
+          // Cache the verified remote payload under the request's own id before
+          // publishing it to shared React state. This is never inferred from a
+          // later effect observing a changed tripId.
+          try {
+            saveTrip({ totalBudget: remoteSnapshot.totalBudget, expenses: remoteSnapshot.expenses, budgetItems: remoteSnapshot.budgetItems, plans: remoteSnapshot.plans }, tripId, storageScope);
+            saveTripDetails(remoteSnapshot.details, tripId, storageScope);
+          } catch {
+            // Remote data is still valid to display; the next visit simply
+            // remains cloud-only if browser storage is unavailable.
+          }
+          applySnapshot(remoteSnapshot);
           onRemoteTripLoaded(tripId);
           window.dispatchEvent(new CustomEvent("tuyu-tripremote", { detail: tripId }));
+          const fingerprint = JSON.stringify(remoteSnapshot);
+          setRemoteBaseline({ tripId, accessToken, version: loadedVersion, fingerprint });
         }
-        lastSavedRef.current = trip ? JSON.stringify(trip) : "";
-        setVersion(loadedVersion);
         setSyncError(null);
-        setSyncedAccessToken(accessToken);
       })
       .catch(() => {
         if (!cancelled) {
-          failedSyncRef.current = { snapshot: snapshotRef.current, version: versionRef.current };
+          // A failed remote read has no confirmed baseline. In particular, do
+          // not retain the previous trip's in-memory snapshot as a retryable
+          // write for this trip.
+          failedSyncRef.current = null;
           setSyncError("云端同步失败，本地修改已保留。");
         }
       });
@@ -174,8 +184,8 @@ export function useTripPersistence({
   const useRemoteSnapshot = () => {
     if (!conflict) return;
     applySnapshot(conflict.remoteSnapshot);
-    lastSavedRef.current = JSON.stringify(conflict.remoteSnapshot);
-    setVersion(conflict.remoteVersion);
+    const fingerprint = JSON.stringify(conflict.remoteSnapshot);
+    if (accessToken) setRemoteBaseline({ tripId, accessToken, version: conflict.remoteVersion, fingerprint });
     conflictPendingRef.current = false;
     setConflict(null);
     setSyncError(null);
@@ -188,8 +198,7 @@ export function useTripPersistence({
     setResolvingConflict(true);
     try {
       const result = await saveSharedTrip(tripId, localSnapshot, conflict.remoteVersion, accessToken);
-      lastSavedRef.current = JSON.stringify(localSnapshot);
-      setVersion(result.version);
+      setRemoteBaseline({ tripId, accessToken, version: result.version, fingerprint: JSON.stringify(localSnapshot) });
       conflictPendingRef.current = false;
       setConflict(null);
       setSyncError(null);
@@ -213,8 +222,7 @@ export function useTripPersistence({
     setSyncRetrying(true);
     try {
       const result = await saveSharedTrip(tripId, failed.snapshot, failed.version, accessToken);
-      lastSavedRef.current = JSON.stringify(failed.snapshot);
-      setVersion(result.version);
+      setRemoteBaseline({ tripId, accessToken, version: result.version, fingerprint: JSON.stringify(failed.snapshot) });
       failedSyncRef.current = null;
       setSyncError(null);
     } catch (error) {
@@ -234,15 +242,15 @@ export function useTripPersistence({
   };
 
   useEffect(() => {
-    if (!enabled || !persistLocal || !accessToken || syncedAccessToken !== accessToken || conflict || resolvingConflict || conflictPendingRef.current) return;
+    if (!enabled || !persistLocal || !ownsSnapshot || !accessToken || !remoteBaseline || remoteBaseline.tripId !== tripId || remoteBaseline.accessToken !== accessToken || conflict || resolvingConflict || conflictPendingRef.current) return;
     const fingerprint = JSON.stringify(snapshot);
-    if (fingerprint === lastSavedRef.current) return;
+    if (fingerprint === remoteBaseline.fingerprint) return;
     const timer = window.setTimeout(() => {
       if (deletingRef.current) return;
       const controller = new AbortController();
       saveAbortRef.current = controller;
-      void saveSharedTrip(tripId, snapshot, version, accessToken, controller.signal)
-        .then((result) => { if (!deletingRef.current) { lastSavedRef.current = fingerprint; setVersion(result.version); setSyncError(null); } })
+      void saveSharedTrip(tripId, snapshot, remoteBaseline.version, accessToken, controller.signal)
+        .then((result) => { if (!deletingRef.current) { setRemoteBaseline({ tripId, accessToken, version: result.version, fingerprint }); setSyncError(null); } })
         .catch((error) => {
           if (controller.signal.aborted) return;
           if (error instanceof TripVersionConflictError) {
@@ -254,13 +262,13 @@ export function useTripPersistence({
             }).catch((reason) => { conflictPendingRef.current = false; setSyncError(reason instanceof Error ? reason.message : "保存冲突，无法读取云端最新版本。"); });
             return;
           }
-          failedSyncRef.current = { snapshot, version };
+          failedSyncRef.current = { snapshot, version: remoteBaseline.version };
           setSyncError("云端同步失败，本地修改已保留。");
         })
         .finally(() => { if (saveAbortRef.current === controller) saveAbortRef.current = null; });
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [accessToken, conflict, details, enabled, normalizeSnapshot, persistLocal, resolvingConflict, snapshot, storageScope, syncedAccessToken, tripId, version]);
+  }, [accessToken, conflict, details, enabled, normalizeSnapshot, ownsSnapshot, persistLocal, remoteBaseline, resolvingConflict, snapshot, storageScope, tripId]);
 
-  return { conflict, disableRemoteSync: () => setSyncedAccessToken(null), resolvingConflict, retryLocalSnapshot, retrySync, syncError, syncRetrying, useRemoteSnapshot };
+  return { conflict, disableRemoteSync: () => setRemoteBaseline(null), resolvingConflict, retryLocalSnapshot, retrySync, syncError, syncRetrying, useRemoteSnapshot };
 }

@@ -36,7 +36,6 @@ export function useTripWorkspaceView() {
   const [tripPopover, setTripPopover] = useState<TripPopover>(null);
   const [editingMemberRole, setEditingMemberRole] = useState<string | null>(null);
   const [newMember, setNewMember] = useState("");
-  const [openPlanMenuId, setOpenPlanMenuId] = useState<string | null>(null);
   const [pendingPlanScrollId, setPendingPlanScrollId] = useState<string | null>(null);
 
   const ledger = {
@@ -47,9 +46,9 @@ export function useTripWorkspaceView() {
   };
   const plan = {
     activeDay, editing: editingPlan, inlineEdit: inlinePlanEdit, manual: manualPlan, newPlan,
-    openMenuId: openPlanMenuId, pendingScrollId: pendingPlanScrollId,
+    pendingScrollId: pendingPlanScrollId,
     setActiveDay, setEditing: setEditingPlan, setInlineEdit: setInlinePlanEdit, setManual: setManualPlan,
-    setNewPlan, setOpenMenuId: setOpenPlanMenuId, setPendingScrollId: setPendingPlanScrollId,
+    setNewPlan, setPendingScrollId: setPendingPlanScrollId,
   };
   const sharing = { shared, shareStatus, setShared, setShareStatus };
 
@@ -77,10 +76,10 @@ export function useTripWorkspaceView() {
     ledger, plan, sharing,
     activeDay, editingExpense, editingMemberRole, editingPlan, expenseAmount, expenseDate, expenseName, expenseNote, expensePayer, expenseType, expenseOccurrence, relatedItineraryItemId,
     inlinePlanEdit, inlineTripTitle, manualPlan, newMember, newPlan,
-    openPlanMenuId, pendingPlanScrollId, setActiveDay,
+    pendingPlanScrollId, setActiveDay,
     setEditingExpense, setEditingMemberRole, setEditingPlan, setExpenseAmount, setExpenseDate, setExpenseName, setExpenseNote, setExpensePayer, setExpenseType, setExpenseOccurrence, setRelatedItineraryItemId,
     setInlinePlanEdit, setInlineTripTitle, setManualPlan, setNewMember,
-    setNewPlan, setOpenPlanMenuId, setPendingPlanScrollId,
+    setNewPlan, setPendingPlanScrollId,
     setShareStatus, setShared, setShowExpense, setTripPopover, setWorkspaceTab,
     shareStatus, shared, showExpense, tripPopover, workspaceTab,
   };

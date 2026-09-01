@@ -44,6 +44,8 @@ export type ExpenseItem = TripExpense;
 export type LedgerItem = TripExpense;
 
 export type StoredTrip = {
+  /** Explicit trip-wide budget; null means the owner has not set one. */
+  totalBudget: number | null;
   expenses: TripExpense[];
   budgetItems: TripExpense[];
   plans: ItineraryItem[];

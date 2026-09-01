@@ -181,7 +181,7 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
     const uniqueCompanions = [...new Set(companions)];
     const details: TripDetails = { ...defaultTripDetails, title: destination, startDate: draft.startDate, endDate: draft.endDate, status: "筹备中", companions: uniqueCompanions, memberRoles: Object.fromEntries(uniqueCompanions.filter((name) => name !== "你").map((name) => [name, "同行人"])) };
     const nextItems = sortTripLibraryItems([...items, { id, title: details.title, startDate: details.startDate, endDate: details.endDate, status: details.status }]);
-    saveTrip({ expenses: [], budgetItems: [], plans: [] }, id, storageScope);
+    saveTrip({ totalBudget: null, expenses: [], budgetItems: [], plans: [] }, id, storageScope);
     saveTripDetails(details, id, storageScope);
     saveTripLibrary(nextItems, storageScope);
     itemsRef.current = nextItems;

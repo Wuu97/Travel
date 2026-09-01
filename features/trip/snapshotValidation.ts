@@ -13,10 +13,10 @@ const isTripDetails = (value: unknown) => {
   return isShortString(value.title) && (value.status === "筹备中" || value.status === "进行中" || value.status === "已结束") && isShortString(value.startDate, 32) && isShortString(value.endDate, 32) && Array.isArray(value.companions) && value.companions.length <= 100 && value.companions.every((name) => isShortString(name, 100)) && (roles === undefined || (isRecord(roles) && Object.values(roles).every((role) => role === "协作者" || role === "同行人" || role === "编辑者" || role === "查看者"))) && (value.coverImage === undefined || isShortString(value.coverImage, 3_000_000));
 };
 
-export type StoredTripPayload = { expenses: unknown[]; budgetItems: unknown[]; plans: unknown[] };
+export type StoredTripPayload = { totalBudget?: number | null; expenses: unknown[]; budgetItems: unknown[]; plans: unknown[] };
 
 export function isStoredTrip(value: unknown): value is StoredTripPayload {
   if (!isRecord(value)) return false;
-  const { expenses, budgetItems, plans } = value;
-  return Array.isArray(expenses) && Array.isArray(budgetItems) && Array.isArray(plans) && expenses.length <= MAX_TRIP_ITEMS && budgetItems.length <= MAX_TRIP_ITEMS && plans.length <= MAX_TRIP_ITEMS && expenses.every(isExpenseItem) && budgetItems.every(isExpenseItem) && plans.every(isItineraryItem) && (value.details === undefined || isTripDetails(value.details));
+  const { expenses, budgetItems, plans, totalBudget } = value;
+  return (totalBudget === undefined || totalBudget === null || typeof totalBudget === "number" && Number.isFinite(totalBudget) && totalBudget >= 0) && Array.isArray(expenses) && Array.isArray(budgetItems) && Array.isArray(plans) && expenses.length <= MAX_TRIP_ITEMS && budgetItems.length <= MAX_TRIP_ITEMS && plans.length <= MAX_TRIP_ITEMS && expenses.every(isExpenseItem) && budgetItems.every(isExpenseItem) && plans.every(isItineraryItem) && (value.details === undefined || isTripDetails(value.details));
 }

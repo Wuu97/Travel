@@ -157,7 +157,9 @@
 
 
 .edit-plan input,.edit-plan select{width:100%;margin-top:6px;border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);padding:9px;background:var(--color-surface);color:var(--color-text-heading);font-size:var(--font-size-md)}
-.edit-plan input:focus,.edit-plan select:focus{border-color:var(--color-brand);box-shadow:0 0 0 3px var(--color-brand-focus);outline:0}
+.edit-plan input:focus{border-color:var(--color-brand);box-shadow:0 0 0 3px var(--color-brand-focus);outline:0}
+.edit-plan select:focus{border-color:var(--color-border-strong);box-shadow:none;outline:0}
+.edit-plan select:focus-visible{border-color:var(--color-border-strong);box-shadow:none;outline:0;background:var(--color-surface-soft)}
 
 
 
@@ -257,7 +259,7 @@
 
 
 
-.itinerary-card::before{content:"";position:absolute;z-index:0;inset:7px 0 0;border-radius:7px;background:transparent;transition:background .16s ease}
+.itinerary-card::before{content:"";position:absolute;z-index:0;inset:0;border-radius:7px;background:transparent;transition:background .16s ease}
 
 
 

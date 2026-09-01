@@ -31,6 +31,7 @@ export const statusTagColors: Record<TripDetails["status"], { background: string
 };
 
 export const getDefaultStoredTrip = (): StoredTrip => ({
+  totalBudget: null,
   expenses: defaultExpenses,
   budgetItems: [],
   plans: defaultPlans,

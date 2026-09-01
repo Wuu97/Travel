@@ -10,26 +10,34 @@ export type CategoryBudgetVsActual = {
 };
 
 export type BudgetVsActual = {
-  plannedTotal: number;
+  totalBudget: number | null;
+  estimatedTotal: number;
   actualTotal: number;
-  remaining: number;
-  usageRate: number;
+  remainingBudget: number | null;
+  usageRate: number | null;
   categories: CategoryBudgetVsActual[];
 };
 
 /** Derives budget-facing totals from persisted trip data, never presentation constants. */
-export function getBudgetOverview(budgetItems: ExpenseItem[], expenses: LedgerItem[]) {
-  const { actualTotal, plannedTotal, remaining } = getBudgetVsActual(budgetItems, expenses);
-  return { actualTotal, plannedTotal, remaining };
+export function getBudgetOverview(totalBudget: number | null, budgetItems: ExpenseItem[], expenses: LedgerItem[]): { totalBudget: number | null; actualTotal: number; estimatedTotal: number; remainingBudget: number | null };
+/** @deprecated Supply totalBudget explicitly; retained for export callers during migration. */
+export function getBudgetOverview(budgetItems: ExpenseItem[], expenses: LedgerItem[]): { totalBudget: null; actualTotal: number; estimatedTotal: number; remainingBudget: null; plannedTotal: number };
+export function getBudgetOverview(totalBudgetOrItems: number | null | ExpenseItem[], budgetItemsOrExpenses: ExpenseItem[] | LedgerItem[], maybeExpenses?: LedgerItem[]) {
+  const legacy = Array.isArray(totalBudgetOrItems);
+  const totalBudget = legacy ? null : totalBudgetOrItems;
+  const budgetItems = legacy ? totalBudgetOrItems : budgetItemsOrExpenses as ExpenseItem[];
+  const expenses = legacy ? budgetItemsOrExpenses as LedgerItem[] : maybeExpenses!;
+  const { actualTotal, estimatedTotal, remainingBudget } = getBudgetVsActual(totalBudget, budgetItems, expenses);
+  return legacy ? { totalBudget, actualTotal, estimatedTotal, remainingBudget, plannedTotal: estimatedTotal } : { totalBudget, actualTotal, estimatedTotal, remainingBudget };
 }
 
 /** Pure, shared budget comparison for all ledger views and future import flows. */
-export function getBudgetVsActual(budgetItems: ExpenseItem[], expenses: LedgerItem[]): BudgetVsActual {
+export function getBudgetVsActual(totalBudget: number | null, budgetItems: ExpenseItem[], expenses: LedgerItem[]): BudgetVsActual {
   const budgets = new Map<ExpenseCategory, number>();
   const actuals = new Map<ExpenseCategory, number>();
   for (const item of budgetItems) budgets.set(item.type, (budgets.get(item.type) ?? 0) + item.amount);
   for (const item of expenses) actuals.set(item.type, (actuals.get(item.type) ?? 0) + item.amount);
-  const plannedTotal = budgetItems.reduce((sum, item) => sum + item.amount, 0);
+  const estimatedTotal = budgetItems.reduce((sum, item) => sum + item.amount, 0);
   const actualTotal = expenses.reduce((sum, item) => sum + item.amount, 0);
   const categories = expenseCategories
     .filter((category) => budgets.has(category) || actuals.has(category))
@@ -38,5 +46,7 @@ export function getBudgetVsActual(budgetItems: ExpenseItem[], expenses: LedgerIt
       const actual = actuals.get(category) ?? 0;
       return { category, budget, actual, difference: budget - actual };
     });
-  return { plannedTotal, actualTotal, remaining: plannedTotal - actualTotal, usageRate: plannedTotal > 0 ? (actualTotal / plannedTotal) * 100 : 0, categories };
+  const remainingBudget = totalBudget === null ? null : totalBudget - actualTotal;
+  const usageRate = totalBudget !== null && totalBudget > 0 ? (actualTotal / totalBudget) * 100 : null;
+  return { totalBudget, estimatedTotal, actualTotal, remainingBudget, usageRate, categories };
 }

@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     if (error) return Response.json({ error: error.message }, { status: 502 });
     const currentMember = trip.owner_id === context.userId ? "owner" : (data || []).find((member) => member.user_id === context.userId)?.role;
     const canEdit = currentMember === "owner" || currentMember === "editor";
-    return Response.json({ canDelete: trip.owner_id === context.userId, canEdit, canManage: trip.owner_id === context.userId, members: [{ userId: trip.owner_id, role: "owner", status: "active" }, ...(data || []).map((member) => ({ userId: member.user_id, role: membershipRoleToProductRole(member.role), status: "active" }))] });
+    return Response.json({ canDelete: trip.owner_id === context.userId, canEdit, canManage: trip.owner_id === context.userId, members: [{ userId: trip.owner_id, role: "owner", status: "active", isCurrentUser: trip.owner_id === context.userId, serverBacked: true }, ...(data || []).map((member) => ({ userId: member.user_id, role: membershipRoleToProductRole(member.role), status: "active", isCurrentUser: member.user_id === context.userId, serverBacked: true }))] });
   }
   if (target.kind === "list") {
     const { data, error } = await context.client.from("trips").select("id, owner_id, payload");

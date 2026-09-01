@@ -1,5 +1,5 @@
 export type TripMemberRole = "owner" | "collaborator" | "companion";
-export type TripMember = { userId: string; role: TripMemberRole; status: "active" };
+export type TripMember = { userId: string; role: TripMemberRole; status: "active"; isCurrentUser?: boolean; serverBacked?: boolean };
 
 export const membershipRoleToProductRole = (role: "editor" | "viewer"): TripMemberRole => role === "editor" ? "collaborator" : "companion";
 export const productRoleToMembershipRole = (role: Exclude<TripMemberRole, "owner">): "editor" | "viewer" => role === "collaborator" ? "editor" : "viewer";

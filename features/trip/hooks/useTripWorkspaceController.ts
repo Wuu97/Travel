@@ -91,7 +91,7 @@ export function useTripWorkspaceController({
   // This is the one display boundary: the id whose snapshot currently backs
   // the workspace. Cloud and permission completion deliberately do not enter
   // this state.
-  const [displayedTripKey, setDisplayedTripKey] = useState<string | null>(null);
+  const [loadedSnapshotKey, setLoadedSnapshotKey] = useState<string | null>(null);
   const libraryReady = libraryCommit?.scope === storageScope;
   // Reading local storage here would make the server and first browser render
   // disagree. The persistence effect below resolves this after mounting.
@@ -99,26 +99,29 @@ export function useTripWorkspaceController({
   const [tripDetails, setTripDetails] = useState(initialDetails);
   const [expenses, setExpenses] = useState<LedgerItem[]>(initialTrip.expenses);
   const [budgetItems, setBudgetItems] = useState<ExpenseItem[]>(initialTrip.budgetItems);
+  const [totalBudget, setTotalBudget] = useState<number | null>(initialTrip.totalBudget);
   const [plans, setPlans] = useState<ItineraryItem[]>(initialTrip.plans);
   const [lastImportBatch, setLastImportBatch] = useState<{ batchId: string; importedAt: number; itineraryItemIds: string[]; budgetItemIds: string[] } | null>(null);
   const [undoImportSuccess, setUndoImportSuccess] = useState(false);
   const migratedUserRef = useRef<string | null>(null);
   const snapshotKey = `${storageScope}:${activeTripId}`;
+  const loadedSnapshotTripId = loadedSnapshotKey === snapshotKey ? activeTripId : null;
   const hydrateLocalSnapshot = useCallback((tripId: string | null) => {
     if (!tripId || !hasStoredTripSnapshot(tripId, storageScope)) return false;
     const trip = loadStoredTrip(getDefaultStoredTrip(), tripId, storageScope);
     setExpenses(trip.expenses);
     setBudgetItems(trip.budgetItems);
+    setTotalBudget(trip.totalBudget);
     setPlans(trip.plans);
     setTripDetails(loadTripDetails(defaultTripDetails, tripId, storageScope));
     setHasPersistedTrip(true);
-    setDisplayedTripKey(`${storageScope}:${tripId}`);
+    setLoadedSnapshotKey(`${storageScope}:${tripId}`);
     return true;
   }, [storageScope]);
   const markRemoteTripLoaded = useCallback((tripId: string) => {
     if (tripId !== activeTripId) return;
     setHasPersistedTrip(true);
-    setDisplayedTripKey(`${storageScope}:${tripId}`);
+    setLoadedSnapshotKey(`${storageScope}:${tripId}`);
   }, [activeTripId, storageScope]);
 
   useLayoutEffect(() => {
@@ -153,7 +156,7 @@ export function useTripWorkspaceController({
       if (!accessToken) {
         if (!canCommitLocal) {
           setLibraryCommit({ scope: storageScope, items: [], cloudDeleteCapabilities: new Map(), error: null });
-          setDisplayedTripKey(null);
+          setLoadedSnapshotKey(null);
           setActivatedTripId(null);
         }
         return;
@@ -168,14 +171,14 @@ export function useTripWorkspaceController({
         setLibraryCommit({ scope: storageScope, items: finalItems, cloudDeleteCapabilities, error: null });
         if (!localCommit.length || !requestedTripIsLocal) {
           const selectedTripId = selectTripFromLibrary(finalItems, requestedTripId).selectedTripId;
-          if (!hydrateLocalSnapshot(selectedTripId)) setDisplayedTripKey(null);
+          if (!hydrateLocalSnapshot(selectedTripId)) setLoadedSnapshotKey(null);
           setActivatedTripId(selectedTripId);
         }
       } catch {
         if (cancelled) return;
         setLibraryCommit({ scope: storageScope, items: localCommit, cloudDeleteCapabilities: new Map(), error: "云端旅行暂时无法加载，当前显示本地数据。" });
         if (!localCommit.length || !requestedTripIsLocal) {
-          setDisplayedTripKey(null);
+          setLoadedSnapshotKey(null);
           setActivatedTripId(null);
         }
       }
@@ -186,11 +189,11 @@ export function useTripWorkspaceController({
     if (!accessToken || storageScope === "guest" || migratedUserRef.current === storageScope) return;
     const result = migrateGuestTripLibrary(storageScope);
     if (result.status === "success" || result.status === "noop") { migratedUserRef.current = storageScope; return; }
-    queueMicrotask(() => setActivationError("旅行迁移失败，游客数据已保留。请稍后重试。"));
+    setActivationError("旅行迁移失败，游客数据已保留。请稍后重试。");
   }, [accessToken, storageScope]);
   useEffect(() => {
-    if (!accessToken || !activeRealTripId) { queueMicrotask(() => { setCanEditTrip(true); setCanManageMembers(true); setCanDeleteTrip(true); setCapabilityTripId(null); setPermissionStatus("ready"); }); return; }
-    queueMicrotask(() => { setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setCapabilityTripId(null); setPermissionStatus("loading"); });
+    if (!accessToken || !activeRealTripId) { setCanEditTrip(true); setCanManageMembers(true); setCanDeleteTrip(true); setCapabilityTripId(null); setPermissionStatus("ready"); return; }
+    setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setCapabilityTripId(null); setPermissionStatus("loading");
     void listTripMembers(activeRealTripId, accessToken).then((membership) => { setCanEditTrip(membership.canEdit); setCanManageMembers(membership.canManage); setCanDeleteTrip(membership.canDelete); setCapabilityTripId(activeRealTripId); setPermissionStatus("ready"); }).catch(() => { setCanEditTrip(false); setCanManageMembers(false); setCanDeleteTrip(false); setCapabilityTripId(null); setPermissionStatus("error"); });
   }, [accessToken, activeRealTripId]);
   const ensureRealTrip = useCallback(() => {
@@ -203,7 +206,7 @@ export function useTripWorkspaceController({
     const item: TripLibraryItem = { id, title: tripDetails.title, startDate: tripDetails.startDate, endDate: tripDetails.endDate, status: tripDetails.status };
     try {
       // Write the entry last: a storage failure never leaves a selectable half-trip.
-      saveTrip({ expenses, budgetItems, plans }, id, storageScope);
+      saveTrip({ totalBudget, expenses, budgetItems, plans }, id, storageScope);
       saveTripDetails(tripDetails, id, storageScope);
       saveTripLibrary([...loadTripLibrary(storageScope), item], storageScope);
     } catch {
@@ -211,7 +214,7 @@ export function useTripWorkspaceController({
       return false;
     }
     setActivationError(null);
-    setDisplayedTripKey(`${storageScope}:${id}`);
+    setLoadedSnapshotKey(`${storageScope}:${id}`);
     setActivatedTripId(id);
     setHasPersistedTrip(true);
     const url = new URL(window.location.href);
@@ -219,17 +222,16 @@ export function useTripWorkspaceController({
     writeHistoryIfChanged("replace", url, "create-first-trip");
     window.dispatchEvent(new CustomEvent("tuyu-tripcreated", { detail: item }));
     return true;
-  }, [activeRealTripId, budgetItems, expenses, isAuthenticated, plans, safeCanEditTrip, storageScope, tripDetails]);
+  }, [activeRealTripId, budgetItems, expenses, isAuthenticated, plans, safeCanEditTrip, storageScope, totalBudget, tripDetails]);
   const onActiveTripChange = useCallback((tripId: string | null) => {
     // A library click is an atomic local transition: never publish the new
     // selected id while the workspace still holds the previous trip's data.
     // Remote-only trips have no local snapshot and continue through the normal
     // persistence effect instead.
-    if (!hydrateLocalSnapshot(tripId)) setDisplayedTripKey(null);
+    if (!hydrateLocalSnapshot(tripId)) setLoadedSnapshotKey(null);
     setActivatedTripId(tripId);
   }, [hydrateLocalSnapshot]);
   const tripDestination = getTripDestination(tripDetails.title);
-  const planMenuRef = useRef<HTMLDivElement>(null);
   const timelineListRef = useRef<HTMLDivElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const inlineTitleInputRef = useRef<HTMLInputElement>(null);
@@ -249,7 +251,6 @@ export function useTripWorkspaceController({
     manualPlan,
     newMember,
     newPlan,
-    openPlanMenuId,
     pendingPlanScrollId,
     setActiveDay,
     setEditingMemberRole,
@@ -259,7 +260,6 @@ export function useTripWorkspaceController({
     setManualPlan,
     setNewMember,
     setNewPlan,
-    setOpenPlanMenuId,
     setPendingPlanScrollId,
     setShareStatus,
     setShared,
@@ -296,13 +296,16 @@ export function useTripWorkspaceController({
     accessToken,
     authReady,
     budgetItems,
+    totalBudget,
     details: tripDetails,
     enabled: loadPersistedState && libraryReady && (!isAuthenticated || Boolean(activeRealTripId)),
     onRemoteTripLoaded: markRemoteTripLoaded,
     persistLocal: !isAuthenticated || hasPersistedTrip || Boolean(activeRealTripId),
+    snapshotTripId: loadedSnapshotTripId,
     expenses,
     plans,
     setBudgetItems,
+    setTotalBudget,
     setDetails: setTripDetails,
     setExpenses,
     setPlans,
@@ -329,7 +332,6 @@ export function useTripWorkspaceController({
   const { selectedImports, toggleImport, toggleImports } = useTripImportSelection();
   const {
     addPlan,
-    copyPlan,
     deletePlan,
     movePlanToDay,
     openManualPlan,
@@ -350,7 +352,7 @@ export function useTripWorkspaceController({
     setPendingPlanId: setPendingPlanScrollId,
     setPlans,
   });
-  const { addExpense, editExpense, removeBudgetItem, removeExpense } =
+  const { addExpense, cancelExpense, editExpense, removeBudgetItem, removeExpense } =
     useExpenseEntry({
       amount: ledgerAmount,
       date: ledgerDate,
@@ -436,10 +438,7 @@ export function useTripWorkspaceController({
     inlineTripTitle,
     memberRoleRef,
     onCloseMemberRole: () => setEditingMemberRole(null),
-    onClosePlanMenu: () => setOpenPlanMenuId(null),
     onCloseTripPopover: () => setTripPopover(null),
-    openPlanMenuId,
-    planMenuRef,
     tripPopover,
     tripPopoverRef,
   });
@@ -447,21 +446,11 @@ export function useTripWorkspaceController({
   const displayReady = loadPersistedState
     && authReady
     && libraryReady
-    && (workspaceEmpty || displayedTripKey === snapshotKey);
+    && (workspaceEmpty || loadedSnapshotTripId === activeTripId);
   const ensureActiveTrip = () => !workspaceEmpty && ensureRealTrip();
-  const copyActivePlan = (item: ItineraryItem) => {
-    if (!ensureActiveTrip()) return;
-    copyPlan(item);
-    setOpenPlanMenuId(null);
-  };
   const deleteActivePlan = (id: string) => {
     if (!ensureActiveTrip()) return;
     void deletePlan(id);
-    setOpenPlanMenuId(null);
-  };
-  const editActivePlan = (item: ItineraryItem) => {
-    setEditingPlan({ ...item, day: item.day ?? activeDay });
-    setOpenPlanMenuId(null);
   };
   const optimizeActiveDay = () => {
     const route = plans
@@ -479,10 +468,26 @@ export function useTripWorkspaceController({
     }
     document.querySelector("#ai")?.scrollIntoView({ behavior: "smooth" });
   };
-  const viewPlanExpenses = () => setWorkspaceTab("budget");
-  const togglePlanMenu = (id: string) =>
-    setOpenPlanMenuId((current) => (current === id ? null : id));
-  const toggleExpense = () => setLedgerVisible(!ledgerVisible);
+  const localToday = () => {
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  };
+  const toggleExpense = () => {
+    if (ledgerVisible) {
+      cancelExpense();
+      return;
+    }
+    setLedgerName("");
+    setLedgerAmount("");
+    setLedgerDate(localToday());
+    setLedgerPayer("");
+    setLedgerNote("");
+    setLedgerType("其他");
+    setLedgerOccurrence("actual");
+    setLedgerRelatedItineraryItemId("");
+    setLedgerEditing(null);
+    setLedgerVisible(true);
+  };
   const workspaceProps: TripWorkspaceProps = {
     accessToken,
     activeDay,
@@ -500,6 +505,7 @@ export function useTripWorkspaceController({
     tripId: activeTripId,
     permissionStatus: effectivePermissionStatus,
     budgetItems,
+    totalBudget,
     coverInputRef,
     days: tripDays,
     details: tripDetails,
@@ -520,7 +526,6 @@ export function useTripWorkspaceController({
     inlineTitle: inlineTripTitle,
     manualPlan,
     memberRoleRef,
-    menuRef: planMenuRef,
     newMember,
     newPlan,
     onAddPlan: () => { if (ensureActiveTrip()) addPlan(); },
@@ -528,10 +533,8 @@ export function useTripWorkspaceController({
     onDateChange: setLedgerDate,
     onArchive: () => { if (ensureActiveTrip()) void archiveTrip(); },
     onCoverChange: (event) => { if (ensureActiveTrip()) chooseCoverImage(event); },
-    onCopy: copyActivePlan,
     onDelete: deleteActivePlan,
     onDetailsChange: (updates) => { if (ensureActiveTrip()) updateTripDetails(updates); },
-    onEdit: editActivePlan,
     onEditBudget: (id) => editExpense(id, "estimated"),
     onEditExpense: (id) => editExpense(id, "actual"),
     onInlineChange: setInlinePlanEdit,
@@ -549,6 +552,7 @@ export function useTripWorkspaceController({
     onRemoveExpense: (id) => { if (ensureActiveTrip()) removeExpense(id); },
     onSaveEdit: () => { if (ensureActiveTrip()) savePlan(); },
     onSaveExpense: () => { if (ensureActiveTrip()) addExpense(); },
+    onCancelExpense: () => { if (ensureActiveTrip()) cancelExpense(); },
     onSaveInline: () => { if (ensureActiveTrip()) saveInlinePlan(); },
     onSaveManual: () => { if (ensureActiveTrip()) saveManualPlan(); },
     onSelectDay: setActiveDay,
@@ -556,10 +560,8 @@ export function useTripWorkspaceController({
     onTitleChange: setInlineTripTitle,
     onTitleSave: () => { if (ensureActiveTrip()) saveInlineTitle(); },
     onToggleExpense: toggleExpense,
-    onToggleMenu: togglePlanMenu,
+    onTotalBudgetChange: (value) => { if (ensureActiveTrip()) setTotalBudget(value); },
     onTypeChange: setLedgerType,
-    onViewPlanExpenses: viewPlanExpenses,
-    openMenuId: openPlanMenuId,
     plans,
     popover: tripPopover,
     relatedItineraryItemId: ledgerRelatedItineraryItemId,
