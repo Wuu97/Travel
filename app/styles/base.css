@@ -167,11 +167,17 @@ select:focus-visible{border-color:var(--color-border-strong);outline:0;box-shado
 .icon-button{display:inline-grid;place-items:center;box-sizing:border-box;flex:0 0 auto;padding:0;border:1px solid transparent;border-radius:var(--radius-sm);background:transparent;cursor:pointer}
 .icon-button--sm{width:28px;height:28px}
 .icon-button--md{width:32px;height:32px}
-.icon-button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8}
+.icon-button--sm svg{width:14px;height:14px}
+.icon-button--md svg{width:16px;height:16px}
+.icon-button svg{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8}
 .icon-button--ghost{color:var(--color-text-muted)}
 .icon-button--ghost:hover,.icon-button--ghost:focus-visible{background:var(--color-surface-soft);color:var(--color-text-action);outline:0}
+.icon-button--ghost-clear{color:var(--color-text-muted)}
+.icon-button--ghost-clear:hover,.icon-button--ghost-clear:focus-visible{background:var(--color-surface-soft);color:var(--color-text-heading);outline:0}
 .icon-button--danger{color:var(--color-text-muted)}
 .icon-button--danger:hover,.icon-button--danger:focus-visible{background:var(--color-danger-soft);color:var(--color-danger);outline:0}
+.icon-button--edit{color:var(--color-text-muted)}
+.icon-button--edit:hover,.icon-button--edit:focus-visible{background:var(--color-surface-soft);color:var(--color-text-action);outline:0}
 .icon-button:disabled{cursor:not-allowed;opacity:.5}
 
 button{transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease}
