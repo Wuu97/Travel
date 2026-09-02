@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from "react";
 import { ICON_REGISTRY, type IconName } from "../icons/registry";
 
-type Variant = "ghost" | "ghost-clear" | "danger" | "edit";
+type Variant = "ghost" | "danger" | "edit";
 type Size = "sm" | "md";
 
 type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "className"> & {

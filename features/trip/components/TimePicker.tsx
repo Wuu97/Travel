@@ -16,7 +16,7 @@ export function TimePicker({ onChange, value }: Props) {
       <CustomSelect ariaLabel="小时" className="time-select" options={[{ value: "", label: "时" }, ...hours.map((value) => ({ value, label: `${value} 时` }))]} value={hour} onChange={(value) => onChange(`${value}:${minute || "00"}`)} />
       <span>:</span>
       <CustomSelect ariaLabel="分钟" className="time-select" options={[{ value: "", label: "分" }, ...minutes.map((value) => ({ value, label: `${value} 分` }))]} value={minute} onChange={(value) => onChange(`${hour || "00"}:${value}`)} />
-      {value && <IconButton aria-label="清除时间" icon="clear" size="sm" variant="ghost-clear" onClick={() => onChange("")} />}
+      {value && <IconButton aria-label="清除时间" icon="clear" size="sm" variant="ghost" onClick={() => onChange("")} />}
     </div>
   );
 }
