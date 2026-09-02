@@ -5,6 +5,7 @@ import { typeColors } from "../utils";
 import { TimePicker } from "./TimePicker";
 import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 import { useTripCapabilities } from "./TripCapabilities";
+import { CustomSelect } from "../../shared/components/CustomSelect";
 
 function inferLocation(title: string) {
   const trimmedTitle = title.trim();
@@ -39,11 +40,11 @@ export function ManualPlanDialog({ activeDay, days, onClose, onSave, plan, setPl
       <button className="edit-plan-dismiss" type="button" aria-label="关闭手动添加" onClick={onClose} />
       <form className="edit-plan manual-plan" onSubmit={(event) => { event.preventDefault(); if (!canEditTrip) return; if (!plan.title.trim()) { setTitleError(true); return; } onSave(); }}>
         <div><b>手动添加行程</b><button type="button" aria-label="关闭手动添加" onClick={onClose}>×</button></div>
-        <label>日期<select value={plan.day || activeDay} onChange={(event) => update({ day: Number(event.target.value) })}>{days.map((item) => <option key={item.day} value={item.day}>DAY {item.day} · {item.date}</option>)}</select></label>
+        <label>日期<CustomSelect ariaLabel="日期" options={days.map((item) => ({ value: String(item.day), label: `DAY ${item.day} · ${item.date}` }))} value={String(plan.day || activeDay)} onChange={(value) => update({ day: Number(value) })} /></label>
         <div className="field-label"><span>时间</span><TimePicker onChange={(time) => update({ time })} value={plan.time || ""} /></div>
         <label>行程名称<input aria-invalid={titleError} value={plan.title} placeholder="例如 杭州东站 → 西湖" onChange={(event) => { updateTitle(event.target.value); setTitleError(false); }} />{titleError && <small className="manual-form-error">请填写行程名称</small>}</label>
         <label>备注（可选）<input value={plan.note || ""} placeholder="例如 提前预约" onChange={(event) => update({ note: event.target.value })} /></label>
-        <label>分类<select value={plan.type} onChange={(event) => update({ type: event.target.value as ItineraryItem["type"] })}>{itineraryTypes.filter((type) => type !== "活动").map((type) => <option key={type}>{type}</option>)}</select></label>
+        <label>分类<CustomSelect ariaLabel="分类" options={itineraryTypes.map((value) => ({ value, label: value }))} value={plan.type} onChange={(value) => update({ type: value as ItineraryItem["type"] })} /></label>
         <span className="manual-type-preview" style={{ color: typeColors[plan.type].color, background: typeColors[plan.type].tint }}>● {plan.type}</span>
         <div className="edit-plan-actions"><button type="button" onClick={onClose}>取消</button><button type="submit">保存行程</button></div>
       </form>

@@ -1,6 +1,6 @@
-import type { ExpenseCategory, ExpenseItem, LedgerItem } from "./model";
+import { tripCategories, type ExpenseCategory, type ExpenseItem, type LedgerItem } from "./model";
 
-const expenseCategories: ExpenseCategory[] = ["住宿", "餐饮", "交通", "门票", "活动", "其他"];
+const expenseCategories: ExpenseCategory[] = [...tripCategories];
 
 export type CategoryBudgetVsActual = {
   category: ExpenseCategory;

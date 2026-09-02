@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { acceptTripInvite, loadSharedTrip, saveSharedTrip, TripVersionConflictError } from "../api";
-import type { ExpenseItem, ItineraryItem, LedgerItem, StoredTrip, TripDetails } from "../model";
+import { normalizeTripCategory, type ExpenseItem, type ItineraryItem, type LedgerItem, type StoredTrip, type TripDetails } from "../model";
 import { saveTrip, saveTripDetails } from "../storage";
 import { normalizeTripExpense } from "../expense";
 import { sortItineraryItems } from "../utils";
@@ -73,7 +73,10 @@ export function useTripPersistence({
     totalBudget: typeof trip.totalBudget === "number" && Number.isFinite(trip.totalBudget) && trip.totalBudget >= 0 ? trip.totalBudget : null,
     expenses: trip.expenses.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "actual")).filter((item): item is LedgerItem => item !== null),
     budgetItems: trip.budgetItems.map((item) => normalizeTripExpense(item as unknown as Record<string, unknown>, "estimated")).filter((item): item is ExpenseItem => item !== null),
-    plans: sortItineraryItems(trip.plans),
+    plans: sortItineraryItems(trip.plans.flatMap((item) => {
+      const type = normalizeTripCategory(item.type);
+      return type ? [{ ...item, type }] : [];
+    })),
     details: trip.details || fallbackDetails,
   }), []);
   const applySnapshot = useCallback((next: TripState) => {

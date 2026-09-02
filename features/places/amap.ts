@@ -9,7 +9,7 @@ type AmapResponse = { status?: string; pois?: AmapPoi[] };
 const typeCodeCategories: Record<string, PlaceCategory> = {
   "05": "餐饮",
   "06": "购物",
-  "08": "活动",
+  "08": "其他",
   "10": "住宿",
   "11": "景点",
   "15": "交通",
@@ -26,7 +26,7 @@ function mapAmapPoi(poi: AmapPoi): PlaceCategory | null {
   if (/酒店|住宿|旅馆/.test(type)) return "住宿";
   if (/风景|景点|博物馆|公园/.test(type)) return "景点";
   if (/交通|车站|机场|地铁/.test(type)) return "交通";
-  if (/娱乐|文化|体育|演出/.test(type)) return "活动";
+  if (/娱乐|文化|体育|演出/.test(type)) return "其他";
   return null;
 }
 

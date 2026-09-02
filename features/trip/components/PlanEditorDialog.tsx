@@ -4,6 +4,7 @@ import type { ItineraryItem } from "../model";
 import { TimePicker } from "./TimePicker";
 import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 import { useTripCapabilities } from "./TripCapabilities";
+import { CustomSelect } from "../../shared/components/CustomSelect";
 
 type Props = {
   plan: ItineraryItem | null;
@@ -26,7 +27,7 @@ export function PlanEditorDialog({ onClose, onSave, plan, setPlan }: Props) {
         <label>行程名称<input value={plan.title} onChange={(event) => update({ title: event.target.value })} /></label>
         <div className="field-label"><span>时间</span><TimePicker onChange={(time) => update({ time })} value={plan.time || ""} /></div>
         <label>备注<input value={plan.note || ""} placeholder="例如 提前预约" onChange={(event) => update({ note: event.target.value })} /></label>
-        <label>分类<select value={plan.type} onChange={(event) => update({ type: event.target.value as ItineraryItem["type"] })}>{itineraryTypes.map((type) => <option key={type}>{type}</option>)}</select></label>
+        <label>分类<CustomSelect ariaLabel="分类" options={itineraryTypes.map((value) => ({ value, label: value }))} value={plan.type} onChange={(value) => update({ type: value as ItineraryItem["type"] })} /></label>
         <div className="edit-plan-actions"><button type="button" onClick={onClose}>取消</button><button type="submit">保存</button></div>
       </form>
     </div>

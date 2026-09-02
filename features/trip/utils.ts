@@ -69,7 +69,6 @@ export const typeColors: Record<
   景点: { color: "#5598bd", tint: "#eaf4f9" },
   住宿: { color: "#846bb0", tint: "#f1edfa" },
   购物: { color: "#c06c8f", tint: "#fbeef3" },
-  活动: { color: "#d48a3e", tint: "#fff5e6" },
   其他: { color: "#7d8d86", tint: "#eff2f0" },
 };
 export const classifyItinerary = (title: string): ItineraryItem["type"] => {
@@ -82,7 +81,7 @@ export const classifyItinerary = (title: string): ItineraryItem["type"] => {
   if (/购物|商场|逛街|买|市集|菜场|免税店/.test(value)) return "购物";
   if (/高铁|火车|飞机|打车|地铁|公交|航班|车站|接送|租车/.test(value))
     return "交通";
-  if (/演出|音乐会|活动|体验|课程|徒步/.test(value)) return "活动";
+  if (/演出|音乐会|活动|体验|课程|徒步/.test(value)) return "其他";
   return "其他";
 };
 export const parseTimeNumber = (value: string) => {

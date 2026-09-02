@@ -6,7 +6,7 @@ export function ActualExpenseList({ expenses, onEdit, onRemove, plans, emptyMess
   const permissionsPending = permissionStatus === "loading";
   return (
     <div className="expense-list" style={{ display: "flex", flexDirection: "column", height: "100%", margin: 0, minHeight: 0, overflowY: "auto" }}>
-      <b>消费明细 <small>已发生</small></b>
+      <b>消费明细</b>
       {expenses.length ? expenses.map((expense) => (
         <article key={expense.id}>
           <i>{expense.type === "住宿" ? "⌂" : expense.type === "餐饮" ? "♨" : expense.type === "交通" ? "↗" : "¥"}</i>

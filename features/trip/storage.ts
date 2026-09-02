@@ -1,4 +1,4 @@
-import type { StoredTrip, TripDetails, TripLibraryItem } from "./model";
+import { normalizeTripCategory, type StoredTrip, type TripDetails, type TripLibraryItem } from "./model";
 import { clampItineraryDays, sortItineraryItems } from "./utils";
 import { normalizeTripExpense } from "./expense";
 
@@ -47,7 +47,12 @@ export function loadStoredTrip(fallback: StoredTrip, tripId?: string, userId?: L
       expenses: Array.isArray(data.expenses) ? data.expenses.map((item) => normalizeTripExpense(item as Record<string, unknown>, "actual")).filter((item): item is StoredTrip["expenses"][number] => item !== null) : fallback.expenses,
       budgetItems: Array.isArray(data.budgetItems) ? data.budgetItems.map((item) => normalizeTripExpense(item as Record<string, unknown>, "estimated")).filter((item): item is StoredTrip["budgetItems"][number] => item !== null) : fallback.budgetItems,
       plans: Array.isArray(data.plans)
-        ? sortItineraryItems(clampItineraryDays(data.plans.map((item, index) => typeof item === "string" ? { id: `legacy-plan-${index}-${item}`, title: item, type: ["交通", "餐饮", "景点"][index % 3] as StoredTrip["plans"][number]["type"], day: 1 } : item)))
+        ? sortItineraryItems(clampItineraryDays(data.plans.flatMap((item, index) => {
+          if (typeof item === "string") return [{ id: `legacy-plan-${index}-${item}`, title: item, type: ["交通", "餐饮", "景点"][index % 3] as StoredTrip["plans"][number]["type"], day: 1 }];
+          if (!item || typeof item !== "object") return [];
+          const type = normalizeTripCategory((item as { type?: unknown }).type);
+          return type ? [{ ...(item as StoredTrip["plans"][number]), type }] : [];
+        })))
         : fallback.plans,
     };
   } catch {

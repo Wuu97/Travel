@@ -5,9 +5,21 @@ export type PlaceInfo = {
   openingHours?: string;
 };
 
-export const itineraryTypes = ["景点", "餐饮", "活动", "交通", "住宿", "购物", "其他"] as const;
-export type ItineraryType = (typeof itineraryTypes)[number];
-export const isItineraryType = (value: unknown): value is ItineraryType => typeof value === "string" && (itineraryTypes as readonly string[]).includes(value);
+/** One canonical category vocabulary for itinerary and ledger records. */
+export const tripCategories = ["景点", "餐饮", "交通", "住宿", "购物", "其他"] as const;
+export type TripCategory = (typeof tripCategories)[number];
+/** @deprecated Use tripCategories. Kept for source compatibility with itinerary UI. */
+export const itineraryTypes = tripCategories;
+export type ItineraryType = TripCategory;
+export type ExpenseCategory = TripCategory;
+
+const legacyCategoryMap: Record<string, TripCategory> = { 门票: "景点", 活动: "其他" };
+export const normalizeTripCategory = (value: unknown): TripCategory | undefined => {
+  if (typeof value !== "string") return undefined;
+  return (tripCategories as readonly string[]).includes(value) ? value as TripCategory : legacyCategoryMap[value];
+};
+export const isTripCategory = (value: unknown): value is TripCategory => typeof value === "string" && (tripCategories as readonly string[]).includes(value);
+export const isItineraryType = isTripCategory;
 
 export type ItineraryItem = {
   id: string;
@@ -22,7 +34,6 @@ export type ItineraryItem = {
   place?: PlaceInfo;
 };
 
-export type ExpenseCategory = "住宿" | "餐饮" | "交通" | "门票" | "活动" | "其他";
 export type ExpenseOccurrence = "estimated" | "actual";
 
 /** Shared expense semantics, independent from whether a screen calls it a budget or ledger row. */

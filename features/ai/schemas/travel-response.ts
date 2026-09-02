@@ -47,7 +47,7 @@ export type TravelExpenseSuggestion = {
   id: string;
   title: string;
   amount: number;
-  category: "住宿" | "餐饮" | "交通" | "门票" | "活动" | "其他";
+  category: "景点" | "餐饮" | "交通" | "住宿" | "购物" | "其他";
   occurrence: "estimated";
   relatedItineraryItemId?: string;
   relatedItineraryTitle?: string;

@@ -1,25 +1,20 @@
-import { isItineraryType, type ExpenseItem, type ItineraryItem } from "../../trip/model";
+import { normalizeTripCategory, type ExpenseItem, type ItineraryItem } from "../../trip/model";
 import type { AiReply } from "../schemas/response";
 import { parseDataRequests } from "../schemas/dataRequests";
 import { parseStructuredTravelResponse, structuredTravelResponseToRichContent } from "../parser/travel-response-parser";
 import { stableExpenseSuggestionId } from "../parser/expense-id";
 
-const expenseTypes = ["住宿", "餐饮", "交通", "门票", "活动", "其他"] as const;
-type ExpenseType = (typeof expenseTypes)[number];
-
-function isExpenseType(value: unknown): value is ExpenseType {
-  return typeof value === "string" && expenseTypes.includes(value as ExpenseType);
-}
 
 function parseItineraryItems(value: unknown): ItineraryItem[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item, index) => {
     if (!item || typeof item !== "object") return [];
     const raw = item as Record<string, unknown>;
-    if (typeof raw.title !== "string" || !raw.title.trim() || !isItineraryType(raw.type)) return [];
+    const type = normalizeTripCategory(raw.type);
+    if (typeof raw.title !== "string" || !raw.title.trim() || !type) return [];
     return [{
       id: typeof raw.id === "string" && raw.id.trim() ? raw.id : `ai-${Date.now()}-${index}`,
-      title: raw.title.trim(), type: raw.type,
+      title: raw.title.trim(), type,
       ...(typeof raw.day === "number" && Number.isInteger(raw.day) && raw.day > 0 ? { day: raw.day } : {}),
       ...(typeof raw.date === "string" && raw.date.trim() ? { date: raw.date.trim() } : {}),
       ...(typeof raw.time === "string" && raw.time.trim() ? { time: raw.time.trim() } : {}),
@@ -35,10 +30,11 @@ function parseExpenseItems(value: unknown): ExpenseItem[] {
     if (!item || typeof item !== "object") return [];
     const raw = item as Record<string, unknown>;
     const type = raw.category ?? raw.type;
-    if (typeof raw.title !== "string" || !raw.title.trim() || typeof raw.amount !== "number" || !Number.isFinite(raw.amount) || raw.amount <= 0 || !isExpenseType(type)) return [];
+    const normalizedType = normalizeTripCategory(type);
+    if (typeof raw.title !== "string" || !raw.title.trim() || typeof raw.amount !== "number" || !Number.isFinite(raw.amount) || raw.amount <= 0 || !normalizedType) return [];
     return [{
-      id: stableExpenseSuggestionId({ id: typeof raw.id === "string" ? raw.id : undefined, title: raw.title, category: type, amount: raw.amount, relatedItineraryItemId: typeof raw.relatedItineraryItemId === "string" ? raw.relatedItineraryItemId : undefined, relatedItineraryTitle: typeof raw.relatedItineraryTitle === "string" ? raw.relatedItineraryTitle : undefined, index }),
-      title: raw.title.trim(), amount: Math.round(raw.amount * 100) / 100, type,
+      id: stableExpenseSuggestionId({ id: typeof raw.id === "string" ? raw.id : undefined, title: raw.title, category: normalizedType, amount: raw.amount, relatedItineraryItemId: typeof raw.relatedItineraryItemId === "string" ? raw.relatedItineraryItemId : undefined, relatedItineraryTitle: typeof raw.relatedItineraryTitle === "string" ? raw.relatedItineraryTitle : undefined, index }),
+      title: raw.title.trim(), amount: Math.round(raw.amount * 100) / 100, type: normalizedType,
       occurrence: "estimated",
       ...(typeof raw.note === "string" && raw.note.trim() ? { note: raw.note.trim() } : {}),
       ...(typeof raw.relatedItineraryItemId === "string" && raw.relatedItineraryItemId.trim() ? { relatedItineraryItemId: raw.relatedItineraryItemId.trim() } : {}),

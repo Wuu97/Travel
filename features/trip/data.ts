@@ -1,6 +1,6 @@
-import type { ItineraryItem, StoredTrip, TripDetails, TripExpense } from "./model";
+import { tripCategories, type ItineraryItem, type StoredTrip, type TripDetails, type TripExpense } from "./model";
 
-export const itineraryTypes = ["交通", "餐饮", "景点", "住宿", "购物", "活动", "其他"] as const;
+export const itineraryTypes = tripCategories;
 
 const defaultExpenses: TripExpense[] = [
   { id: "expense-stay", title: "民宿 · 西湖边", type: "住宿", amount: 628, occurrence: "actual", payer: "林" },

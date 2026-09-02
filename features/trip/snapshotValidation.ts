@@ -1,12 +1,11 @@
 import { isOptionalShortString, isRecord, isShortString } from "../shared/validation";
+import { normalizeTripCategory } from "./model";
 
-const ITINERARY_TYPES = new Set(["景点", "餐饮", "活动", "交通", "住宿", "购物", "其他"]);
-const EXPENSE_TYPES = new Set(["住宿", "餐饮", "交通", "门票", "活动", "其他"]);
 const MAX_TRIP_ITEMS = 500;
 
 const isPlaceInfo = (value: unknown) => value === undefined || (isRecord(value) && value.provider === "amap" && (value.rating === undefined || (typeof value.rating === "number" && Number.isFinite(value.rating) && value.rating >= 0 && value.rating <= 5)) && (value.averageCost === undefined || (typeof value.averageCost === "number" && Number.isFinite(value.averageCost) && value.averageCost >= 0 && value.averageCost <= 1_000_000)) && isOptionalShortString(value.openingHours));
-const isItineraryItem = (value: unknown) => isRecord(value) && isShortString(value.id, 200) && isShortString(value.title) && typeof value.type === "string" && ITINERARY_TYPES.has(value.type) && (value.day === undefined || (typeof value.day === "number" && Number.isInteger(value.day) && value.day >= 0 && value.day <= 31)) && isOptionalShortString(value.date) && isOptionalShortString(value.time) && isOptionalShortString(value.location) && isOptionalShortString(value.note) && isOptionalShortString(value.creator) && isPlaceInfo(value.place);
-const isExpenseItem = (value: unknown) => isRecord(value) && isShortString(value.id, 200) && isShortString(value.title ?? value.item) && typeof value.type === "string" && EXPENSE_TYPES.has(value.type) && typeof value.amount === "number" && Number.isFinite(value.amount) && value.amount >= 0 && isOptionalShortString(value.by) && isOptionalShortString(value.payer) && isOptionalShortString(value.date) && isOptionalShortString(value.occurrence) && isOptionalShortString(value.relatedItineraryItemId) && isOptionalShortString(value.relatedItineraryTitle) && isOptionalShortString(value.note);
+const isItineraryItem = (value: unknown) => isRecord(value) && isShortString(value.id, 200) && isShortString(value.title) && Boolean(normalizeTripCategory(value.type)) && (value.day === undefined || (typeof value.day === "number" && Number.isInteger(value.day) && value.day >= 0 && value.day <= 31)) && isOptionalShortString(value.date) && isOptionalShortString(value.time) && isOptionalShortString(value.location) && isOptionalShortString(value.note) && isOptionalShortString(value.creator) && isPlaceInfo(value.place);
+const isExpenseItem = (value: unknown) => isRecord(value) && isShortString(value.id, 200) && isShortString(value.title ?? value.item) && Boolean(normalizeTripCategory(value.type)) && typeof value.amount === "number" && Number.isFinite(value.amount) && value.amount >= 0 && isOptionalShortString(value.by) && isOptionalShortString(value.payer) && isOptionalShortString(value.date) && isOptionalShortString(value.occurrence) && isOptionalShortString(value.relatedItineraryItemId) && isOptionalShortString(value.relatedItineraryTitle) && isOptionalShortString(value.note);
 const isTripDetails = (value: unknown) => {
   if (!isRecord(value)) return false;
   const roles = value.memberRoles;

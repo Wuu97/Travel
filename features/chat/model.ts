@@ -1,4 +1,4 @@
-import { isItineraryType, type ExpenseItem, type ItineraryItem } from "../trip/model";
+import { normalizeTripCategory, type ExpenseItem, type ItineraryItem } from "../trip/model";
 import type { TravelImage } from "../ai/image/types";
 import { normalizeTravelImages } from "../ai/image/normalization";
 import { parseStructuredTravelResponse } from "../ai/parser/travel-response-parser";
@@ -18,7 +18,7 @@ const display = (value: unknown) => typeof value === "string" || typeof value ==
 const list = (value: unknown) => Array.isArray(value) ? value : [];
 const dedupe = <T>(items: T[], key: (item: T) => string, limit: number) => items.filter((item, index, all) => all.findIndex((candidate) => key(candidate) === key(item)) === index).slice(0, limit);
 const imageUrl = (value: unknown) => { const url = text(value); return url && /^(https?:|blob:|\/data\/)/i.test(url) ? url : undefined; };
-const itineraryItem = (value: unknown): ItineraryItem | undefined => { const item = asRecord(value); const title = text(item?.title); const type = item?.type; if (!title || !isItineraryType(type)) return undefined; return { id: text(item?.id) || `rich-${title}-${type}`, title, type, day: typeof item?.day === "number" ? item.day : undefined, date: text(item?.date), time: text(item?.time), location: text(item?.location), note: text(item?.note), creator: text(item?.creator) }; };
+const itineraryItem = (value: unknown): ItineraryItem | undefined => { const item = asRecord(value); const title = text(item?.title); const type = normalizeTripCategory(item?.type); if (!title || !type) return undefined; return { id: text(item?.id) || `rich-${title}-${type}`, title, type, day: typeof item?.day === "number" ? item.day : undefined, date: text(item?.date), time: text(item?.time), location: text(item?.location), note: text(item?.note), creator: text(item?.creator) }; };
 const dishes = (value: unknown) => dedupe(list(value).map(text).filter((item): item is string => Boolean(item)), (item) => item.toLowerCase(), 8);
 const recommendationReasons = (value: unknown) => dedupe(list(value).map(text).filter((item): item is string => Boolean(item)), (item) => item.toLowerCase(), 2);
 const providerImages = (value: unknown) => Array.isArray(value) ? normalizeTravelImages(value.map((item) => {

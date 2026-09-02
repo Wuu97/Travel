@@ -1,5 +1,5 @@
 import type { RichContent } from "../../chat/model";
-import type { ExpenseCategory, ItineraryItem } from "../../trip/model";
+import { normalizeTripCategory, type ItineraryItem } from "../../trip/model";
 import type { ItineraryAction, StructuredTravelResponse, TravelCoordinates, TravelExpenseSuggestion, TravelPlaceCard, TravelRestaurantCard, TravelRouteCard } from "../schemas/travel-response";
 import { stableExpenseSuggestionId } from "./expense-id";
 
@@ -63,14 +63,14 @@ function actions(value: unknown): ItineraryAction[] {
 }
 
 function expenses(value: unknown): TravelExpenseSuggestion[] {
-  const categories = new Set<ExpenseCategory>(["住宿", "餐饮", "交通", "门票", "活动", "其他"]);
   return compact(list(value).flatMap((item, index): TravelExpenseSuggestion[] => {
     const raw = record(item); const title = text(raw?.title); const amount = number(raw?.amount);
     const category = raw?.category ?? raw?.type;
-    if (!title || amount === undefined || amount <= 0 || !categories.has(category as ExpenseCategory)) return [];
+    const normalizedCategory = normalizeTripCategory(category);
+    if (!title || amount === undefined || amount <= 0 || !normalizedCategory) return [];
     const relatedItineraryItemId = text(raw?.relatedItineraryItemId, 120);
     const relatedItineraryTitle = text(raw?.relatedItineraryTitle, 300);
-    return [{ id: stableExpenseSuggestionId({ id: text(raw?.id, 120), title, category: category as ExpenseCategory, amount, relatedItineraryItemId, relatedItineraryTitle, index }), title, amount: Math.round(amount * 100) / 100, category: category as ExpenseCategory, occurrence: "estimated", relatedItineraryItemId, relatedItineraryTitle }];
+    return [{ id: stableExpenseSuggestionId({ id: text(raw?.id, 120), title, category: normalizedCategory, amount, relatedItineraryItemId, relatedItineraryTitle, index }), title, amount: Math.round(amount * 100) / 100, category: normalizedCategory, occurrence: "estimated", relatedItineraryItemId, relatedItineraryTitle }];
   }), (item) => item.id, 12);
 }
 
