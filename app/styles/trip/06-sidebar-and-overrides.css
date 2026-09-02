@@ -293,7 +293,6 @@
 
 
 
-.planned-list{margin-top:14px}
 
 
 
@@ -301,35 +300,27 @@
 
 
 
-.progress{flex:1}
 
 
 
-.progress p{font-size:var(--font-size-sm);margin:0 0 8px;color:#6c8176}
 
 
 
-.progress i{height:8px;background:#dbe7de;border-radius:6px;display:block}
 
 
 
-.progress i b{display:block;width:36%;height:100%;background:var(--color-brand);border-radius:6px}
 
 
 
-.donut{width:128px;height:128px;border-radius:var(--radius-pill);background:conic-gradient(var(--color-brand) 0 57%,#65a57b 57% 72%,#7599b6 72% 99%,#e3e9e3 99%);margin:15px auto;display:grid;place-items:center}
 
 
 
-.donut:before{content:"";position:absolute;width:94px;height:94px;border-radius:var(--radius-pill);background:var(--color-surface)}
 
 
 
-.donut span{z-index:1;font:500 17px Georgia,serif;text-align:center}
 
 
 
-.donut small{display:block;font:10px Arial;color:#8a9a91;margin-top:3px}
 
 
 
@@ -519,35 +510,6 @@
 #workspace .timeline article.itinerary-card>.plan-menu-trigger{border-radius:var(--radius-sm)}
 
 /* Budget */
-#workspace .budget-board{border-color:var(--color-border)!important;border-radius:0 0 var(--radius-md) var(--radius-md)!important;background:var(--color-surface);padding:20px!important}
-
-#workspace .budget-summary{border:1px solid var(--color-border-soft);border-radius:var(--radius-md);background:var(--color-surface-soft);padding:16px 18px;gap:28px}
-
-#workspace .budget-summary strong{font-family:var(--font-display);font-size:26px;color:var(--color-text-heading)}
-#workspace .budget-summary input{display:block;box-sizing:border-box;width:118px;height:32px;margin:4px 0;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text-heading);font:500 var(--font-size-lg)/1 var(--font-display);padding:4px 7px}
-#workspace .budget-summary input:focus{border-color:var(--color-brand);box-shadow:none;outline:0}
-
-#workspace .expense-list,#workspace .budget-side{border-color:var(--color-border-soft);border-radius:var(--radius-md);padding:14px}
-
-#workspace .expense-list article{gap:10px;padding:12px 0;border-bottom-color:var(--color-border-soft)}
-
-#workspace .expense-list h4{color:var(--color-text-heading);font-weight:600}
-
-#workspace .expense-list p{color:var(--color-text-muted)}
-
-#workspace .expense-list strong{color:var(--color-text-heading)}
-#workspace .expense-list article .expense-actions{display:flex;flex:0 0 48px;gap:2px;justify-content:flex-end}
-#workspace .expense-list article .expense-actions button{display:grid;place-items:center;width:23px;height:23px;padding:0;border:0;background:transparent;color:var(--color-text-muted);font:inherit;opacity:0;visibility:hidden}
-#workspace .expense-list article:hover .expense-actions button,#workspace .expense-list article:focus-within .expense-actions button{opacity:1;visibility:visible}
-#workspace .expense-list article .expense-actions .expense-edit:hover,#workspace .expense-list article .expense-actions .expense-edit:focus-visible{color:var(--color-text-action);outline:0}
-#workspace .expense-list article .expense-actions .expense-remove:hover,#workspace .expense-list article .expense-actions .expense-remove:focus-visible{color:var(--color-danger);outline:0}
-
-@media(max-width:760px){#workspace .trip-workspace-panel>.trip-head{padding:12px!important}
-
-#workspace .budget-board{padding:13px!important}
-
-#workspace .budget-summary{gap:12px!important;padding:14px!important}}
-
 /* Sidebar navigation */
 
 /* Layout */
@@ -602,7 +564,7 @@
 @media(max-width:760px){#workspace .trip-sidebar .trip-library-item .trip-library-delete{opacity:1!important;visibility:visible!important}}
 
 /* Ledger layout: information-led cards rather than equal-height dashboard panels. */
-#workspace .budget-board{height:auto!important;overflow:visible!important;padding:18px 20px!important}
+#workspace .budget-board{height:auto;overflow:visible;background:var(--color-surface);padding:18px 20px}
 #workspace .budget-summary{display:block!important;border:0!important;background:var(--color-surface-soft)!important;padding:11px 18px!important}
 #workspace .budget-summary-heading{display:flex;justify-content:center;color:var(--color-text-heading)}
 #workspace .budget-summary-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:min(720px,64%);min-width:0;margin:0}
@@ -640,21 +602,28 @@
 #workspace .budget-date-picker .return-date-calendar{top:calc(100% + 6px);left:0}
 #workspace .budget-export{height:34px;margin-left:0;padding:0 11px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text-secondary);font:400 var(--font-size-sm)/1 var(--font-ui);cursor:pointer}
 #workspace .budget-export:disabled{cursor:not-allowed}
-#workspace .budget-grid{display:grid!important;grid-template-columns:minmax(0,1.16fr) minmax(300px,.84fr)!important;align-items:start;gap:16px!important;margin-top:0!important}
-#workspace .budget-grid>.expense-list{border:0!important;border-radius:0!important;background:transparent!important}
-#workspace .finance-overview{display:grid;gap:22px;align-content:start;border:0!important;border-radius:0!important;padding:18px;background:transparent!important}
+#workspace .budget-grid{display:grid;grid-template-columns:minmax(0,1.16fr) minmax(300px,.84fr);align-items:start;gap:16px;margin-top:0}
+#workspace .budget-grid>.expense-list{border:0;border-radius:0;background:transparent}
+#workspace .finance-overview{display:grid;gap:22px;align-content:start;border:0;border-radius:0;padding:18px;background:transparent}
 #workspace .budget-grid>.expense-list>b,#workspace .finance-overview>h2,#workspace .finance-overview .planned-list>h3{margin:0;color:var(--color-text-heading);font:600 var(--font-size-md)/1.25 var(--font-ui)}
 #workspace .finance-overview .finance-section{min-width:0}
 #workspace .finance-overview .finance-section>h3{margin:0;color:var(--color-text-heading);font:600 13px/1.25 var(--font-ui)}
 #workspace .finance-overview .planned-list>h3{font:600 var(--font-size-md)/1.25 var(--font-ui)}
 #workspace .finance-overview .finance-section>h3 small{margin-left:7px;color:var(--color-text-muted);font:400 .8em/1.25 var(--font-ui)}
-#workspace .expense-list,#workspace .budget-side{height:auto!important;min-height:0!important;overflow:visible!important;background:var(--color-surface)}
-#workspace .expense-list article{min-height:0;padding:7px 0!important}
-#workspace .expense-list article>i{width:24px!important;height:24px!important;font-size:var(--font-size-xs)}
-#workspace .expense-list h4{font-size:var(--font-size-sm)!important;font-weight:600}
-#workspace .expense-list p{font-size:10px!important;font-weight:400}
-#workspace .expense-list strong{font-weight:600}
-#workspace .finance-overview .expense-distribution{padding:0!important}
+#workspace .expense-list{height:auto;min-height:0;overflow:visible;background:var(--color-surface)}
+#workspace .expense-list article{position:relative;display:flex;align-items:center;gap:10px;min-height:0;padding:7px 0;border-bottom:1px solid var(--color-border-soft)}
+#workspace .expense-list article:last-child{border-bottom:0}
+#workspace .expense-list article>i{display:grid;place-items:center;width:24px;height:24px;border-radius:var(--radius-md);background:var(--color-brand-tint);color:var(--color-brand);font-size:var(--font-size-xs);font-style:normal}
+#workspace .expense-list h4{margin:0 0 3px;color:var(--color-text-heading);font-size:var(--font-size-sm);font-weight:600}
+#workspace .expense-list p{margin:0;color:var(--color-text-muted);font-size:10px;font-weight:400}
+#workspace .expense-list strong{margin-left:auto;color:var(--color-text-heading);font-size:var(--font-size-md);font-weight:600}
+#workspace .expense-list article .expense-actions{display:flex;flex:0 0 48px;gap:2px;justify-content:flex-end}
+#workspace .expense-list article .expense-actions button{display:grid;place-items:center;width:23px;height:23px;padding:0;border:0;background:transparent;color:var(--color-text-muted);font:inherit;opacity:0;visibility:hidden}
+#workspace .expense-list article:hover .expense-actions button,#workspace .expense-list article:focus-within .expense-actions button{opacity:1;visibility:visible}
+#workspace .expense-list article .expense-actions .expense-edit:hover,#workspace .expense-list article .expense-actions .expense-edit:focus-visible{color:var(--color-text-action);outline:0}
+#workspace .expense-list article .expense-actions .expense-remove:hover,#workspace .expense-list article .expense-actions .expense-remove:focus-visible{color:var(--color-danger);outline:0}
+#workspace .expense-remove{border:0;background:transparent;color:var(--color-text-muted);font-size:17px;line-height:1;cursor:pointer;padding:4px}
+#workspace .finance-overview .expense-distribution{padding:0}
 #workspace .distribution-content{display:grid;grid-template-columns:100px minmax(0,1fr);align-items:center;gap:13px;margin-top:8px}
 #workspace .expense-distribution .donut{position:relative;width:88px;height:88px;margin:0 auto}
 #workspace .expense-distribution .donut:before{inset:13px;width:auto;height:auto}
@@ -675,7 +644,7 @@
 #workspace .budget-usage p{margin:1px 0 0;color:var(--color-text-secondary);font:400 var(--font-size-xs)/1.3 var(--font-ui)}
 #workspace .budget-usage small{color:var(--color-text-muted);font:400 var(--font-size-xs)/1.3 var(--font-ui)}
 #workspace .budget-usage.is-over small>strong{color:var(--color-brand);font-weight:600}
-#workspace .finance-overview .planned-list{margin:0!important;padding:0!important;border:0!important;border-radius:0!important;overflow:visible!important;background:transparent!important}
+#workspace .finance-overview .planned-list{margin:0;padding:0;border:0;border-radius:0;overflow:visible;background:transparent}
 #workspace .planned-list-toggle{align-self:flex-start;margin-top:8px;padding:0;border:0;background:transparent;color:var(--color-text-link);font:400 var(--font-size-xs)/1.4 var(--font-ui);cursor:pointer}
 @media(max-width:760px){#workspace .budget-summary-heading{justify-content:flex-start}#workspace .budget-summary-metrics{grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-left:0}#workspace .budget-toolbar-actions{margin-left:0}#workspace .budget-toolbar>input{flex-basis:100%}#workspace .budget-date-picker{order:3}#workspace .budget-export{margin-left:0}#workspace .budget-grid{grid-template-columns:1fr!important}#workspace .distribution-content{grid-template-columns:92px minmax(0,1fr)}}
 

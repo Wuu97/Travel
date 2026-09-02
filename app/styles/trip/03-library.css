@@ -1,7 +1,6 @@
 
 
 
-.expense-remove:hover,.expense-remove:focus-visible{color:#cb684c;outline:0}
 
 
 
@@ -557,4 +556,3 @@
 
 
 .return-date-calendar>.calendar-toolbar>button[aria-label]::before{position:relative;top:-1px}
-

@@ -493,9 +493,6 @@
 
 
 
-#workspace .budget-board{height:570px!important;border:1px solid #e2e8e2!important;border-top:0!important;border-radius:0 0 7px 7px!important;background:var(--color-surface)}
-
-
 
 @media(max-width:760px){#workspace.workspace{padding:18px 0 28px}
 
@@ -517,7 +514,7 @@
 
 #workspace .trip-actions{margin-top:8px;margin-left:0;flex-wrap:wrap}
 
-#workspace .plan-board,#workspace .budget-board{height:500px!important;min-height:380px!important}
+#workspace .plan-board{height:500px!important;min-height:380px!important}
 
 #workspace .plan-board .timeline{padding:0 10px}}
 
@@ -555,6 +552,3 @@
 
 
 #workspace .trip-sidebar.is-collapsed .sidebar-header-title,#workspace .trip-sidebar.is-collapsed .sidebar-header-action{display:none!important}
-
-
-

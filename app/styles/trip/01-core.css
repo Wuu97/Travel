@@ -337,7 +337,6 @@
 
 
 
-.expense-list>b small{font-weight:normal;color:#91a197;margin-left:6px}
 
 
 
@@ -346,19 +345,18 @@
 
 
 
-.add-local,.expense-form{display:flex;gap:8px;margin-top:18px}
+.add-local{display:flex;gap:8px;margin-top:18px}
 
 
 
-.add-local input,.expense-form input{border:1px solid #d9e4dc;border-radius:var(--radius-sm);padding:9px;font-size:var(--font-size-sm);flex:1;background:var(--color-surface)}
+.add-local input{border:1px solid #d9e4dc;border-radius:var(--radius-sm);padding:9px;font-size:var(--font-size-sm);flex:1;background:var(--color-surface)}
 
 
 
-.add-local button,.expense-form button{border:0;border-radius:var(--radius-sm);background:var(--color-brand);color:var(--color-surface);padding:0 13px;font-size:var(--font-size-sm);cursor:pointer}
+.add-local button{border:0;border-radius:var(--radius-sm);background:var(--color-brand);color:var(--color-surface);padding:0 13px;font-size:var(--font-size-sm);cursor:pointer}
 
 
 
-.expense-form{padding:13px;background:#fff5ef;margin-top:14px}
 
 
 
@@ -379,7 +377,7 @@
 
 
 
-.share,.budget-summary button{border:0;background:var(--color-brand);color:var(--color-surface);padding:12px 17px;border-radius:5px;font-weight:bold;cursor:pointer}
+.share{border:0;background:var(--color-brand);color:var(--color-surface);padding:12px 17px;border-radius:5px;font-weight:bold;cursor:pointer}
 
 
 
@@ -536,43 +534,3 @@
 
 
 .timeline article em{margin:0;background:#6b9b89}
-
-
-
-.budget-board{background:var(--color-surface);border:1px solid var(--color-success-tint-strong);border-top:0;border-radius:0 0 8px 8px;padding:24px}
-
-
-
-.budget-summary{background:#f6faf5;border-radius:7px;padding:18px 21px;display:flex;align-items:center;gap:40px}
-
-
-
-.budget-summary span,.budget-summary small{display:block;color:#809287;font-size:var(--font-size-xs)}
-
-
-
-.budget-summary strong{font:500 28px Georgia,serif;color:#274a3c;display:block;margin:4px 0}
-
-
-
-.budget-summary button{margin-left:auto}
-
-
-
-.budget-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:26px;margin-top:24px}
-
-
-
-.expense-list,.budget-side{border:1px solid #e8ede8;border-radius:6px;padding:15px}
-
-
-
-.expense-list>b,.budget-side>b{font-size:var(--font-size-md)}
-
-
-
-.expense-list article{display:flex;align-items:center;padding:13px 0;border-bottom:1px solid #f0f3f0;gap:10px}
-
-
-
-.expense-list article:last-child{border:0}
