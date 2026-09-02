@@ -1,3 +1,5 @@
+import { IconButton } from "./IconButton";
+
 type Props = {
   onClose: () => void;
   title: string;
@@ -8,6 +10,6 @@ type Props = {
 export function PdfPreviewHeader({ onClose, title, titleId }: Props) {
   return <header className="pdf-preview-header">
     <div><p>PDF EXPORT PREVIEW</p><h2 id={titleId}>{title}</h2></div>
-    <button aria-label="关闭 PDF 预览" className="pdf-preview-close" type="button" onClick={onClose}>×</button>
+    <IconButton aria-label="关闭 PDF 预览" icon="close" size="md" variant="ghost" onClick={onClose} />
   </header>;
 }
