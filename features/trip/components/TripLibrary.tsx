@@ -12,6 +12,7 @@ import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 import { SidebarCollapseButton } from "../../shared/components/SidebarCollapseButton";
 import { SidebarHeader } from "../../shared/components/SidebarHeader";
 import { ScrollArea } from "../../shared/components/ScrollArea";
+import { IconButton } from "../../shared/components/IconButton";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import { TripSidebarIcon } from "./TripSidebarIcon";
 import { writeHistoryIfChanged } from "../../navigation/history";
@@ -308,7 +309,7 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
               return <div className={`trip-library-item ${isActive ? "selected" : ""}`} key={item.id}>
                 <div className="trip-library-trip-row">
                   <button className="trip-library-open" type="button" title={item.title} onClick={() => openTrip(item.id)}><TripSidebarIcon name="mountain" /><span><b>{item.title}</b><small>{item.startDate} - {item.endDate}</small></span></button>
-                  {canDeleteItem && <button aria-label={`删除${item.title}`} className="trip-library-delete" disabled={deletingTripId !== null} title={deletingTripId === item.id ? "正在删除" : "删除行程"} type="button" onClick={() => void deleteTrip(item.id)}>{deletingTripId === item.id ? "…" : "×"}</button>}
+                  {canDeleteItem && <IconButton aria-label={`删除${item.title}`} disabled={deletingTripId !== null} icon="trash" title={deletingTripId === item.id ? "正在删除" : "删除行程"} variant="danger" onClick={() => void deleteTrip(item.id)} />}
                   <button className={`trip-library-tree-toggle${isExpanded ? " is-open" : ""}`} type="button" aria-expanded={isExpanded} aria-label={`${isExpanded ? "收起" : "展开"}${item.title}的天数`} onClick={() => setExpandedTrips((current) => ({ ...current, [item.id]: !isExpanded }))}><svg aria-hidden="true" className="sidebar-chevron" viewBox="0 0 12 12"><path d="m1 3 5 6 5-6" /></svg></button>
                 </div>
                 {isExpanded && <ScrollArea ariaLabel={`${item.title} 的天数`} className="trip-library-days">
@@ -324,7 +325,7 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
     {createOpen && <div aria-modal="true" className="edit-plan-backdrop" role="dialog" aria-labelledby="create-trip-title">
       <button className="edit-plan-dismiss" type="button" aria-label="关闭新建行程" onClick={closeCreateTrip} />
       <form className="edit-plan create-trip-form" noValidate onSubmit={(event) => { event.preventDefault(); createTrip(); }}>
-        <div><b id="create-trip-title">新建行程</b><button type="button" aria-label="关闭新建行程" onClick={closeCreateTrip}>×</button></div>
+        <div><b id="create-trip-title">新建行程</b><IconButton aria-label="关闭新建行程" icon="close" variant="ghost" onClick={closeCreateTrip} /></div>
         <label>目的地<input className={createErrors.destination ? "input-error" : ""} placeholder="例如 杭州" value={draft.destination} onChange={(event) => { setDraft({ ...draft, destination: event.target.value }); if (createErrors.destination) setCreateErrors({ ...createErrors, destination: undefined }); }} />{createErrors.destination && <small className="field-error">{createErrors.destination}</small>}</label>
         <CustomDateRangePicker className="create-trip-dates" endDate={draft.endDate} endError={createErrors.endDate} endLabel="返程日期" onChange={(dates) => { setDraft({ ...draft, ...dates }); setCreateErrors({ ...createErrors, startDate: dates.startDate ? undefined : createErrors.startDate, endDate: dates.endDate ? undefined : createErrors.endDate }); }} startDate={draft.startDate} startError={createErrors.startDate} startLabel="出发日期" />
         <label>同行人（可选）<input placeholder="例如 小林、阿宁" value={draft.companions} onChange={(event) => setDraft({ ...draft, companions: event.target.value })} /></label>

@@ -4,6 +4,7 @@ import { CustomSelect } from "../../shared/components/CustomSelect";
 import { getTimeValidationMessage } from "../hooks/useInlinePlanEditor";
 import { typeColors } from "../utils";
 import { useTripPresentation } from "./TripCapabilities";
+import { IconButton } from "../../shared/components/IconButton";
 
 type InlineEdit = { id: string; field: "title" | "note" | "time" | "type"; value: string } | null;
 type Props = { index: number; inlineEdit: InlineEdit; inlineRef: RefObject<HTMLInputElement | null>; textareaRef: RefObject<HTMLTextAreaElement | null>; onChangeInline: (edit: InlineEdit) => void; onDelete: (id: string) => void; onSaveInline: () => void; plan: ItineraryItem };
@@ -68,6 +69,6 @@ export function ItineraryCard({ index, inlineEdit, inlineRef, textareaRef, onCha
       {interactionEnabled && editingNote ? <textarea className="inline-plan-note" ref={textareaRef} rows={1} value={inlineEdit.value} aria-label="行程备注" placeholder="添加备注…" onChange={(event) => onChangeInline({ ...inlineEdit, value: event.target.value })} onInput={(event) => resizeNote(event.currentTarget)} onFocus={(event) => resizeNote(event.currentTarget)} onBlur={onSaveInline} onKeyDown={(event) => { if (event.nativeEvent.isComposing) return; if (event.key === "Escape") { onChangeInline(null); return; } if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); onSaveInline(); } }} /> : plan.note ? <p>{editableStructure ? <button aria-disabled={permissionsPending} type="button" className="inline-readable" title="点击编辑备注" onClick={() => { if (interactionEnabled) onChangeInline({ id: plan.id, field: "note", value: plan.note ?? "" }); }}>{plan.note}<span aria-hidden="true">✎</span></button> : plan.note}</p> : null}
     </div>
     {plan.creator && <small className="plan-creator">{plan.creator === "AI" ? "AI 规划" : `${plan.creator} 添加`}</small>}
-    {interactionEnabled && canDeleteTrip && <button className="plan-delete" type="button" aria-label={`删除${plan.title}`} title="删除行程" onClick={() => onDelete(plan.id)}>×</button>}
+    {interactionEnabled && canDeleteTrip && <IconButton aria-label={`删除${plan.title}`} icon="trash" title="删除行程" variant="danger" onClick={() => onDelete(plan.id)} />}
   </article>;
 }

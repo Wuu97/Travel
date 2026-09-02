@@ -6,6 +6,7 @@ import { TimePicker } from "./TimePicker";
 import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 import { useTripCapabilities } from "./TripCapabilities";
 import { CustomSelect } from "../../shared/components/CustomSelect";
+import { IconButton } from "../../shared/components/IconButton";
 
 function inferLocation(title: string) {
   const trimmedTitle = title.trim();
@@ -39,7 +40,7 @@ export function ManualPlanDialog({ activeDay, days, onClose, onSave, plan, setPl
     <div className="edit-plan-backdrop">
       <button className="edit-plan-dismiss" type="button" aria-label="关闭手动添加" onClick={onClose} />
       <form className="edit-plan manual-plan" onSubmit={(event) => { event.preventDefault(); if (!canEditTrip) return; if (!plan.title.trim()) { setTitleError(true); return; } onSave(); }}>
-        <div><b>手动添加行程</b><button type="button" aria-label="关闭手动添加" onClick={onClose}>×</button></div>
+        <div><b>手动添加行程</b><IconButton aria-label="关闭手动添加" icon="close" variant="ghost" onClick={onClose} /></div>
         <label>日期<CustomSelect ariaLabel="日期" options={days.map((item) => ({ value: String(item.day), label: `DAY ${item.day} · ${item.date}` }))} value={String(plan.day || activeDay)} onChange={(value) => update({ day: Number(value) })} /></label>
         <div className="field-label"><span>时间</span><TimePicker onChange={(time) => update({ time })} value={plan.time || ""} /></div>
         <label>行程名称<input aria-invalid={titleError} value={plan.title} placeholder="例如 杭州东站 → 西湖" onChange={(event) => { updateTitle(event.target.value); setTitleError(false); }} />{titleError && <small className="manual-form-error">请填写行程名称</small>}</label>

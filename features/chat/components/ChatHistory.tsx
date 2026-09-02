@@ -2,6 +2,7 @@ import type { SavedChat } from "../model";
 import { SidebarCollapseButton } from "../../shared/components/SidebarCollapseButton";
 import { SidebarHeader } from "../../shared/components/SidebarHeader";
 import { ScrollArea } from "../../shared/components/ScrollArea";
+import { IconButton } from "../../shared/components/IconButton";
 
 type Props = {
   activeChatId: string;
@@ -24,7 +25,7 @@ export function ChatHistory({ activeChatId, collapsed, onDelete, onNewChat, onOp
               <b>{chat.title}</b>
               <small>{new Date(chat.createdAt).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}</small>
             </button>
-            <button className="history-delete" onClick={() => onDelete(chat.id)} title="删除这段对话">×</button>
+            <IconButton aria-label="删除这段对话" icon="trash" title="删除这段对话" variant="danger" onClick={() => onDelete(chat.id)} />
           </div>
         )) : <p>还没有历史对话</p>}
       </ScrollArea>

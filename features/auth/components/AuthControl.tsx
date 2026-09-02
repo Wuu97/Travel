@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import type { SignUpResult } from "../useSupabaseAuth";
 import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 import { CustomSelect } from "../../shared/components/CustomSelect";
+import { IconButton } from "../../shared/components/IconButton";
 
 const callingCodes = [
   { code: "+86", label: "中国大陆 +86" },
@@ -179,7 +180,7 @@ export function AuthControl({ configured, error, onClearError, onRequestPhoneOtp
     {showTrigger && <div className="auth-control"><button type="button" onClick={() => setOpen(true)}>登录 / 注册</button></div>}
     {open && <div className="auth-backdrop">
       <section className="auth-dialog" data-modal-scroll-lock role="dialog" aria-modal="true" aria-labelledby="auth-title">
-        <div className="auth-dialog-title"><div><b id="auth-title">{registeredEmail ? "注册成功" : method === "phone" ? "手机号登录或注册" : isSignUp ? "创建账户" : "登录账户"}</b><small>{registeredEmail ? "请完成邮箱验证后再登录。" : method === "phone" ? "验证短信验证码后，将自动登录或创建账户。" : isSignUp ? "注册后可同步你的行程和对话。" : "登录后可同步你的行程和对话。"}</small></div><button type="button" className="auth-close" aria-label="关闭" onClick={closeDialog}>×</button></div>
+        <div className="auth-dialog-title"><div><b id="auth-title">{registeredEmail ? "注册成功" : method === "phone" ? "手机号登录或注册" : isSignUp ? "创建账户" : "登录账户"}</b><small>{registeredEmail ? "请完成邮箱验证后再登录。" : method === "phone" ? "验证短信验证码后，将自动登录或创建账户。" : isSignUp ? "注册后可同步你的行程和对话。" : "登录后可同步你的行程和对话。"}</small></div><IconButton aria-label="关闭" icon="close" variant="ghost" onClick={closeDialog} /></div>
         {registeredEmail ? <div className="auth-success-state"><div className="auth-success-icon" aria-hidden="true">✓</div><h2>注册成功</h2><p>验证邮件已发送至<br /><strong>{registeredEmail}</strong></p><p className="auth-success-help">请前往邮箱完成验证，验证后即可登录。</p>{(error || notice) && <p className={`auth-message${error ? " auth-message-error" : ""}`} role="status">{error || notice}</p>}<button type="button" className="auth-submit" onClick={goToSignIn}>去登录</button><button type="button" className="auth-switch auth-resend" onClick={() => void resendVerification()} disabled={submitting}>{submitting ? "正在发送…" : "没收到邮件？重新发送验证邮件"}</button></div> : <form className="auth-dialog-form" noValidate onSubmit={(event) => { event.preventDefault(); void submit(); }}>
           <div className="auth-methods" role="group" aria-label="认证方式"><button type="button" className={method === "email" ? "selected" : ""} onClick={() => { onClearError(); setMethod("email"); setNotice(null); }}>邮箱密码</button><button type="button" className={method === "phone" ? "selected" : ""} onClick={() => { onClearError(); setMethod("phone"); setNotice(null); }}>手机验证码</button></div>
           {method === "phone" ? <>
