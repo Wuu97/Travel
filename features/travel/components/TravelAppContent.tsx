@@ -14,6 +14,7 @@ import { useTravelSearch } from "../../search/hooks/useTravelSearch";
 import { TripWorkspace } from "../../trip/components/TripWorkspace";
 import { TripCapabilitiesContext } from "../../trip/components/TripCapabilities";
 import { useTripWorkspaceController } from "../../trip/hooks/useTripWorkspaceController";
+import { Button } from "../../shared/components/Button";
 import { useEffect } from "react";
 
 export function TravelAppContent({ initialAccountLabel, loadPersistedState }: { initialAccountLabel?: string | null; loadPersistedState: boolean }) {
@@ -87,9 +88,9 @@ export function TravelAppContent({ initialAccountLabel, loadPersistedState }: { 
         savedChats={chat.savedChats}
         scrollRef={chat.chatScrollRef}
       /></TripCapabilitiesContext.Provider>
-      {workspace.syncError && <p className="sync-error" role="status">{workspace.syncError.message}{workspace.syncError.retry && <button type="button" disabled={workspace.syncError.retrying} onClick={() => void workspace.syncError?.retry?.()}>{workspace.syncError.retrying ? "正在重试" : "重试同步"}</button>}</p>}
-      {workspace.syncConflict && <div className="sync-error" role="alert"><p>旅行已被其他成员更新。</p><button type="button" disabled={workspace.syncConflict.resolving} onClick={workspace.syncConflict.useRemoteSnapshot}>使用最新版本</button><button type="button" disabled={workspace.syncConflict.resolving} onClick={() => void workspace.syncConflict?.retryLocalSnapshot()}>保留我的修改</button></div>}
-      {workspace.importUndo && <div className="sync-error" role="status">已导入 {workspace.importUndo.batch.itineraryItemIds.length} 个行程、{workspace.importUndo.batch.budgetItemIds.length} 笔预计费用{workspace.workspaceProps.canEditTrip && <button type="button" onClick={workspace.importUndo.undo}>撤销</button>}</div>}
+      {workspace.syncError && <p className="sync-error" role="status">{workspace.syncError.message}{workspace.syncError.retry && <Button disabled={workspace.syncError.retrying} type="button" variant="link" onClick={() => void workspace.syncError?.retry?.()}>{workspace.syncError.retrying ? "正在重试" : "重试同步"}</Button>}</p>}
+      {workspace.syncConflict && <div className="sync-error" role="alert"><p>旅行已被其他成员更新。</p><Button disabled={workspace.syncConflict.resolving} size="sm" type="button" onClick={workspace.syncConflict.useRemoteSnapshot}>使用最新版本</Button><Button disabled={workspace.syncConflict.resolving} size="sm" type="button" variant="secondary" onClick={() => void workspace.syncConflict?.retryLocalSnapshot()}>保留我的修改</Button></div>}
+      {workspace.importUndo && <div className="sync-error" role="status">已导入 {workspace.importUndo.batch.itineraryItemIds.length} 个行程、{workspace.importUndo.batch.budgetItemIds.length} 笔预计费用{workspace.workspaceProps.canEditTrip && <Button type="button" variant="link" onClick={workspace.importUndo.undo}>撤销</Button>}</div>}
       {workspace.undoImportSuccess && <p className="sync-error" role="status">已撤销 AI 导入</p>}
       <SiteFooter />
       <AuthControl

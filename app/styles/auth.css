@@ -48,10 +48,6 @@
 
 .auth-control input{width:82px;border:1px solid #d8e5dc;border-radius:var(--radius-control);background:var(--color-surface);padding:5px 6px;color:var(--color-text-secondary);font-size:10px;outline:0}
 
-.auth-control button{border:1px solid #c9dace;border-radius:var(--radius-control);background:var(--color-surface);color:#47765a;padding:5px 7px;font-size:10px;cursor:pointer}
-
-.auth-control button:disabled{cursor:wait;opacity:.65}
-
 .auth-control small{position:absolute;right:0;top:52px;z-index:12;width:180px;border:1px solid #dce5de;border-radius:var(--radius-card);background:var(--color-surface);padding:5px;color:var(--color-text-muted);font-size:10px;line-height:1.35}
 
 .auth-status{margin-left:auto}
