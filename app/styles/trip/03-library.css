@@ -21,7 +21,7 @@
 
 
 
-.trip-library-list{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.trip-library-list{display:flex;gap:var(--space-list);overflow-x:auto;padding-bottom:2px}
 
 
 

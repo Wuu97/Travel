@@ -16,7 +16,7 @@
 .auth-phone-input .auth-calling-code .custom-select-trigger{height:38px;padding:0 8px;border-color:#cfded4;color:#294d3e;font-size:var(--font-size-md)}
 
 
-.auth-confirm-page{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--color-page-bg)}
+.auth-confirm-page{min-height:100vh;display:grid;place-items:center;padding:var(--space-page);background:var(--color-page-bg)}
 
 .auth-confirm-page section{width:min(460px,100%);border:1px solid #dce6df;border-radius:var(--radius-card);background:var(--color-surface);padding:34px;box-shadow:0 18px 42px #1d342f16}
 

@@ -245,7 +245,7 @@
 
 
 
-.future article{background:var(--color-surface);border:1px solid #e8ece6;border-radius:var(--radius-card);padding:20px;width:190px}
+.future article{background:var(--color-surface);border:1px solid #e8ece6;border-radius:var(--radius-card);padding:var(--space-card);width:190px}
 
 
 
