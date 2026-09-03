@@ -28,19 +28,6 @@
 
 
 
-#workspace .trip-sidebar .trip-library-item .trip-library-delete{position:static!important;display:grid!important;grid-column:2!important;grid-row:1!important;place-items:center!important;width:18px!important;height:16px!important;margin-top:2px!important;padding:0!important;border:0!important;background:transparent!important;color:#97aaa0!important;font-size:var(--font-size-base)!important;line-height:1!important;opacity:0!important;visibility:hidden!important;transition:opacity .14s ease,color .14s ease!important}
-
-
-
-#workspace .trip-sidebar .trip-library-item:hover .trip-library-delete{opacity:1!important;visibility:visible!important}
-
-
-
-#workspace .trip-sidebar .trip-library-item .trip-library-delete:hover,#workspace .trip-sidebar .trip-library-item .trip-library-delete:focus-visible{color:#c96a4e!important;background:#fff3ee!important;outline:0!important}
-
-
-
-
 #workspace .trip-sidebar .sidebar-disclosure{display:block!important;box-sizing:border-box!important;border-top:0!important;border-left:0!important;border-right:1.5px solid currentColor!important;border-bottom:1.5px solid currentColor!important;border-radius:0!important;background:transparent!important;transform:rotate(-45deg)!important}
 
 
@@ -82,11 +69,6 @@
 
 
 
-#workspace .trip-sidebar .trip-library-item .trip-library-delete{grid-column:2!important;width:12px!important;height:16px!important;margin-top:0!important;font-size:var(--font-size-sm)!important}
-
-
-
-
 #workspace .trip-sidebar .trip-sidebar-group-toggle{padding-right:17px!important}
 
 
@@ -99,30 +81,11 @@
 
 
 
-#workspace .trip-sidebar .trip-library-item .trip-library-delete{position:static!important;grid-column:2!important;grid-row:1!important;justify-self:center!important;align-self:start!important;margin:0!important;font-size:var(--font-size-xs)!important}
-
-
-
 #workspace .trip-sidebar .trip-library-tree-toggle{grid-column:3!important;grid-row:1!important;justify-self:center!important;visibility:visible!important}
 
 
 
 #workspace .trip-sidebar .trip-library-item:hover .trip-library-tree-toggle{visibility:visible!important}
-
-
-
-#workspace .trip-sidebar .trip-library-item:hover .trip-library-delete{opacity:1!important;visibility:visible!important}
-
-
-
-
-#workspace .trip-sidebar .trip-library-item .trip-library-delete{transform:translateX(8px)!important}
-
-
-
-
-#workspace .trip-sidebar .trip-library-item .trip-library-delete{font-size:var(--font-size-md)!important}
-
 
 
 
@@ -532,10 +495,9 @@
 #workspace .trip-sidebar .trip-library-open small{overflow:hidden!important;font-size:10px!important;font-weight:400!important;line-height:14px!important;color:var(--color-text-muted)!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 
 /* Actions */
-#workspace .trip-sidebar .trip-library-item .trip-library-delete{position:static!important;display:grid!important;grid-column:2!important;grid-row:1!important;place-items:center!important;width:28px!important;height:28px!important;margin:0!important;padding:0!important;background:transparent!important;color:var(--color-text-muted)!important;font-size:var(--font-size-md)!important;line-height:1!important;opacity:0!important;visibility:hidden!important;transform:none!important;transition:opacity .16s ease,color .16s ease,background-color .16s ease!important}
+#workspace .trip-sidebar .trip-library-trip-row>.icon-button{position:static!important;display:grid!important;grid-column:2!important;grid-row:1!important;place-items:center!important;width:28px!important;height:28px!important;margin:0!important;padding:0!important;opacity:0!important;visibility:hidden!important;transition:opacity .16s ease!important}
 #workspace .trip-sidebar .trip-library-tree-toggle{display:grid!important;grid-column:3!important;grid-row:1!important;place-items:center!important;width:28px!important;height:28px!important;margin:0!important;padding:0!important;color:var(--color-text-muted)!important;visibility:visible!important}
-#workspace .trip-sidebar .trip-library-item:hover .trip-library-delete,#workspace .trip-sidebar .trip-library-item:focus-within .trip-library-delete{opacity:1!important;visibility:visible!important}
-#workspace .trip-sidebar .trip-library-item .trip-library-delete:hover,#workspace .trip-sidebar .trip-library-item .trip-library-delete:focus-visible{background:var(--color-danger-soft)!important;color:var(--color-danger)!important;outline:0!important}
+#workspace .trip-sidebar .trip-library-item:hover .trip-library-trip-row>.icon-button,#workspace .trip-sidebar .trip-library-item:focus-within .trip-library-trip-row>.icon-button{opacity:1!important;visibility:visible!important}
 
 /* Chevron */
 #workspace .trip-sidebar svg.sidebar-chevron{grid-column:4!important;justify-self:center!important;width:10px!important;height:10px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.2!important;transform:rotate(-90deg)!important;transform-box:fill-box!important;transform-origin:center!important;transition:transform .16s ease!important}
@@ -561,7 +523,7 @@
 #workspace .trip-sidebar .trip-library-days button.selected-day .day-timeline-dot{border-color:var(--color-success)!important;background:var(--color-success)!important;box-shadow:0 0 0 2px var(--color-success-soft)!important}
 
 /* Responsive */
-@media(max-width:760px){#workspace .trip-sidebar .trip-library-item .trip-library-delete{opacity:1!important;visibility:visible!important}}
+@media(max-width:760px){#workspace .trip-sidebar .trip-library-trip-row>.icon-button{opacity:1!important;visibility:visible!important}}
 
 /* Ledger layout: information-led cards rather than equal-height dashboard panels. */
 #workspace .budget-board{height:auto;overflow:visible;background:var(--color-surface);padding:18px 20px}
@@ -593,8 +555,7 @@
 #workspace .budget-date-picker .date-field-control{position:relative;display:block}
 #workspace .budget-date-picker .date-field-control input{box-sizing:border-box;width:80px;height:26px;padding:0 2px;border:0;border-radius:0;background:transparent;color:var(--color-text-secondary);font:400 var(--font-size-sm)/1 var(--font-ui);outline:0}
 #workspace .budget-date-picker .date-range-separator{flex:0 0 auto;color:var(--color-text-muted);font:400 var(--font-size-sm)/1 var(--font-ui)}
-#workspace .budget-date-picker .date-field-control button{position:absolute;top:50%;right:1px;width:16px;height:16px;margin:0;padding:0;transform:translateY(-50%);border:0;border-radius:var(--radius-pill);background:transparent;color:var(--color-text-muted);font:400 15px/1 var(--font-ui);cursor:pointer}
-#workspace .budget-date-picker .date-field-control button:hover{background:var(--color-surface-soft);color:var(--color-text-heading)}
+#workspace .budget-date-picker .date-field-control>.icon-button{position:absolute;top:50%;right:1px;width:16px;height:16px;margin:0;transform:translateY(-50%);border-radius:var(--radius-pill);color:var(--color-text-muted)}
 #workspace .budget-date-picker .date-range-clear{margin-left:1px;padding:0;border:0;background:transparent;color:var(--color-text-link);font:400 var(--font-size-xs)/1 var(--font-ui);cursor:pointer}
 #workspace .budget-date-picker .date-range-clear.is-icon{flex:0 0 16px;width:16px;height:16px;margin-left:0;border-radius:var(--radius-pill);color:var(--color-text-muted);font-size:15px;line-height:16px}
 #workspace .budget-date-picker .date-range-clear.is-icon:hover{background:var(--color-surface-soft);color:var(--color-text-heading)}
@@ -618,11 +579,8 @@
 #workspace .expense-list p{margin:0;color:var(--color-text-muted);font-size:10px;font-weight:400}
 #workspace .expense-list strong{margin-left:auto;color:var(--color-text-heading);font-size:var(--font-size-md);font-weight:600}
 #workspace .expense-list article .expense-actions{display:flex;flex:0 0 48px;gap:2px;justify-content:flex-end}
-#workspace .expense-list article .expense-actions button{display:grid;place-items:center;width:23px;height:23px;padding:0;border:0;background:transparent;color:var(--color-text-muted);font:inherit;opacity:0;visibility:hidden}
-#workspace .expense-list article:hover .expense-actions button,#workspace .expense-list article:focus-within .expense-actions button{opacity:1;visibility:visible}
-#workspace .expense-list article .expense-actions .expense-edit:hover,#workspace .expense-list article .expense-actions .expense-edit:focus-visible{color:var(--color-text-action);outline:0}
-#workspace .expense-list article .expense-actions .expense-remove:hover,#workspace .expense-list article .expense-actions .expense-remove:focus-visible{color:var(--color-danger);outline:0}
-#workspace .expense-remove{border:0;background:transparent;color:var(--color-text-muted);font-size:17px;line-height:1;cursor:pointer;padding:4px}
+#workspace .expense-list article .expense-actions>.icon-button{width:23px;height:23px;opacity:0;visibility:hidden}
+#workspace .expense-list article:hover .expense-actions>.icon-button,#workspace .expense-list article:focus-within .expense-actions>.icon-button{opacity:1;visibility:visible}
 #workspace .finance-overview .expense-distribution{padding:0}
 #workspace .distribution-content{display:grid;grid-template-columns:100px minmax(0,1fr);align-items:center;gap:13px;margin-top:8px}
 #workspace .expense-distribution .donut{position:relative;width:88px;height:88px;margin:0 auto}
@@ -676,8 +634,7 @@
 #workspace .expense-form .expense-date-picker{position:relative}
 #workspace .expense-form .expense-date-picker .date-field-control{position:relative;display:block}
 #workspace .expense-form .expense-date-picker .date-field-control input{padding-right:28px}
-#workspace .expense-form .expense-date-picker .date-field-control button{position:absolute;top:50%;right:7px;display:grid;place-items:center;width:18px;height:18px;margin:0;padding:0;transform:translateY(-50%);border:0;border-radius:var(--radius-pill);background:transparent;color:var(--color-text-muted);font:400 15px/1 var(--font-ui);cursor:pointer}
-#workspace .expense-form .expense-date-picker .date-field-control button:hover{background:var(--color-surface-soft);color:var(--color-text-heading)}
+#workspace .expense-form .expense-date-picker .date-field-control>.icon-button{position:absolute;top:50%;right:7px;width:18px;height:18px;margin:0;transform:translateY(-50%);border-radius:var(--radius-pill);color:var(--color-text-muted)}
 #workspace .expense-form .expense-date-picker .return-date-calendar{top:calc(100% + 5px);right:0;left:auto}
 #workspace .expense-form .expense-field-amount>div{position:relative}
 #workspace .expense-form .expense-field-amount i{position:absolute;z-index:1;top:50%;left:9px;transform:translateY(-50%);color:var(--color-text-muted);font-style:normal}

@@ -16,7 +16,7 @@ export function PlannedExpenseList({ items, onEdit, onRemove, plans, emptyMessag
         <article key={item.id}>
           <i>¥</i>
           <div><h4>{item.title}</h4><p>{item.type}{item.relatedItineraryItemId && (() => { const plan = plans.find((entry) => entry.id === item.relatedItineraryItemId); return plan ? ` · Day ${plan.day ?? 1} · ${plan.title}` : item.relatedItineraryTitle ? ` · ${item.relatedItineraryTitle}` : ""; })()}</p></div>
-          <strong>¥ {item.amount}</strong>{editableStructure && <span className="expense-actions"><button aria-disabled={permissionsPending} className="expense-edit" type="button" aria-label={`编辑${item.title}`} title="编辑" onClick={() => { if (interactionEnabled) onEdit(item.id); }}>✎</button><IconButton aria-label={`移除${item.title}`} disabled={permissionsPending} icon="trash" variant="danger" onClick={() => { if (interactionEnabled) onRemove(item.id); }} /></span>}
+          <strong>¥ {item.amount}</strong>{editableStructure && <span className="expense-actions"><IconButton aria-label={`编辑${item.title}`} disabled={permissionsPending} icon="edit" size="sm" title="编辑" variant="edit" onClick={() => { if (interactionEnabled) onEdit(item.id); }} /><IconButton aria-label={`移除${item.title}`} disabled={permissionsPending} icon="trash" variant="danger" onClick={() => { if (interactionEnabled) onRemove(item.id); }} /></span>}
         </article>
       )) : <p className="empty-budget">{emptyMessage || "暂无预计支出，可在账本中添加。"}</p>}
       {hasMore && <button className="planned-list-toggle" type="button" onClick={() => setExpanded((value) => !value)}>{expanded ? "收起" : `查看全部 ${items.length} 笔 →`}</button>}

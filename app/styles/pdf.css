@@ -3,8 +3,6 @@
 
 .pdf-preview-dialog>.pdf-export-footer button{font-size:var(--font-size-sm)}
 
-.pdf-preview-dialog>.pdf-preview-header>.pdf-preview-close{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;background:transparent;color:var(--color-text-muted);font-family:var(--font-ui);font-size:28px;font-weight:500;line-height:1;cursor:pointer}
-
 .chat-pdf-dialog{height:min(880px,calc(100vh - 48px))}
 
 .chat-pdf-document{min-height:auto}

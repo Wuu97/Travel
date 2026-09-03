@@ -41,14 +41,6 @@
 
 
 
-.trip-library-delete{align-self:flex-start;border:0;background:transparent;padding:6px 8px;color:#9aaba1;font-size:17px;line-height:1;cursor:pointer}
-
-
-
-.trip-library-delete:hover,.trip-library-delete:focus-visible{color:var(--color-brand-hover);outline:0}
-
-
-
 .trip-library-list b{font-size:var(--font-size-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 

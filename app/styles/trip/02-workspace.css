@@ -109,16 +109,11 @@
 
 
 
-.timeline article.itinerary-card>.plan-delete{grid-column:5!important;grid-row:1!important;align-self:stretch!important}
+.timeline article.itinerary-card>.icon-button{grid-column:5!important;grid-row:1!important;align-self:stretch!important;opacity:0;visibility:hidden;transition:opacity .16s ease}
 
 
 
-.timeline article.itinerary-card>.plan-delete{width:28px;height:28px;display:grid;place-items:center;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--color-text-muted);font-size:17px;line-height:1;padding:0;opacity:0;visibility:hidden;transition:opacity .16s ease,color .16s ease,background-color .16s ease}
-
-
-
-.timeline article.itinerary-card:hover>.plan-delete,.timeline article.itinerary-card:focus-within>.plan-delete{opacity:1;visibility:visible}
-.timeline article.itinerary-card>.plan-delete:hover,.timeline article.itinerary-card>.plan-delete:focus-visible{background:var(--color-danger-soft);border-color:var(--color-danger-soft);color:var(--color-danger);outline:0}
+.timeline article.itinerary-card:hover>.icon-button,.timeline article.itinerary-card:focus-within>.icon-button{opacity:1;visibility:visible}
 
 
 
@@ -129,7 +124,7 @@
 
 .timeline article.itinerary-card>.plan-creator{grid-column:3!important;grid-row:2!important}
 
-.timeline article.itinerary-card>.plan-delete{grid-column:4!important}
+.timeline article.itinerary-card>.icon-button{grid-column:4!important}
 
 .timeline article.itinerary-card>time{font-size:10px!important}}
 

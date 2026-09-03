@@ -115,10 +115,6 @@
 
 .history-open small{font-size:9px;color:#9aa99f;white-space:nowrap}
 
-.history-delete{border:0;background:transparent;color:#a1b0a7;font-size:var(--font-size-title);line-height:1;padding:4px 8px;cursor:pointer}
-
-.history-delete:hover{color:var(--color-brand)}
-
 .chat-history p{font-size:var(--font-size-xs);line-height:1.5;color:var(--color-text-muted);text-align:center;margin:13px 0;padding:0 8px}
 
 .chat{position:relative}
@@ -227,11 +223,6 @@
 .section h2,.ai-copy h2,.future h2{font-size:31px}}
 
 
-.wide-ai .ai-history-sidebar .history-delete{display:block!important;visibility:hidden;width:28px!important;flex:0 0 28px!important}
-
-.wide-ai .ai-history-sidebar .history-row:hover .history-delete,.wide-ai .ai-history-sidebar .history-row:focus-within .history-delete{visibility:visible}
-
-
 .wide-ai .ai-history-sidebar .history-tools b,.wide-ai .ai-history-sidebar .history-tools .new-chat{font-size:var(--font-size-sm)!important;font-weight:700!important}
 
 .wide-ai .ai-history-sidebar .history-tools .new-chat{margin-left:auto!important;border:0!important;background:transparent!important;padding:4px 0!important;color:var(--color-brand)!important}
@@ -268,10 +259,6 @@
 .wide-ai .chat .history-control .chat-history .history-open small{flex:none!important;color:#a5b2aa!important}
 
 .wide-ai .chat .history-control .chat-history .history-row.current .history-open small{color:#6d897b!important}
-
-.wide-ai .chat .history-control .chat-history .history-delete{width:28px!important;flex:none!important;padding:3px 6px!important;background:transparent!important;color:#b1bdb6!important}
-
-.wide-ai .chat .history-control .chat-history .history-delete:hover{color:var(--color-brand)!important;background:#fff7f2!important}
 
 .wide-ai .chat.history-visible .chat-scroll{padding-bottom:18px!important}
 
@@ -328,10 +315,6 @@
 
 .wide-ai .ai-history-sidebar .history-open{padding:8px 4px 8px 8px!important;font-size:var(--font-size-xs)}
 
-.wide-ai .ai-history-sidebar .history-delete{display:none}
-
-.wide-ai .ai-history-sidebar .history-row:hover .history-delete{display:block}
-
 .wide-ai .ai-history-sidebar .chat-history p{margin:18px 0;font-size:var(--font-size-xs)}
 
 .wide-ai .chat-workbench>.chat{width:auto!important;height:auto!important;min-height:0;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:22px 26px!important;overflow:hidden!important}
@@ -361,10 +344,6 @@
 #ai .ai-history-sidebar .history-open b{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 
 #ai .ai-history-sidebar .history-open small{flex:none!important;white-space:nowrap!important}
-
-#ai .ai-history-sidebar .history-delete{display:grid!important;visibility:hidden!important;place-items:center!important;width:28px!important;min-width:28px!important;height:34px!important;padding:0!important}
-
-#ai .ai-history-sidebar .history-row:hover .history-delete,#ai .ai-history-sidebar .history-row:focus-within .history-delete{visibility:visible!important}
 
 #ai .sidebar-header{display:grid!important;grid-template-columns:28px minmax(0,1fr) auto!important;gap:6px!important;align-items:center!important;min-height:32px!important;padding:5px 7px 9px!important;color:var(--color-text-link)!important;font-size:var(--font-size-sm)!important;font-weight:700!important}
 
@@ -445,8 +424,8 @@
 
 #ai .ai-history-sidebar .history-row:not(.current):hover{background:var(--color-surface-soft)!important}
 
-#ai .ai-history-sidebar .history-delete{display:grid!important;place-items:center!important;width:28px!important;height:34px!important;padding:0!important;color:var(--color-text-muted)!important}
+#ai .ai-history-sidebar .history-row>.icon-button{width:28px!important;min-width:28px!important;height:34px!important;visibility:hidden!important}
 
-#ai .ai-history-sidebar .history-delete:hover,#ai .ai-history-sidebar .history-delete:focus-visible{background:var(--color-danger-soft)!important;color:var(--color-danger)!important;outline:0!important}
+#ai .ai-history-sidebar .history-row:hover>.icon-button,#ai .ai-history-sidebar .history-row:focus-within>.icon-button{visibility:visible!important}
 
-@media(max-width:760px){#ai .ai-history-sidebar .history-delete{visibility:visible!important}}
+@media(max-width:760px){#ai .ai-history-sidebar .history-row>.icon-button{visibility:visible!important}}

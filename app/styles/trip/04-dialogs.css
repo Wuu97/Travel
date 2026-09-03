@@ -227,10 +227,6 @@
 
 
 
-#workspace .trip-sidebar .trip-library-item .trip-library-delete{grid-column:2;grid-row:1;position:relative;z-index:1}
-
-
-
 #workspace .trip-sidebar.is-collapsed .trip-library-tree-toggle,#workspace .trip-sidebar.is-collapsed .trip-library-days{display:none}
 
 
@@ -354,14 +350,6 @@
 
 
 #workspace .trip-sidebar .trip-library-open small{grid-column:2;color:#92a198;font-size:9px;white-space:nowrap}
-
-
-
-#workspace .trip-sidebar .trip-library-delete{display:none;padding:5px 7px;font-size:var(--font-size-base)}
-
-
-
-#workspace .trip-sidebar .trip-library-item:hover .trip-library-delete{display:block}
 
 
 
