@@ -425,15 +425,15 @@
 
 
 
-#workspace .trip-actions button{border:1px solid transparent!important;border-bottom:0!important;border-radius:5px!important;padding:7px 9px!important;font-size:var(--font-size-xs)!important}
+#workspace .trip-actions .trip-tab{border:1px solid transparent!important;border-bottom:0!important;border-radius:5px!important;padding:7px 9px!important;font-size:var(--font-size-xs)!important}
 
 
 
-#workspace .trip-actions button:hover{background:var(--color-success-hover)}
+#workspace .trip-actions .trip-tab:hover{background:var(--color-success-hover)}
 
 
 
-#workspace .trip-actions .selected{background:#e8f1ea!important;color:var(--color-text-link)!important}
+#workspace .trip-actions .trip-tab.selected{background:#e8f1ea!important;color:var(--color-text-link)!important}
 
 
 

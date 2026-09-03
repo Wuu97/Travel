@@ -432,11 +432,11 @@
 
 
 
-.trip-actions button{background:none;border:0;border-bottom:2px solid transparent;padding:12px 2px;color:var(--color-text-meta);cursor:pointer;font-size:var(--font-size-md)}
+.trip-actions .trip-tab{background:none;border:0;border-bottom:2px solid transparent;padding:12px 2px;color:var(--color-text-meta);cursor:pointer;font-size:var(--font-size-md)}
 
 
 
-.trip-actions .selected{border-color:var(--color-brand);color:var(--color-text-heading);font-weight:bold}
+.trip-actions .trip-tab.selected{border-color:var(--color-brand);color:var(--color-text-heading);font-weight:bold}
 
 
 
