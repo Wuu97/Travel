@@ -163,7 +163,7 @@
 
 
 
-.booking-body{display:grid;grid-template-columns:1.1fr 36px 1.1fr 1fr 1fr 132px;gap:16px;align-items:end;padding-top:19px}
+.booking-body{display:grid;grid-template-columns:1.1fr 36px 1.1fr 1fr 1fr 132px;gap:var(--space-4);align-items:end;padding-top:19px}
 
 
 
@@ -293,7 +293,7 @@ footer small{font-size:10px;color:#83a295}
 
 
 
-.booking{margin-top:-28px;padding:0 16px 16px}
+.booking{margin-top:-28px;padding:0 var(--space-4) var(--space-4)}
 
 
 
@@ -309,7 +309,7 @@ footer small{font-size:10px;color:#83a295}
 
 
 
-.booking-body{grid-template-columns:1fr 28px 1fr;gap:12px}
+.booking-body{grid-template-columns:1fr 28px 1fr;gap:var(--space-3)}
 
 
 
