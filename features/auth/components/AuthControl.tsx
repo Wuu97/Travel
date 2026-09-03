@@ -6,6 +6,7 @@ import type { SignUpResult } from "../useSupabaseAuth";
 import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 import { CustomSelect } from "../../shared/components/CustomSelect";
 import { IconButton } from "../../shared/components/IconButton";
+import { Button } from "../../shared/components/Button";
 
 const callingCodes = [
   { code: "+86", label: "中国大陆 +86" },
@@ -192,7 +193,7 @@ export function AuthControl({ configured, error, onClearError, onRequestPhoneOtp
             {isSignUp && <label>确认密码<input aria-describedby={fieldErrors.confirmPassword ? "confirm-password-error" : undefined} aria-invalid={Boolean(fieldErrors.confirmPassword)} aria-label="确认密码" className={fieldErrors.confirmPassword ? "input-error" : undefined} type="password" value={confirmPassword} onBlur={() => blurRegistrationField("confirmPassword")} onChange={(event) => updateRegistrationField("confirmPassword", event.target.value)} placeholder="再次输入密码" />{fieldErrors.confirmPassword && <small className="field-error" id="confirm-password-error">{fieldErrors.confirmPassword}</small>}</label>}
           </>}
           {(error || notice) && <p className={`auth-message${error ? " auth-message-error" : ""}`}>{error || notice}</p>}
-          <button className={`auth-submit${method === "email" && isSignUp && !canSubmitRegistration ? " form-incomplete" : ""}`} type="submit" disabled={submitting || (method === "email" && isSignUp && !canSubmitRegistration)}>{submitting ? "处理中…" : method === "phone" ? phoneOtpSent ? "验证并继续" : "发送验证码" : isSignUp ? "注册" : "登录"}</button>
+          <Button disabled={method === "email" && isSignUp && !canSubmitRegistration} loading={submitting} type="submit">{method === "phone" ? phoneOtpSent ? "验证并继续" : "发送验证码" : isSignUp ? "注册" : "登录"}</Button>
           {method === "phone" ? phoneOtpSent && <button type="button" className="auth-switch" onClick={() => { onClearError(); setPhoneOtpSent(false); setVerificationCode(""); setNotice(null); }} disabled={submitting}>更换手机号</button> : <button type="button" className="auth-switch" onClick={() => { onClearError(); setMode(isSignUp ? "sign-in" : "sign-up"); setNotice(null); }} disabled={submitting}>{isSignUp ? "已有账户？去登录" : "没有账户？去注册"}</button>}
         </form>}
       </section>

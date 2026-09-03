@@ -6,6 +6,7 @@ import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 import { useTripCapabilities } from "./TripCapabilities";
 import { CustomSelect } from "../../shared/components/CustomSelect";
 import { IconButton } from "../../shared/components/IconButton";
+import { Button } from "../../shared/components/Button";
 
 type Props = {
   plan: ItineraryItem | null;
@@ -29,7 +30,7 @@ export function PlanEditorDialog({ onClose, onSave, plan, setPlan }: Props) {
         <div className="field-label"><span>时间</span><TimePicker onChange={(time) => update({ time })} value={plan.time || ""} /></div>
         <label>备注<input value={plan.note || ""} placeholder="例如 提前预约" onChange={(event) => update({ note: event.target.value })} /></label>
         <label>分类<CustomSelect ariaLabel="分类" options={itineraryTypes.map((value) => ({ value, label: value }))} value={plan.type} onChange={(value) => update({ type: value as ItineraryItem["type"] })} /></label>
-        <div className="edit-plan-actions"><button type="button" onClick={onClose}>取消</button><button type="submit">保存</button></div>
+        <div className="edit-plan-actions"><Button type="button" variant="secondary" onClick={onClose}>取消</Button><Button type="submit">保存</Button></div>
       </form>
     </div>
   );
