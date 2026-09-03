@@ -230,7 +230,7 @@
 
 #ai .ai-history-sidebar{min-width:0;background:var(--color-surface-subtle);border-right:1px solid var(--color-border-subtle);overflow:hidden;font-family:var(--font-ui)}
 
-#ai .ai-history-sidebar .chat-history{position:static!important;display:flex!important;flex-direction:column;width:100%!important;height:100%!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:10px 8px!important;overflow:hidden!important}
+#ai .ai-history-sidebar .chat-history{position:static!important;display:flex!important;flex-direction:column;width:100%!important;height:100%!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:10px var(--density-dense-padding-md)!important;overflow:hidden!important}
 
 #ai .ai-history-sidebar .history-tools{flex:none;padding:5px 7px 9px!important;color:var(--color-text-link);font-size:var(--font-size-sm)}
 
@@ -246,13 +246,13 @@
 
 #ai .ai-history-sidebar .history-row:not(.current):hover{background:var(--color-surface-soft)!important}
 
-#ai .ai-history-sidebar .history-open{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:7px!important;min-width:0!important;padding:8px 4px 8px 8px!important;border:0;background:transparent;color:var(--color-text-secondary)!important;text-align:left;cursor:pointer}
+#ai .ai-history-sidebar .history-open{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:7px!important;min-width:0!important;padding:var(--density-dense-row-padding-y) var(--density-dense-padding-sm) var(--density-dense-row-padding-y) var(--density-dense-row-padding-x)!important;border:0;background:transparent;color:var(--color-text-secondary)!important;text-align:left;cursor:pointer}
 
 #ai .ai-history-sidebar .history-open b{min-width:0!important;overflow:hidden!important;color:inherit;font-weight:normal;text-overflow:ellipsis!important;white-space:nowrap!important}
 
 #ai .ai-history-sidebar .history-open small{flex:none!important;color:#9aa99f;white-space:nowrap!important}
 
-#ai .ai-history-sidebar .chat-history p{margin:18px 0;padding:0 8px;color:var(--color-text-muted);font-size:var(--font-size-xs);line-height:1.5;text-align:center}
+#ai .ai-history-sidebar .chat-history p{margin:18px 0;padding:0 var(--density-dense-padding-md);color:var(--color-text-muted);font-size:var(--font-size-xs);line-height:1.5;text-align:center}
 
 .wide-ai .chat-workbench>.chat{width:auto!important;height:auto!important;min-height:0;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:22px 26px!important;overflow:hidden!important}
 
