@@ -104,12 +104,12 @@
 
 
 
-.empty-day{margin:24px 0 8px;padding:14px 16px;border:1px dashed #c7d8cc;border-radius:6px;background:#f8fbf7;color:#72877b;font-size:var(--font-size-sm);cursor:pointer}
+.empty-day{margin:24px 0 8px;padding:14px 16px;border:1px dashed #c7d8cc;border-radius:var(--radius-card);background:#f8fbf7;color:#72877b;font-size:var(--font-size-sm);cursor:pointer}
 
 
 
 
-.itinerary-card{position:relative;border-radius:var(--radius-md);padding-inline:8px!important;transition:background .18s ease}
+.itinerary-card{position:relative;border-radius:var(--radius-card);padding-inline:8px!important;transition:background .18s ease}
 
 
 
@@ -121,7 +121,7 @@
 
 
 
-.timeline .type-tag{display:inline-flex;align-items:center;width:max-content;color:var(--type-color);background:var(--type-tint);border-radius:var(--radius-sm);padding:3px 7px;font-weight:600}
+.timeline .type-tag{display:inline-flex;align-items:center;width:max-content;color:var(--type-color);background:var(--type-tint);border-radius:var(--radius-pill);padding:3px 7px;font-weight:600}
 
 
 
@@ -129,7 +129,7 @@
 
 
 
-.plan-tools button{border:0;background:transparent;color:#8b9b92;font-size:var(--font-size-xs);padding:3px 4px;cursor:pointer;border-radius:var(--radius-sm)}
+.plan-tools button{border:0;background:transparent;color:#8b9b92;font-size:var(--font-size-xs);padding:3px 4px;cursor:pointer;border-radius:var(--radius-control)}
 
 
 
@@ -157,7 +157,7 @@
 
 
 
-.edit-plan input,.edit-plan select,.edit-plan .custom-select{width:100%;margin-top:6px;border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);padding:9px;background:var(--color-surface);color:var(--color-text-heading);font-size:var(--font-size-md)}
+.edit-plan input,.edit-plan select,.edit-plan .custom-select{width:100%;margin-top:6px;border:1px solid var(--color-border-strong);border-radius:var(--radius-control);padding:9px;background:var(--color-surface);color:var(--color-text-heading);font-size:var(--font-size-md)}
 .edit-plan .custom-select{box-sizing:border-box;padding:0;border:0;background:transparent}
 .edit-plan .custom-select-trigger{height:38px;padding:0 9px;border-color:var(--color-border-strong);color:var(--color-text-heading)}
 .edit-plan input:focus{border-color:var(--color-brand);box-shadow:0 0 0 3px var(--color-brand-focus);outline:0}
@@ -170,7 +170,7 @@
 
 
 
-.manual-add{margin-top:14px;border:1px solid #c9d8cd;background:#f6f9f4;color:#45655a;border-radius:18px;padding:9px 13px;font-size:var(--font-size-sm);cursor:pointer}
+.manual-add{margin-top:14px;border:1px solid #c9d8cd;background:#f6f9f4;color:#45655a;border-radius:var(--radius-pill);padding:9px 13px;font-size:var(--font-size-sm);cursor:pointer}
 
 
 
@@ -199,7 +199,7 @@
 
 
 
-.plan-menu-trigger{border:0;background:transparent;color:#789086;font-size:20px;line-height:1;padding:1px 5px;cursor:pointer;border-radius:5px}
+.plan-menu-trigger{border:0;background:transparent;color:#789086;font-size:20px;line-height:1;padding:1px 5px;cursor:pointer;border-radius:var(--radius-control)}
 
 
 
@@ -253,7 +253,7 @@
 
 
 
-.itinerary-card::before{content:"";position:absolute;z-index:0;inset:0;border-radius:7px;background:transparent;transition:background .16s ease}
+.itinerary-card::before{content:"";position:absolute;z-index:0;inset:0;border-radius:var(--radius-card);background:transparent;transition:background .16s ease}
 
 
 
@@ -340,11 +340,11 @@
 
 
 
-.add-local input{border:1px solid #d9e4dc;border-radius:var(--radius-sm);padding:9px;font-size:var(--font-size-sm);flex:1;background:var(--color-surface)}
+.add-local input{border:1px solid #d9e4dc;border-radius:var(--radius-control);padding:9px;font-size:var(--font-size-sm);flex:1;background:var(--color-surface)}
 
 
 
-.add-local button{border:0;border-radius:var(--radius-sm);background:var(--color-brand);color:var(--color-surface);padding:0 13px;font-size:var(--font-size-sm);cursor:pointer}
+.add-local button{border:0;border-radius:var(--radius-control);background:var(--color-brand);color:var(--color-surface);padding:0 13px;font-size:var(--font-size-sm);cursor:pointer}
 
 
 
@@ -368,7 +368,7 @@
 
 
 
-.share{border:0;background:var(--color-brand);color:var(--color-surface);padding:12px 17px;border-radius:5px;font-weight:bold;cursor:pointer}
+.share{border:0;background:var(--color-brand);color:var(--color-surface);padding:12px 17px;border-radius:var(--radius-control);font-weight:bold;cursor:pointer}
 
 
 
@@ -376,7 +376,7 @@
 
 
 
-.trip-head{background:var(--color-surface);border:1px solid var(--color-success-tint-strong);margin-top:28px;border-radius:var(--radius-md);padding:18px;display:flex;gap:19px;align-items:center}
+.trip-head{background:var(--color-surface);border:1px solid var(--color-success-tint-strong);margin-top:28px;border-radius:var(--radius-card);padding:18px;display:flex;gap:19px;align-items:center}
 
 
 
@@ -396,7 +396,7 @@
 
 
 
-.trip-meta>span{font-size:10px;background:#e8f4ec;color:#4a9870;padding:4px 7px;border-radius:9px}
+.trip-meta>span{font-size:10px;background:#e8f4ec;color:#4a9870;padding:4px 7px;border-radius:var(--radius-pill)}
 
 
 
@@ -484,7 +484,7 @@
 
 
 
-.timeline-head button{border:1px solid #d6e2d8;background:#f8fbf7;color:#47705d;border-radius:14px;padding:5px 9px;font-size:var(--font-size-xs)}
+.timeline-head button{border:1px solid #d6e2d8;background:#f8fbf7;color:#47705d;border-radius:var(--radius-control);padding:5px 9px;font-size:var(--font-size-xs)}
 
 
 

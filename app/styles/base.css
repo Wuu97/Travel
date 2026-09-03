@@ -90,6 +90,7 @@
   --radius-sm: 4px;
   --radius-control: 5px;
   --radius-md: 8px;
+  --radius-card: var(--radius-md);
   --radius-lg: 12px;
   --radius-pill: 999px;
 

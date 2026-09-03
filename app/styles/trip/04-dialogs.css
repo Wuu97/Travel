@@ -273,7 +273,7 @@
 
 
 
-#workspace .workspace-title .share{padding:7px 10px;border-radius:5px;font-size:var(--font-size-xs)}
+#workspace .workspace-title .share{padding:7px 10px;border-radius:var(--radius-control);font-size:var(--font-size-xs)}
 
 
 
@@ -477,7 +477,7 @@
 
 
 
-#workspace .timeline-head button{border:1px solid #d6e3da!important;background:#f5faf6!important;color:#3e7655!important;border-radius:5px!important;font-size:var(--font-size-xs)!important}
+#workspace .timeline-head button{border:1px solid #d6e3da!important;background:#f5faf6!important;color:#3e7655!important;border-radius:var(--radius-control)!important;font-size:var(--font-size-xs)!important}
 
 
 
@@ -523,7 +523,7 @@
 
 
 
-#workspace .sidebar-header-collapse>.icon-button{width:28px!important;height:28px!important;border-radius:5px!important;color:#55786a!important}
+#workspace .sidebar-header-collapse>.icon-button{width:28px!important;height:28px!important;border-radius:var(--radius-control)!important;color:#55786a!important}
 
 
 

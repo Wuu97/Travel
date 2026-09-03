@@ -5,7 +5,7 @@
 
 
 
-.trip-library{margin-top:22px;border:1px solid #e3ebe5;border-radius:var(--radius-md);background:var(--color-surface);padding:12px 14px}
+.trip-library{margin-top:22px;border:1px solid #e3ebe5;border-radius:var(--radius-card);background:var(--color-surface);padding:12px 14px}
 
 
 
@@ -13,7 +13,7 @@
 
 
 
-.trip-library-heading button{border:1px solid #e7a180;border-radius:var(--radius-sm);background:#fff8f4;color:var(--color-brand-hover);padding:6px 9px;font-size:var(--font-size-sm);font-weight:700;cursor:pointer}
+.trip-library-heading button{border:1px solid #e7a180;border-radius:var(--radius-control);background:#fff8f4;color:var(--color-brand-hover);padding:6px 9px;font-size:var(--font-size-sm);font-weight:700;cursor:pointer}
 
 
 
@@ -25,7 +25,7 @@
 
 
 
-.trip-library-item{display:flex;min-width:164px;border:1px solid #dde8e0;border-radius:5px;background:var(--color-surface);overflow:hidden}
+.trip-library-item{display:flex;min-width:164px;border:1px solid #dde8e0;border-radius:var(--radius-card);background:var(--color-surface);overflow:hidden}
 
 
 
@@ -49,7 +49,7 @@
 
 
 
-.trip-library-list em{width:max-content;margin-top:5px;padding:3px 6px;border-radius:5px;font-size:10px;font-style:normal;font-weight:700}
+.trip-library-list em{width:max-content;margin-top:5px;padding:3px 6px;border-radius:var(--radius-pill);font-size:10px;font-style:normal;font-weight:700}
 
 
 
@@ -130,7 +130,7 @@
 
 
 
-#workspace .trip-actions .trip-invite{position:absolute;right:0;bottom:-16px;border:0!important;background:var(--color-brand)!important;color:var(--color-surface)!important;padding:3px 10px!important;border-radius:5px!important;font-size:var(--font-size-xs)!important;font-weight:bold;white-space:nowrap}
+#workspace .trip-actions .trip-invite{position:absolute;right:0;bottom:-16px;border:0!important;background:var(--color-brand)!important;color:var(--color-surface)!important;padding:3px 10px!important;border-radius:var(--radius-control)!important;font-size:var(--font-size-xs)!important;font-weight:bold;white-space:nowrap}
 
 
 

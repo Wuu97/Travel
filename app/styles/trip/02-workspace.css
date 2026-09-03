@@ -261,7 +261,7 @@
 
 
 
-.date-popover input,.member-popover input,.member-popover select{border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);background:var(--color-surface);color:#345446;padding:6px;font:12px var(--font-ui)}
+.date-popover input,.member-popover input,.member-popover select{border:1px solid var(--color-border-strong);border-radius:var(--radius-control);background:var(--color-surface);color:#345446;padding:6px;font:12px var(--font-ui)}
 .date-popover input:focus,.member-popover input:focus{border-color:var(--color-brand);box-shadow:0 0 0 3px var(--color-brand-focus);outline:0}
 .member-popover select:focus{border-color:var(--color-border-strong);box-shadow:none;outline:0}
 .member-popover select:focus-visible{border-color:var(--color-border-strong);box-shadow:none;outline:0;background:var(--color-surface-soft)}
@@ -300,7 +300,7 @@
 
 
 
-.member-popover form button{border:0;border-radius:var(--radius-sm);background:var(--color-brand);color:var(--color-surface);padding:0 8px;font-size:var(--font-size-xs);cursor:pointer}
+.member-popover form button{border:0;border-radius:var(--radius-control);background:var(--color-brand);color:var(--color-surface);padding:0 8px;font-size:var(--font-size-xs);cursor:pointer}
 
 
 
