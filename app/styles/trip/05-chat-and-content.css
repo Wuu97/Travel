@@ -11,10 +11,6 @@
 
 
 
-#workspace .sidebar-header-action{font-size:var(--font-size-sm)!important;line-height:20px!important}
-
-
-
 #workspace .trip-sidebar .trip-library-open b{font-size:var(--font-size-sm)!important;line-height:18px!important}
 
 
@@ -543,5 +539,4 @@
 
 
 #workspace .trip-sidebar .trip-library-days button{grid-template-columns:20px 58px minmax(0,1fr)!important}
-
 

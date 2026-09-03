@@ -280,13 +280,9 @@
 
 #ai .sidebar-header-title{overflow:hidden!important;font-size:var(--font-size-sm)!important;font-weight:700!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 
-#ai .sidebar-header-action{width:auto!important;border:0!important;background:transparent!important;padding:4px 0!important;color:var(--color-brand)!important;font-size:var(--font-size-sm)!important;font-weight:700!important;line-height:20px!important;white-space:nowrap!important;cursor:pointer!important}
-
 #ai .ai-history-sidebar.is-collapsed .sidebar-header-title,#ai .ai-history-sidebar.is-collapsed .sidebar-header-action{display:none!important}
 
 #ai .ai-history-sidebar .sidebar-header-title{font-size:var(--font-size-base)!important;line-height:20px!important}
-
-#ai .ai-history-sidebar .sidebar-header-action{font-size:var(--font-size-sm)!important;line-height:20px!important}
 
 #ai .ai-history-sidebar .history-open{font-size:var(--font-size-sm)!important;line-height:18px!important}
 

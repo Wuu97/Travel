@@ -227,6 +227,10 @@ select:focus-visible{border-color:var(--color-border-strong);outline:0;box-shado
 .button--danger:hover:not(:disabled){background:var(--color-danger-hover)}
 .button:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 .button:disabled{cursor:not-allowed;opacity:.55}
+.sidebar-header-action{box-sizing:border-box;min-height:28px;padding:4px 0;border:0;background:transparent;color:var(--color-brand);font:700 var(--font-size-sm)/20px var(--font-ui);white-space:nowrap;cursor:pointer}
+.sidebar-header-action:hover:not(:disabled){color:var(--color-brand-hover)}
+.sidebar-header-action:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
+.sidebar-header-action:disabled{cursor:not-allowed;opacity:.55}
 @keyframes button-spin{to{transform:rotate(360deg)}}
 
 button{transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease}

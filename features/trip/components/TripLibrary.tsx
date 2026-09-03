@@ -11,6 +11,7 @@ import { CustomDateRangePicker } from "./CustomDateRangePicker";
 import { useModalBehavior } from "../../shared/hooks/useModalBehavior";
 import { SidebarCollapseButton } from "../../shared/components/SidebarCollapseButton";
 import { SidebarHeader } from "../../shared/components/SidebarHeader";
+import { SidebarHeaderAction } from "../../shared/components/SidebarHeaderAction";
 import { ScrollArea } from "../../shared/components/ScrollArea";
 import { IconButton } from "../../shared/components/IconButton";
 import { Button } from "../../shared/components/Button";
@@ -282,7 +283,7 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
   const showLibrary = committedLibraryReady;
 
   return <section className={`trip-library trip-sidebar ${collapsed ? "is-collapsed" : ""}`} aria-busy={!showLibrary} aria-label="全部行程">
-    <SidebarHeader action={<button aria-label="新建行程" className="sidebar-header-action" title="新建行程" type="button" onClick={() => setCreateOpen(true)}>＋ 新建</button>} className="trip-sidebar-heading" collapseButton={<SidebarCollapseButton className="sidebar-header-collapse" collapseLabel="收起行程侧栏" collapsed={collapsed} expandLabel="展开行程侧栏" onToggle={() => onCollapsedChange?.(!collapsed)} />} title="全部行程" />
+    <SidebarHeader action={<SidebarHeaderAction aria-label="新建行程" title="新建行程" onClick={() => setCreateOpen(true)}>＋ 新建</SidebarHeaderAction>} className="trip-sidebar-heading" collapseButton={<SidebarCollapseButton className="sidebar-header-collapse" collapseLabel="收起行程侧栏" collapsed={collapsed} expandLabel="展开行程侧栏" onToggle={() => onCollapsedChange?.(!collapsed)} />} title="全部行程" />
     <div className="trip-sidebar-groups">
       {!showLibrary ? null : <>
       {cloudListError && <p className="sync-error" role="status">{cloudListError}<button type="button" disabled={cloudListRetrying} onClick={retryCloudList}>{cloudListRetrying ? "正在重试" : "重试"}</button></p>}
