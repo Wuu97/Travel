@@ -8,7 +8,7 @@
 
 #ai .ai-history-sidebar.is-collapsed .history-tools{justify-content:center!important;padding:5px 0!important;border:0!important}
 
-#ai .ai-history-sidebar.is-collapsed .history-tools>b,#ai .ai-history-sidebar.is-collapsed .history-tools .new-chat,#ai .ai-history-sidebar.is-collapsed .history-list{display:none!important}
+#ai .ai-history-sidebar.is-collapsed .history-tools>b,#ai .ai-history-sidebar.is-collapsed .history-list{display:none!important}
 
 #ai .ai-history-sidebar .history-tools b{font-size:var(--font-size-base)!important}
 
@@ -91,19 +91,11 @@
 .import-row button:disabled{border-color:#d9e2db;background:#f3f6f3;color:#9aad9f;cursor:default}
 
 
-.new-chat{border:1px solid #d9e5da;background:var(--color-surface);color:#577467;border-radius:15px;padding:7px 11px;font-size:var(--font-size-sm);cursor:pointer}
-
 .history-control{margin-left:auto;position:relative}
-
-.new-chat{color:var(--color-brand);border-color:#f1d4c5;margin-left:7px}
 
 .chat-history{position:absolute;z-index:4;right:0;top:36px;width:236px;max-height:260px;overflow-y:auto;background:var(--color-surface);border:1px solid #dfe8e0;border-radius:var(--radius-md);box-shadow:var(--shadow-popover);padding:6px}
 
 .history-tools{display:flex;align-items:center;justify-content:space-between;padding:5px 6px 8px;border-bottom:1px solid #edf1ed;font-size:var(--font-size-xs)}
-
-.history-tools button{border:0;background:none;color:var(--color-brand);font-size:10px;cursor:pointer}
-
-.history-tools button:disabled{color:#b6c1ba}
 
 .history-row{display:flex;align-items:center;border-radius:5px}
 
@@ -223,9 +215,7 @@
 .section h2,.ai-copy h2,.future h2{font-size:31px}}
 
 
-.wide-ai .ai-history-sidebar .history-tools b,.wide-ai .ai-history-sidebar .history-tools .new-chat{font-size:var(--font-size-sm)!important;font-weight:700!important}
-
-.wide-ai .ai-history-sidebar .history-tools .new-chat{margin-left:auto!important;border:0!important;background:transparent!important;padding:4px 0!important;color:var(--color-brand)!important}
+.wide-ai .ai-history-sidebar .history-tools b{font-size:var(--font-size-sm)!important;font-weight:700!important}
 
 
 
