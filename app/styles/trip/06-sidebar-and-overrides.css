@@ -540,11 +540,9 @@
 #workspace .budget-value-button{display:inline-flex;align-items:center;box-sizing:border-box;min-height:26px;margin:0;padding:0;border:0;border-radius:var(--radius-sm);background:transparent;color:inherit;cursor:pointer}
 #workspace .budget-value-button:hover strong{color:var(--color-text-link);text-decoration:underline;text-underline-offset:3px}
 #workspace .budget-value-button:focus-visible{outline:0;background:var(--color-surface);box-shadow:0 0 0 1px var(--color-border-strong)}
-#workspace .budget-clear{margin:0;padding:0;border:0;background:transparent;color:var(--color-text-link);font:400 var(--font-size-xs)/1.4 var(--font-ui);cursor:pointer}
 #workspace .budget-summary-metrics input{box-sizing:border-box;width:100px;height:26px;margin:0;padding:3px 5px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);font:600 var(--font-size-md)/1 var(--font-ui)}
 #workspace .budget-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:14px 0}
 #workspace .budget-toolbar-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
-#workspace .budget-toolbar-actions .budget-add{height:34px;margin:0!important;padding:0 12px!important;font:600 var(--font-size-sm)/1 var(--font-ui)!important}
 #workspace .budget-toolbar>input{flex:0 1 228px}
 #workspace .budget-toolbar>input,#workspace .budget-toolbar select{box-sizing:border-box;height:34px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text-secondary);font:400 var(--font-size-sm)/1 var(--font-ui);padding:0 9px}
 #workspace .budget-toolbar select{min-width:100px}
@@ -562,8 +560,6 @@
 #workspace .budget-date-picker .date-range-clear.is-icon:hover{background:var(--color-surface-soft);color:var(--color-text-heading)}
 #workspace .budget-date-picker .date-range-clear.is-icon.is-hidden{visibility:hidden;pointer-events:none}
 #workspace .budget-date-picker .return-date-calendar{top:calc(100% + 6px);left:0}
-#workspace .budget-export{height:34px;margin-left:0;padding:0 11px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text-secondary);font:400 var(--font-size-sm)/1 var(--font-ui);cursor:pointer}
-#workspace .budget-export:disabled{cursor:not-allowed}
 #workspace .budget-grid{display:grid;grid-template-columns:minmax(0,1.16fr) minmax(300px,.84fr);align-items:start;gap:16px;margin-top:0}
 #workspace .budget-grid>.expense-list{border:0;border-radius:0;background:transparent}
 #workspace .finance-overview{display:grid;gap:22px;align-content:start;border:0;border-radius:0;padding:18px;background:transparent}
@@ -606,7 +602,7 @@
 #workspace .budget-usage.is-over small>strong{color:var(--color-brand);font-weight:600}
 #workspace .finance-overview .planned-list{margin:0;padding:0;border:0;border-radius:0;overflow:visible;background:transparent}
 #workspace .planned-list-toggle{align-self:flex-start;margin-top:8px;padding:0;border:0;background:transparent;color:var(--color-text-link);font:400 var(--font-size-xs)/1.4 var(--font-ui);cursor:pointer}
-@media(max-width:760px){#workspace .budget-summary-heading{justify-content:flex-start}#workspace .budget-summary-metrics{grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-left:0}#workspace .budget-toolbar-actions{margin-left:0}#workspace .budget-toolbar>input{flex-basis:100%}#workspace .budget-date-picker{order:3}#workspace .budget-export{margin-left:0}#workspace .budget-grid{grid-template-columns:1fr!important}#workspace .distribution-content{grid-template-columns:92px minmax(0,1fr)}}
+@media(max-width:760px){#workspace .budget-summary-heading{justify-content:flex-start}#workspace .budget-summary-metrics{grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-left:0}#workspace .budget-toolbar-actions{margin-left:0}#workspace .budget-toolbar>input{flex-basis:100%}#workspace .budget-date-picker{order:3}#workspace .budget-grid{grid-template-columns:1fr!important}#workspace .distribution-content{grid-template-columns:92px minmax(0,1fr)}}
 
 /* The workbench, rather than an individual tab, owns the desktop viewport floor.
    This keeps the guide and ledger frame stable while letting either board grow
