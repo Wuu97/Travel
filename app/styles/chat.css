@@ -91,7 +91,7 @@
 .import-row button:disabled{border-color:#d9e2db;background:#f3f6f3;color:#9aad9f;cursor:default}
 
 
-.history-button,.new-chat{border:1px solid #d9e5da;background:var(--color-surface);color:#577467;border-radius:15px;padding:7px 11px;font-size:var(--font-size-sm);cursor:pointer}
+.new-chat{border:1px solid #d9e5da;background:var(--color-surface);color:#577467;border-radius:15px;padding:7px 11px;font-size:var(--font-size-sm);cursor:pointer}
 
 .history-control{margin-left:auto;position:relative}
 
@@ -226,12 +226,6 @@
 .wide-ai .ai-history-sidebar .history-tools b,.wide-ai .ai-history-sidebar .history-tools .new-chat{font-size:var(--font-size-sm)!important;font-weight:700!important}
 
 .wide-ai .ai-history-sidebar .history-tools .new-chat{margin-left:auto!important;border:0!important;background:transparent!important;padding:4px 0!important;color:var(--color-brand)!important}
-
-.wide-ai .chat-top .history-button{border:0!important;background:transparent!important;padding:7px 9px!important;color:var(--color-text-meta)!important;font-size:var(--font-size-xs)!important;font-weight:400!important}
-
-.wide-ai .chat-top .history-button:hover:not(:disabled){background:var(--color-success-hover)!important;color:var(--color-text-link)!important}
-
-.wide-ai .chat-top .history-button:disabled{color:#b6c1ba!important}
 
 
 

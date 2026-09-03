@@ -1,3 +1,5 @@
+import { Button } from "../../shared/components/Button";
+
 type Props = {
   hasMessages: boolean;
   onExport: () => void;
@@ -10,7 +12,7 @@ export function ChatHeader({ hasMessages, onExport, provider }: Props) {
       <span className="ai-dot">✦</span>
       <div><b>途遇 AI</b><small>由 {provider} 驱动</small></div>
       <i>在线</i>
-      <button className="history-button" onClick={onExport} disabled={!hasMessages}>导出</button>
+      <Button disabled={!hasMessages} type="button" variant="secondary" onClick={onExport}>导出</Button>
     </div>
   );
 }
