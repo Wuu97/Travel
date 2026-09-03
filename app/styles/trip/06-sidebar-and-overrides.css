@@ -442,9 +442,10 @@
 
 
 .avatars .member-overflow-count{display:grid;place-items:center;flex:0 0 23px;width:23px;height:23px;margin-left:-4px;border:2px solid var(--color-surface);border-radius:var(--radius-pill);background:#edf4ef;color:#5c7b6d;font:500 9px/1 var(--font-ui);font-style:normal}
-.avatars .add-member-avatar{display:grid;place-items:center;flex:0 0 20px;width:20px;height:20px;margin:0 0 0 9px;padding:0;border:1px solid #b7cabe;border-radius:var(--radius-pill);background:var(--color-surface);color:#356b50;font:400 13px/1 var(--font-ui);cursor:pointer}
-.avatars .add-member-avatar:hover:not(:disabled),.avatars .add-member-avatar:focus-visible:not(:disabled){border-color:#73a388;background:#edf6ef;outline:0}
-.avatars .add-member-avatar:disabled{cursor:default;opacity:.55}
+.avatars .add-member-avatar{display:grid;place-items:center;flex:0 0 20px;width:20px;height:20px;margin:0 0 0 9px}
+.avatars .add-member-avatar>.icon-button{width:20px;height:20px;border:1px solid #b7cabe;border-radius:var(--radius-pill);background:var(--color-surface);color:#356b50}
+.avatars .add-member-avatar>.icon-button:hover:not(:disabled),.avatars .add-member-avatar>.icon-button:focus-visible:not(:disabled){border-color:#73a388;background:#edf6ef}
+.avatars .add-member-avatar>.icon-button:disabled{cursor:default;opacity:.55}
 
 /* ========================================
    Core business cards
@@ -495,9 +496,9 @@
 #workspace .trip-sidebar .trip-library-open small{overflow:hidden!important;font-size:10px!important;font-weight:400!important;line-height:14px!important;color:var(--color-text-muted)!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 
 /* Actions */
-#workspace .trip-sidebar .trip-library-trip-row>.icon-button{position:static!important;display:grid!important;grid-column:2!important;grid-row:1!important;place-items:center!important;width:28px!important;height:28px!important;margin:0!important;padding:0!important;opacity:0!important;visibility:hidden!important;transition:opacity .16s ease!important}
+#workspace .trip-sidebar .trip-library-trip-row>.icon-button--danger{position:static!important;display:grid!important;grid-column:2!important;grid-row:1!important;place-items:center!important;width:28px!important;height:28px!important;margin:0!important;padding:0!important;opacity:0!important;visibility:hidden!important;transition:opacity .16s ease!important}
 #workspace .trip-sidebar .trip-library-tree-toggle{display:grid!important;grid-column:3!important;grid-row:1!important;place-items:center!important;width:28px!important;height:28px!important;margin:0!important;padding:0!important;color:var(--color-text-muted)!important;visibility:visible!important}
-#workspace .trip-sidebar .trip-library-item:hover .trip-library-trip-row>.icon-button,#workspace .trip-sidebar .trip-library-item:focus-within .trip-library-trip-row>.icon-button{opacity:1!important;visibility:visible!important}
+#workspace .trip-sidebar .trip-library-item:hover .trip-library-trip-row>.icon-button--danger,#workspace .trip-sidebar .trip-library-item:focus-within .trip-library-trip-row>.icon-button--danger{opacity:1!important;visibility:visible!important}
 
 /* Chevron */
 #workspace .trip-sidebar svg.sidebar-chevron{grid-column:4!important;justify-self:center!important;width:10px!important;height:10px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.2!important;transform:rotate(-90deg)!important;transform-box:fill-box!important;transform-origin:center!important;transition:transform .16s ease!important}
@@ -523,7 +524,7 @@
 #workspace .trip-sidebar .trip-library-days button.selected-day .day-timeline-dot{border-color:var(--color-success)!important;background:var(--color-success)!important;box-shadow:0 0 0 2px var(--color-success-soft)!important}
 
 /* Responsive */
-@media(max-width:760px){#workspace .trip-sidebar .trip-library-trip-row>.icon-button{opacity:1!important;visibility:visible!important}}
+@media(max-width:760px){#workspace .trip-sidebar .trip-library-trip-row>.icon-button--danger{opacity:1!important;visibility:visible!important}}
 
 /* Ledger layout: information-led cards rather than equal-height dashboard panels. */
 #workspace .budget-board{height:auto;overflow:visible;background:var(--color-surface);padding:18px 20px}
@@ -579,8 +580,9 @@
 #workspace .expense-list p{margin:0;color:var(--color-text-muted);font-size:10px;font-weight:400}
 #workspace .expense-list strong{margin-left:auto;color:var(--color-text-heading);font-size:var(--font-size-md);font-weight:600}
 #workspace .expense-list article .expense-actions{display:flex;flex:0 0 48px;gap:2px;justify-content:flex-end}
-#workspace .expense-list article .expense-actions>.icon-button{width:23px;height:23px;opacity:0;visibility:hidden}
-#workspace .expense-list article:hover .expense-actions>.icon-button,#workspace .expense-list article:focus-within .expense-actions>.icon-button{opacity:1;visibility:visible}
+#workspace .expense-list article .expense-actions>.icon-button{width:23px;height:23px}
+#workspace .expense-list article .expense-actions>.icon-button--danger{opacity:0;visibility:hidden}
+#workspace .expense-list article:hover .expense-actions>.icon-button--danger,#workspace .expense-list article:focus-within .expense-actions>.icon-button--danger{opacity:1;visibility:visible}
 #workspace .finance-overview .expense-distribution{padding:0}
 #workspace .distribution-content{display:grid;grid-template-columns:100px minmax(0,1fr);align-items:center;gap:13px;margin-top:8px}
 #workspace .expense-distribution .donut{position:relative;width:88px;height:88px;margin:0 auto}

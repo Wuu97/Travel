@@ -1,0 +1,3 @@
+export function ChevronRightIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9.5 5 7 7-7 7" /></svg>;
+}

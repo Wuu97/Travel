@@ -523,11 +523,11 @@
 
 
 
-#workspace .sidebar-header-collapse{display:grid!important;place-items:center!important;width:28px!important;height:28px!important;border:0!important;border-radius:5px!important;background:transparent!important;color:#55786a!important;font-size:var(--font-size-lg)!important;cursor:pointer!important}
+#workspace .sidebar-header-collapse>.icon-button{width:28px!important;height:28px!important;border-radius:5px!important;color:#55786a!important}
 
 
 
-#workspace .sidebar-header-collapse:hover{background:var(--color-surface-tint)!important;color:var(--color-brand)!important}
+#workspace .sidebar-header-collapse>.icon-button:hover{background:var(--color-surface-tint)!important;color:var(--color-brand)!important}
 
 
 

@@ -109,11 +109,11 @@
 
 
 
-.timeline article.itinerary-card>.icon-button{grid-column:5!important;grid-row:1!important;align-self:stretch!important;opacity:0;visibility:hidden;transition:opacity .16s ease}
+.timeline article.itinerary-card>.icon-button--danger{grid-column:5!important;grid-row:1!important;align-self:stretch!important;opacity:0;visibility:hidden;transition:opacity .16s ease}
 
 
 
-.timeline article.itinerary-card:hover>.icon-button,.timeline article.itinerary-card:focus-within>.icon-button{opacity:1;visibility:visible}
+.timeline article.itinerary-card:hover>.icon-button--danger,.timeline article.itinerary-card:focus-within>.icon-button--danger{opacity:1;visibility:visible}
 
 
 
@@ -124,7 +124,7 @@
 
 .timeline article.itinerary-card>.plan-creator{grid-column:3!important;grid-row:2!important}
 
-.timeline article.itinerary-card>.icon-button{grid-column:4!important}
+.timeline article.itinerary-card>.icon-button--danger{grid-column:4!important}
 
 .timeline article.itinerary-card>time{font-size:10px!important}}
 

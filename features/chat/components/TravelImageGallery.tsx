@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- Provider images have dynamic remote hosts and render one lazy image at a time. */
 
 import { useMemo, useState } from "react";
+import { IconButton } from "../../shared/components/IconButton";
 
 export type GalleryImage = { url: string; alt?: string; sourceUrl?: string };
 type Props = { images: GalleryImage[]; name: string };
@@ -25,8 +26,8 @@ export function TravelImageGallery({ images, name }: Props) {
   return <div className="rich-card-gallery">
     <img src={image.url} alt={image.alt || name} loading="lazy" onError={() => setFailedState((failed) => ({ key: imageKey, urls: new Set(failed.key === imageKey ? failed.urls : []).add(image.url) }))} />
     {multiple && <>
-      <button className="rich-gallery-control rich-gallery-previous" type="button" aria-label="上一张图片" onClick={() => setIndex(galleryPreviousIndex(safeIndex, availableImages.length))}>‹</button>
-      <button className="rich-gallery-control rich-gallery-next" type="button" aria-label="下一张图片" onClick={() => setIndex(galleryNextIndex(safeIndex, availableImages.length))}>›</button>
+      <span className="rich-gallery-control rich-gallery-previous"><IconButton aria-label="上一张图片" icon="chevronLeft" size="md" variant="ghost" onClick={() => setIndex(galleryPreviousIndex(safeIndex, availableImages.length))} /></span>
+      <span className="rich-gallery-control rich-gallery-next"><IconButton aria-label="下一张图片" icon="chevronRight" size="md" variant="ghost" onClick={() => setIndex(galleryNextIndex(safeIndex, availableImages.length))} /></span>
       <span className="rich-gallery-counter" aria-live="polite">{safeIndex + 1} / {availableImages.length}</span>
     </>}
   </div>;

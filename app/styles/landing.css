@@ -171,7 +171,7 @@
 
 
 
-.swap{border:1px solid #d5e0d8;background:var(--color-surface);border-radius:var(--radius-pill);height:28px;width:28px;color:#5c776a;cursor:pointer;margin-bottom:4px}
+.swap{display:inline-grid;place-items:center;height:28px;width:28px;margin-bottom:4px}.swap>.icon-button{width:28px;height:28px;border:1px solid #d5e0d8;border-radius:var(--radius-pill);background:var(--color-surface);color:#5c776a}
 
 
 

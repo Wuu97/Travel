@@ -9,5 +9,6 @@ type Props = {
 /** Shared, accessible toggle for controlled collapsible sidebars. */
 export function SidebarCollapseButton({ className, collapsed, collapseLabel, expandLabel, onToggle }: Props) {
   const label = collapsed ? expandLabel : collapseLabel;
-  return <button aria-expanded={!collapsed} aria-label={label} className={className} title={label} type="button" onClick={onToggle}>☰</button>;
+  return <span className={className}><IconButton aria-expanded={!collapsed} aria-label={label} icon="menu" size="sm" title={label} variant="ghost" onClick={onToggle} /></span>;
 }
+import { IconButton } from "./IconButton";

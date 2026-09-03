@@ -521,30 +521,3 @@
 
 
 .return-date-calendar>.calendar-toolbar>div{height:24px;align-items:center;justify-content:center}
-
-
-
-
-.return-date-calendar>.calendar-toolbar>button[aria-label]{transform:translateY(-1px)}
-
-
-
-
-.return-date-calendar>.calendar-toolbar>button[aria-label]{position:relative;transform:none;font-size:0!important}
-
-
-
-.return-date-calendar>.calendar-toolbar>button[aria-label]::before{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor}
-
-
-
-.return-date-calendar>.calendar-toolbar>button[aria-label="上个月"]::before{transform:rotate(135deg)}
-
-
-
-.return-date-calendar>.calendar-toolbar>button[aria-label="下个月"]::before{transform:rotate(-45deg)}
-
-
-
-
-.return-date-calendar>.calendar-toolbar>button[aria-label]::before{position:relative;top:-1px}

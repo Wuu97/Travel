@@ -347,9 +347,9 @@
 
 #ai .sidebar-header{display:grid!important;grid-template-columns:28px minmax(0,1fr) auto!important;gap:6px!important;align-items:center!important;min-height:32px!important;padding:5px 7px 9px!important;color:var(--color-text-link)!important;font-size:var(--font-size-sm)!important;font-weight:700!important}
 
-#ai .sidebar-header-collapse{display:grid!important;place-items:center!important;width:28px!important;height:28px!important;border:0!important;border-radius:5px!important;background:transparent!important;color:#55786a!important;font-size:var(--font-size-lg)!important;cursor:pointer!important}
+#ai .sidebar-header-collapse>.icon-button{width:28px!important;height:28px!important;border-radius:5px!important;color:#55786a!important}
 
-#ai .sidebar-header-collapse:hover{background:var(--color-surface-tint)!important;color:var(--color-brand)!important}
+#ai .sidebar-header-collapse>.icon-button:hover{background:var(--color-surface-tint)!important;color:var(--color-brand)!important}
 
 #ai .sidebar-header-title{overflow:hidden!important;font-size:var(--font-size-sm)!important;font-weight:700!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 
@@ -376,7 +376,7 @@
 .rich-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .rich-card{overflow:hidden;border:1px solid var(--color-border-soft);border-radius:var(--radius-md);background:var(--color-surface-warm)}
 .rich-card-gallery{position:relative;background:var(--color-surface-soft)}.rich-card-gallery img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
-.rich-gallery-control{position:absolute;top:50%;display:grid;place-items:center;width:34px;height:34px;transform:translateY(-50%);border:0;border-radius:50%;background:rgb(0 0 0 / 45%);color:#fff;font-size:25px;line-height:1;cursor:pointer}.rich-gallery-control:hover{background:rgb(0 0 0 / 66%)}.rich-gallery-previous{left:8px}.rich-gallery-next{right:8px}.rich-gallery-counter{position:absolute;right:8px;bottom:8px;border-radius:999px;background:rgb(0 0 0 / 55%);padding:3px 6px;color:#fff;font-size:10px;line-height:1.2}
+.rich-gallery-control{position:absolute;top:50%;display:grid;place-items:center;width:34px;height:34px;transform:translateY(-50%);border:0;border-radius:50%;background:rgb(0 0 0 / 45%);color:#fff}.rich-gallery-control:hover{background:rgb(0 0 0 / 66%)}.rich-gallery-control>.icon-button{width:34px;height:34px;border-radius:50%;color:inherit}.rich-gallery-previous{left:8px}.rich-gallery-next{right:8px}.rich-gallery-counter{position:absolute;right:8px;bottom:8px;border-radius:999px;background:rgb(0 0 0 / 55%);padding:3px 6px;color:#fff;font-size:10px;line-height:1.2}
 .rich-card-body{display:grid;gap:6px;padding:10px}
 .rich-card-title{display:flex;justify-content:space-between;gap:6px;align-items:baseline}.rich-card-title b{min-width:0;font-size:var(--font-size-sm);color:var(--color-text-heading)}.rich-card-title span{flex:none;font-size:10px;color:var(--color-warning)}
 .rich-card small,.rich-card p,.rich-card-facts{margin:0;color:var(--color-text-muted);font-size:10px;line-height:1.5}.rich-card-facts{display:flex;flex-wrap:wrap;gap:4px 8px}.rich-card-tags{display:flex;flex-wrap:wrap;gap:4px}.rich-card-tags em{border-radius:var(--radius-sm);background:var(--color-surface-soft);padding:2px 5px;color:var(--color-text-secondary);font-size:10px;font-style:normal}
@@ -424,8 +424,8 @@
 
 #ai .ai-history-sidebar .history-row:not(.current):hover{background:var(--color-surface-soft)!important}
 
-#ai .ai-history-sidebar .history-row>.icon-button{width:28px!important;min-width:28px!important;height:34px!important;visibility:hidden!important}
+#ai .ai-history-sidebar .history-row>.icon-button--danger{width:28px!important;min-width:28px!important;height:34px!important;visibility:hidden!important}
 
-#ai .ai-history-sidebar .history-row:hover>.icon-button,#ai .ai-history-sidebar .history-row:focus-within>.icon-button{visibility:visible!important}
+#ai .ai-history-sidebar .history-row:hover>.icon-button--danger,#ai .ai-history-sidebar .history-row:focus-within>.icon-button--danger{visibility:visible!important}
 
-@media(max-width:760px){#ai .ai-history-sidebar .history-row>.icon-button{visibility:visible!important}}
+@media(max-width:760px){#ai .ai-history-sidebar .history-row>.icon-button--danger{visibility:visible!important}}
