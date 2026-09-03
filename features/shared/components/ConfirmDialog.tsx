@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useRef, useState, type ReactNode } from "react";
+import { Button } from "./Button";
 
 type Props = {
   confirmLabel?: string;
@@ -14,7 +15,7 @@ type Props = {
 /** Reusable in-app confirmation dialog for irreversible actions. */
 export function ConfirmDialog({ confirmLabel = "确认删除", description, onCancel, onConfirm, open, title }: Props) {
   if (!open) return null;
-  return <div aria-labelledby="confirm-dialog-title" aria-modal="true" className="confirm-dialog-backdrop" role="dialog"><button aria-label="取消" className="confirm-dialog-dismiss" type="button" onClick={onCancel} /><section className="confirm-dialog"><h2 id="confirm-dialog-title">{title}</h2><p>{description}</p><footer><button type="button" onClick={onCancel}>取消</button><button className="confirm-dialog-danger" type="button" onClick={onConfirm}>{confirmLabel}</button></footer></section></div>;
+  return <div aria-labelledby="confirm-dialog-title" aria-modal="true" className="confirm-dialog-backdrop" role="dialog"><button aria-label="取消" className="confirm-dialog-dismiss" type="button" onClick={onCancel} /><section className="confirm-dialog"><h2 id="confirm-dialog-title">{title}</h2><p>{description}</p><footer><Button type="button" variant="secondary" onClick={onCancel}>取消</Button><Button type="button" variant="danger" onClick={onConfirm}>{confirmLabel}</Button></footer></section></div>;
 }
 
 type ConfirmOptions = { confirmLabel?: string; description: string; title: string };
