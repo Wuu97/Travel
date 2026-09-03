@@ -1,6 +1,7 @@
 "use client";
 
 import { IconButton } from "../../shared/components/IconButton";
+import { Button } from "../../shared/components/Button";
 
 type Service = { icon: string; name: string; note: string };
 
@@ -27,7 +28,7 @@ export function BookingSearch({ active, from, notice, onSearch, setActive, setFr
       <div className="city-field"><label htmlFor="arrival-city">目的地</label><input id="arrival-city" value={to} onChange={(event) => setTo(event.target.value)} /></div>
       <div className="date-field"><span className="field-label">出发日期</span><strong>8月 16日 <small>周六</small></strong></div>
       <div className="date-field"><span className="field-label">返程日期</span><strong>8月 18日 <small>周一</small></strong></div>
-      <button className="search" onClick={onSearch}>查询{service.name}</button>
+      <Button type="button" onClick={onSearch}>查询{service.name}</Button>
     </div>
     {notice && <p className="notice">{notice}</p>}
   </section>;

@@ -175,12 +175,6 @@
 
 
 
-.search{border:0;background:var(--color-brand);color:var(--color-surface);font-weight:bold;border-radius:var(--radius-sm);padding:14px 8px;cursor:pointer}
-
-.search:hover:not(:disabled){background:var(--color-brand-hover)}
-
-.search:active:not(:disabled){background:var(--color-brand-active)}
-
 
 
 .notice{color:var(--color-brand);font-size:var(--font-size-md);margin:13px 0 0}
@@ -319,7 +313,7 @@ footer small{font-size:10px;color:#83a295}
 
 
 
-.search{grid-column:span 3}
+.booking-body>.button{grid-column:span 3}
 
 
 
