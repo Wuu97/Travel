@@ -1,4 +1,5 @@
 import { useTripCapabilities } from "./TripCapabilities";
+import { Button } from "../../shared/components/Button";
 
 type Props = {
   canEditTrip?: boolean;
@@ -16,7 +17,7 @@ export function ItineraryEntryActions({ canEditTrip = true, idea, onAddByAi, onI
     <div style={{ flex: "none", marginTop: "auto", paddingTop: 12 }}>
       <div className="add-local" style={{ marginTop: 0 }}>
         <input disabled={!canEditTrip} value={idea} onChange={(event) => onIdeaChange(event.target.value)} onKeyDown={(event) => event.key === "Enter" && onAddByAi()} placeholder="输入想法，让 AI 帮你安排这一段行程…" />
-        <button disabled={!canEditTrip} onClick={onAddByAi}>AI生成</button>
+        <Button disabled={!canEditTrip} size="md" type="button" variant="primary" onClick={onAddByAi}>AI生成</Button>
       </div>
       <div className="manual-entry" style={{ marginTop: 8 }}>
         <button disabled={!canEditTrip} className="manual-add" onClick={onManualAdd} style={{ fontSize: 12, padding: "8px 12px" }}>＋ 手动添加行程</button>
