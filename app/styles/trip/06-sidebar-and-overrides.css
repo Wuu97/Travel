@@ -563,7 +563,7 @@
 #workspace .finance-overview .planned-list>h3{font:600 var(--font-size-md)/1.25 var(--font-ui)}
 #workspace .finance-overview .finance-section>h3 small{margin-left:7px;color:var(--color-text-muted);font:400 .8em/1.25 var(--font-ui)}
 #workspace .expense-list{height:auto;min-height:0;overflow:visible;background:var(--color-surface)}
-#workspace .expense-list article{position:relative;display:flex;align-items:center;gap:10px;min-height:0;padding:7px 0;border-bottom:1px solid var(--color-border-soft)}
+#workspace .expense-list article{position:relative;display:flex;align-items:center;gap:var(--density-dense-gap-sm);min-height:0;padding:var(--density-dense-row-padding-y) 0;border-bottom:1px solid var(--color-border-soft)}
 #workspace .expense-list article:last-child{border-bottom:0}
 #workspace .expense-list article>i{display:grid;place-items:center;width:24px;height:24px;border-radius:var(--radius-md);background:var(--color-brand-tint);color:var(--color-brand);font-size:var(--font-size-xs);font-style:normal}
 #workspace .expense-list h4{margin:0 0 3px;color:var(--color-text-heading);font-size:var(--font-size-sm);font-weight:600}
@@ -579,7 +579,7 @@
 #workspace .expense-distribution .donut:before{inset:13px;width:auto;height:auto}
 #workspace .expense-distribution .donut span{font-size:var(--font-size-base)}
 #workspace .expense-distribution .donut small{display:block;font-size:10px;color:var(--color-text-muted)}
-#workspace .distribution-list{display:grid;gap:7px}
+#workspace .distribution-list{display:grid;gap:var(--density-dense-gap-sm)}
 #workspace .distribution-list p{display:grid;grid-template-columns:7px minmax(0,1fr) 76px 48px;align-items:center;column-gap:var(--space-2);row-gap:2px;margin:0!important;color:var(--color-text-secondary)!important;font-size:var(--font-size-xs)!important;font-weight:400}
 #workspace .distribution-list p>span{font-weight:400}
 #workspace .distribution-list p>i{width:7px;height:7px;border-radius:var(--radius-pill)}
@@ -616,10 +616,10 @@
 /* Quick expense entry is an operation layer anchored to its trigger, not ledger content. */
 #workspace .budget-add-wrap{position:relative;flex:0 0 auto}
 #workspace .expense-entry-popover{position:absolute;z-index:40;top:calc(100% + 8px);right:0;box-sizing:border-box;width:min(390px,calc(100vw - 48px));max-height:calc(100dvh - 96px);overflow:auto;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:0 12px 28px #1d342f1c}
-#workspace .expense-form{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;margin:0!important;padding:14px!important;border:0!important;border-radius:inherit!important;background:var(--color-surface-soft)!important}
+#workspace .expense-form{display:grid!important;grid-template-columns:1fr!important;gap:var(--density-dense-gap-sm)!important;margin:0!important;padding:14px!important;border:0!important;border-radius:inherit!important;background:var(--color-surface-soft)!important}
 #workspace .expense-form-heading{display:flex;align-items:center;color:var(--color-text-heading)}
 #workspace .expense-form-heading b{font-size:var(--font-size-sm)}
-#workspace .expense-form .expense-field{display:grid;gap:5px;min-width:0;color:var(--color-text-secondary);font-size:var(--font-size-xs)}
+#workspace .expense-form .expense-field{display:grid;gap:var(--density-dense-gap-xs);min-width:0;color:var(--color-text-secondary);font-size:var(--font-size-xs)}
 #workspace .expense-form .expense-field>span em{color:var(--color-brand);font-style:normal}
 #workspace .expense-form .expense-field input,#workspace .expense-form .expense-field select{box-sizing:border-box;width:100%;height:34px;min-width:0;margin:0;padding:0 9px;border:1px solid var(--color-border);border-radius:var(--radius-control);background:var(--color-surface);color:var(--color-text-heading);font:400 var(--font-size-sm)/1 var(--font-ui)}
 #workspace .expense-form .expense-field .custom-select-trigger{height:34px;padding:0 9px;color:var(--color-text-heading);font:400 var(--font-size-sm)/1 var(--font-ui)}
@@ -631,8 +631,8 @@
 #workspace .expense-form .expense-field-amount>div{position:relative}
 #workspace .expense-form .expense-field-amount i{position:absolute;z-index:1;top:50%;left:9px;transform:translateY(-50%);color:var(--color-text-muted);font-style:normal}
 #workspace .expense-form .expense-field-amount input{padding-left:var(--space-6)}
-#workspace .expense-form-primary,#workspace .expense-form-advanced{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#workspace .expense-form-primary,#workspace .expense-form-advanced{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--density-dense-gap-sm)}
 #workspace .expense-form .expense-more{justify-self:start;margin:0!important;padding:0!important;border:0!important;background:transparent!important;color:var(--color-text-link)!important;font:400 var(--font-size-xs)/1.4 var(--font-ui)!important;cursor:pointer}
 #workspace .expense-form .expense-more:disabled{cursor:not-allowed}
-#workspace .expense-form-actions{display:flex;justify-content:flex-end;gap:var(--space-2);margin-top:2px}
+#workspace .expense-form-actions{display:flex;justify-content:flex-end;gap:var(--density-dense-gap-sm);margin-top:2px}
 @media(max-width:760px){#workspace .expense-entry-popover{position:fixed;z-index:90;top:auto;right:0;bottom:0;left:0;width:100%;max-height:86dvh;border-right:0;border-bottom:0;border-left:0;border-radius:var(--radius-md) var(--radius-md) 0 0}#workspace .expense-form{padding:var(--space-3)!important}#workspace .expense-form-primary,#workspace .expense-form-advanced{grid-template-columns:1fr}}
