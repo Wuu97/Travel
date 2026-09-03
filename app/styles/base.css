@@ -197,7 +197,7 @@ select:focus-visible{border-color:var(--color-border-strong);outline:0;box-shado
 .button--secondary:hover:not(:disabled){border-color:var(--color-border-strong);background:var(--color-surface-soft);color:var(--color-text-heading)}
 .button--ghost{background:transparent;color:var(--color-text-secondary)}
 .button--ghost:hover:not(:disabled){background:var(--color-surface-soft);color:var(--color-text-action)}
-.button--link{height:auto;padding:0;border:0;background:transparent;color:var(--color-text-link);font-weight:500}
+.button--link{padding-inline:0;border:0;background:transparent;color:var(--color-text-link);font-weight:500}
 .button--link:hover:not(:disabled){color:var(--color-text-action);text-decoration:underline;text-underline-offset:3px}
 .button--danger{background:var(--color-danger);color:var(--color-surface)}
 .button--danger:hover:not(:disabled){background:var(--color-danger-hover)}
