@@ -13,6 +13,7 @@ import { SidebarCollapseButton } from "../../shared/components/SidebarCollapseBu
 import { SidebarHeader } from "../../shared/components/SidebarHeader";
 import { ScrollArea } from "../../shared/components/ScrollArea";
 import { IconButton } from "../../shared/components/IconButton";
+import { Button } from "../../shared/components/Button";
 import { useConfirmation } from "../../shared/components/ConfirmDialog";
 import { TripSidebarIcon } from "./TripSidebarIcon";
 import { writeHistoryIfChanged } from "../../navigation/history";
@@ -329,7 +330,7 @@ export function TripLibrary({ accessToken, activeDay, activeTripId: committedAct
         <label>目的地<input className={createErrors.destination ? "input-error" : ""} placeholder="例如 杭州" value={draft.destination} onChange={(event) => { setDraft({ ...draft, destination: event.target.value }); if (createErrors.destination) setCreateErrors({ ...createErrors, destination: undefined }); }} />{createErrors.destination && <small className="field-error">{createErrors.destination}</small>}</label>
         <CustomDateRangePicker className="create-trip-dates" endDate={draft.endDate} endError={createErrors.endDate} endLabel="返程日期" onChange={(dates) => { setDraft({ ...draft, ...dates }); setCreateErrors({ ...createErrors, startDate: dates.startDate ? undefined : createErrors.startDate, endDate: dates.endDate ? undefined : createErrors.endDate }); }} startDate={draft.startDate} startError={createErrors.startDate} startLabel="出发日期" />
         <label>同行人（可选）<input placeholder="例如 小林、阿宁" value={draft.companions} onChange={(event) => setDraft({ ...draft, companions: event.target.value })} /></label>
-        <div className="edit-plan-actions"><button type="button" onClick={closeCreateTrip}>取消</button><button type="submit">创建</button></div>
+        <div className="edit-plan-actions"><Button type="button" variant="secondary" onClick={closeCreateTrip}>取消</Button><Button type="submit">创建</Button></div>
       </form>
     </div>}
   </section>;
