@@ -1,0 +1,7 @@
+:root {
+  /* Dense: ledger rows, compact lists, and high-information controls. */
+  --density-dense-padding-sm: var(--space-1);
+  --density-dense-padding-md: var(--space-2);
+  --density-dense-gap-xs: var(--space-1);
+  --density-dense-gap-sm: var(--space-2);
+}
