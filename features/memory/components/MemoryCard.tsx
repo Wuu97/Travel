@@ -1,6 +1,7 @@
 "use client";
 
 import type { TravelMemory } from "../model";
+import { Button } from "../../shared/components/Button";
 
 type Props = { deleting?: boolean; memory: TravelMemory; onDelete: (memory: TravelMemory) => void };
 
@@ -19,5 +20,5 @@ export function MemoryCard({ deleting, memory, onDelete }: Props) {
     preference.interests?.length ? ["喜欢", preference.interests.map(display).join("、")] : undefined,
     preference.dislikes?.length ? ["不喜欢", preference.dislikes.map(display).join("、")] : undefined,
   ].filter((fact): fact is [string, string] => Boolean(fact));
-  return <article className="memory-card"><div>{facts.map(([label, value]) => <p key={label}><small>{label}</small><strong>{value}</strong></p>)}</div><button className="memory-delete" disabled={deleting} type="button" onClick={() => onDelete(memory)}>{deleting ? "删除中…" : "删除"}</button></article>;
+  return <article className="memory-card"><div>{facts.map(([label, value]) => <p key={label}><small>{label}</small><strong>{value}</strong></p>)}</div><Button loading={deleting} type="button" variant="danger" onClick={() => onDelete(memory)}>删除</Button></article>;
 }
