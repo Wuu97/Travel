@@ -178,7 +178,7 @@ export function AuthControl({ configured, error, onClearError, onRequestPhoneOtp
     setSubmitting(false);
   };
   return <>
-    {showTrigger && <div className="auth-control"><Button size="sm" type="button" onClick={() => setOpen(true)}>登录 / 注册</Button></div>}
+    {showTrigger && <div className="auth-control"><Button size="sm" type="button" variant="primary" onClick={() => setOpen(true)}>登录 / 注册</Button></div>}
     {open && <div className="auth-backdrop">
       <section className="auth-dialog" data-modal-scroll-lock role="dialog" aria-modal="true" aria-labelledby="auth-title">
         <div className="auth-dialog-title"><div><b id="auth-title">{registeredEmail ? "注册成功" : method === "phone" ? "手机号登录或注册" : isSignUp ? "创建账户" : "登录账户"}</b><small>{registeredEmail ? "请完成邮箱验证后再登录。" : method === "phone" ? "验证短信验证码后，将自动登录或创建账户。" : isSignUp ? "注册后可同步你的行程和对话。" : "登录后可同步你的行程和对话。"}</small></div><IconButton aria-label="关闭" icon="close" variant="ghost" onClick={closeDialog} /></div>

@@ -1,6 +1,7 @@
 import type { ExpenseItem, ItineraryItem } from "../../trip/model";
 import type { ChatMessage } from "../model";
 import { useTripCapabilities } from "../../trip/components/TripCapabilities";
+import { Button } from "../../shared/components/Button";
 
 type Props = {
   message: ChatMessage;
@@ -38,12 +39,12 @@ export function ChatImportPanel({
   return (
     <div className="ai-imports">
       {!canEditTrip && <p className="ai-import-readonly" role="status">当前旅行为只读，无法导入到行程或账本。</p>}
-      {hasMixedSelection && <button type="button" disabled={!canEditTrip} onClick={() => onAddImportBatch(selectedItineraries, selectedBudget)}>导入已选 {selectedItineraries.length + selectedBudget.length} 项</button>}
+      {hasMixedSelection && <Button disabled={!canEditTrip} size="sm" type="button" variant="primary" onClick={() => onAddImportBatch(selectedItineraries, selectedBudget)}>导入已选 {selectedItineraries.length + selectedBudget.length} 项</Button>}
       {itineraryItems.length > 0 && (
         <section>
           <header>
             <b>可导入行程</b>
-            {selectedItineraries.length > 0 && !hasMixedSelection && <button disabled={!canEditTrip} onClick={() => onAddItineraries(selectedItineraries)}>添加已选 {selectedItineraries.length} 项</button>}
+            {selectedItineraries.length > 0 && !hasMixedSelection && <button className="ai-import-header-import" disabled={!canEditTrip} onClick={() => onAddItineraries(selectedItineraries)}>添加已选 {selectedItineraries.length} 项</button>}
           </header>
           {itineraryItems.map((item) => {
             const added = isPlanAdded(item);
@@ -61,8 +62,8 @@ export function ChatImportPanel({
         <section>
           <header>
             <b>预计费用</b>
-            <button disabled={!canEditTrip} type="button" onClick={() => onToggleMany(expenseItems.map((item) => `budget-${item.id}`))}>{expenseItems.every((item) => selected[`budget-${item.id}`]) ? "取消全选" : "全选"}</button>
-            {selectedBudget.length > 0 && !hasMixedSelection && <button disabled={!canEditTrip} onClick={() => onAddExpenses(selectedBudget, "budget")}>导入已选 {selectedBudget.length} 项</button>}
+            <button className="ai-import-header-toggle" disabled={!canEditTrip} type="button" onClick={() => onToggleMany(expenseItems.map((item) => `budget-${item.id}`))}>{expenseItems.every((item) => selected[`budget-${item.id}`]) ? "取消全选" : "全选"}</button>
+            {selectedBudget.length > 0 && !hasMixedSelection && <button className="ai-import-header-import" disabled={!canEditTrip} onClick={() => onAddExpenses(selectedBudget, "budget")}>导入已选 {selectedBudget.length} 项</button>}
           </header>
           {expenseItems.map((item) => {
             const destination = "budget";

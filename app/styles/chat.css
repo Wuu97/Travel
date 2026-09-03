@@ -72,7 +72,7 @@
 
 .ai-imports header b{font-size:var(--font-size-xs);color:#4a6c5d}
 
-.ai-imports header button{margin-left:auto;border:0;background:#e3f0e6;color:#3e7558;border-radius:var(--radius-control);padding:4px 7px;font-size:10px;cursor:pointer}
+.ai-imports header .ai-import-header-import{margin-left:auto;border:0;background:#e3f0e6;color:#3e7558;border-radius:var(--radius-control);padding:4px 7px;font-size:10px;cursor:pointer}
 
 .import-row{display:grid;grid-template-columns:14px minmax(0,1fr) auto;align-items:center;gap:7px;padding:7px 0;border-top:1px solid #e4ece5}
 
@@ -305,7 +305,7 @@
 .rich-card-body{display:grid;gap:6px;padding:10px}
 .rich-card-title{display:flex;justify-content:space-between;gap:6px;align-items:baseline}.rich-card-title b{min-width:0;font-size:var(--font-size-sm);color:var(--color-text-heading)}.rich-card-title span{flex:none;font-size:10px;color:var(--color-warning)}
 .rich-card small,.rich-card p,.rich-card-facts{margin:0;color:var(--color-text-muted);font-size:10px;line-height:1.5}.rich-card-facts{display:flex;flex-wrap:wrap;gap:4px 8px}.rich-card-tags{display:flex;flex-wrap:wrap;gap:4px}.rich-card-tags em{border-radius:var(--radius-pill);background:var(--color-surface-soft);padding:2px 5px;color:var(--color-text-secondary);font-size:10px;font-style:normal}
-.rich-card-action{justify-self:start;border:1px solid var(--color-border);border-radius:var(--radius-control);background:var(--color-surface);padding:4px 7px;color:var(--color-success-strong);font-size:10px;cursor:pointer}.rich-card-action:disabled{color:var(--color-text-disabled)}
+.rich-card-action{justify-self:start;border:1px solid var(--color-border);border-radius:var(--radius-control);background:var(--color-surface);padding:4px 7px;color:var(--color-success-strong);font-size:10px;cursor:pointer}.rich-card-action:disabled{border-color:#d9e2db;background:#f3f6f3;color:#9aad9f;cursor:default}
 .structured-card-actions{display:flex;gap:8px;align-items:center}.rich-card-feedback{border:0;background:transparent;padding:4px 0;color:var(--color-text-muted);font-size:10px;cursor:pointer}.rich-card-feedback:hover{color:var(--color-text-secondary)}.recommendation-reasons{display:grid;gap:3px;margin-top:10px;color:var(--color-text-secondary);font-size:12px}.recommendation-reasons b{color:var(--color-text-primary);font-size:11px}.recommendation-reasons span{padding-left:2px}
 .rich-route{display:grid;gap:7px;border-left:1px solid var(--color-border);padding:4px 0 4px 12px}.rich-route>b{color:var(--color-text-heading);font-size:var(--font-size-sm)}.rich-route>div{display:grid;gap:2px;color:var(--color-text-muted);font-size:10px}.rich-route>div span{width:max-content;background:var(--color-surface-soft);padding:2px 5px;border-radius:var(--radius-pill)}.rich-route small{color:var(--color-text-muted)}
 .rich-cost{border:1px solid var(--color-border-soft);border-radius:var(--radius-card);background:var(--color-surface-warm);padding:10px}.rich-cost>b{display:block;margin-bottom:6px;color:var(--color-text-heading);font-size:var(--font-size-sm)}.rich-cost div,.rich-cost footer{display:flex;justify-content:space-between;gap:12px;padding:3px 0;color:var(--color-text-muted);font-size:10px}.rich-cost footer{margin-top:4px;border-top:1px solid var(--color-border-soft);padding-top:7px;color:var(--color-text-secondary)}
@@ -320,11 +320,15 @@
 
 .ai-imports header b{font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-secondary)}
 
-.ai-imports header button{border-radius:var(--radius-control);background:var(--color-brand);color:var(--color-surface)}
+.ai-imports header .ai-import-header-import{border-radius:var(--radius-control);background:var(--color-brand);color:var(--color-surface)}
 
-.ai-imports header button:hover{background:var(--color-brand-hover)}
+.ai-imports header .ai-import-header-import:hover:not(:disabled){background:var(--color-brand-hover)}
 
-.ai-imports header button:active{background:var(--color-brand-active)}
+.ai-imports header .ai-import-header-import:active:not(:disabled){background:var(--color-brand-active)}
+
+.ai-imports header .ai-import-header-toggle{margin-left:auto;border:0;border-radius:var(--radius-control);background:transparent;padding:4px 7px;color:var(--color-text-secondary);font-size:10px;cursor:pointer}
+
+.ai-imports header .ai-import-header-toggle:hover:not(:disabled){background:var(--color-surface-soft);color:var(--color-text-action)}
 
 .import-row{padding:8px 0;border-top-color:var(--color-border-soft)}
 
